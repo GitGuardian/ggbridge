@@ -1,0 +1,21 @@
+# Deploy ggbridge server and expose using Kubernetes Ingress
+domain: gitguardian.com
+
+ha:
+  enabled: false
+
+server:
+  subdomain: my-subdomain
+
+  tls:
+    enabled: true
+    exisingSecret: ggbridge-server-crt
+    existingSecretKeys:
+      caCrt: ca.crt
+      crt: tls.crt
+      key: tls.key
+
+  ingress:
+    enabled: true
+    controller: nginx
+    className: nginx

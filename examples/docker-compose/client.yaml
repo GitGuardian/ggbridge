@@ -1,0 +1,18 @@
+name: ggbridge
+
+services:
+
+  client:
+    image: gitguardian/ggbridge:unstable-debug
+    entrypoint:
+      - ggbridge
+    command:
+      - client
+    environment:
+      SERVER_ADDRESS: tenant.domain.com
+      TLS_ENABLED: "true"
+      LOG_LEVEL: INFO
+    volumes:
+      - ./certs/client.crt:/certs/client.crt:ro
+      - ./certs/client.key:/certs/client.key:ro
+    restart: on-failure

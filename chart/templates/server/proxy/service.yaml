@@ -1,0 +1,31 @@
+{{- if (include "ggbridge.server.hostname" .) -}}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.server.subdomain }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.server.proxy.service.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.proxy.service.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.server.proxy.service.type }}
+  ports:
+    - port: {{ .Values.server.proxy.service.ports.socks.port }}
+      targetPort: socks
+      protocol: TCP
+      name: socks
+  selector:
+    {{- include "ggbridge.selectorLabels" . | nindent 4 }}
+    {{- if gt (include "ggbridge.proxy.replicaCount" . | int) 0 }}
+    {{- include "ggbridge.proxy.selectorLabels" . | nindent 4 }}
+    {{- else }}
+    {{- include "ggbridge.server.selectorLabels" . | nindent 4 }}
+    {{- end }}
+{{- end }}

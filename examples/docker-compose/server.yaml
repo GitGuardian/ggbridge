@@ -1,0 +1,18 @@
+name: ggbridge
+
+services:
+
+  server:
+    image: gitguardian/ggbridge:unstable-debug
+    entrypoint:
+      - ggbridge
+    command:
+      - server
+    environment:
+      TLS_ENABLED: "true"
+      LOG_LEVEL: INFO
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt:ro
+      - ./certs/server.crt:/certs/server.crt:ro
+      - ./certs/server.key:/certs/server.key:ro
+    restart: on-failure

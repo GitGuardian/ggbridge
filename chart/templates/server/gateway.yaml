@@ -1,0 +1,119 @@
+{{- if and (include "ggbridge.server.hostname" .) .Values.server.gateway.enabled }}
+  {{- $fullname := include "ggbridge.fullname" . }}
+  {{- $serverFullname := include "ggbridge.server.fullname" . }}
+
+{{- if $.Values.server.gateway.gateway.create }}
+  {{- if and (eq .Values.server.gateway.controller "traefik") .Values.server.tls.enabled }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: TLSOption
+metadata:
+  name: {{ $serverFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.server.labels" . | nindent 4 }}
+spec:
+  {{- if eq (lower .Values.server.tls.mode) "mutual" }}
+  clientAuth:
+    secretNames:
+      - {{ printf "%s-crt" $serverFullname }}
+    clientAuthType: RequireAndVerifyClientCert
+  {{- end }}
+  minVersion: VersionTLS12
+  {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $serverFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.server.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.server.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ .Values.server.gateway.gateway.className | quote }}
+  listeners:
+    - hostname: {{ include "ggbridge.server.hostname" . }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+      {{- if .Values.server.tls.enabled }}
+      name: https
+      port: {{ .Values.server.gateway.gateway.ports.https }}
+      tls:
+        mode: {{ include "ggbridge.server.gateway.tlsMode" . }}
+        {{- if eq (lower .Values.server.tls.mode) "passthrough" }}
+      protocol: TLS
+        {{- else }}
+        certificateRefs:
+          {{- if .Values.server.tls.existingSecret }}
+          - name: {{ .Values.server.tls.existingSecret }}
+          {{- else }}
+          - name: {{ printf "%s-crt" $serverFullname }}
+          {{- end }}
+        options:
+          gateway.istio.io/tls-terminate-mode: MUTUAL
+      protocol: HTTPS
+        {{- end }}
+      {{- else }}
+      name: http
+      port: {{ .Values.server.gateway.gateway.ports.http }}
+      protocol: HTTP
+      {{- end }}
+{{- end }}
+---
+{{- if eq (lower .Values.server.tls.mode) "passthrough" }}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+{{- else }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+{{- end }}
+metadata:
+  name: {{ $serverFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.server.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.server.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.server.gateway.gateway.create }}
+  parentRefs:
+    - name: {{ $serverFullname }}
+      namespace: {{ .Release.Namespace }}
+      sectionName: {{ ternary "https" "http" .Values.server.tls.enabled }}
+  {{- else }}
+  parentRefs: {{ toYaml .Values.server.gateway.parentRefs | nindent 4 }}
+  {{- end }}
+  hostnames:
+    - {{ include "ggbridge.server.hostname" . }}
+  rules:
+    - backendRefs:
+        - name: {{ $serverFullname }}
+          port: {{ $.Values.server.service.ports.ws.port }}
+      {{- if ne (lower .Values.server.tls.mode) "passthrough" }}
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+        {{- range $index := until (include "ggbridge.server.deploymentCount" $ | int) }}
+          {{- $serverFullname := include "ggbridge.server.fullname" $ }}
+          {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ printf "/%d" ($index | int) }}
+      backendRefs:
+        - name: {{ $indexServerFullname }}
+          port: {{ $.Values.server.service.ports.ws.port }}
+        {{- end }}
+      {{- end }}
+{{- end }}

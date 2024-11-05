@@ -1,0 +1,122 @@
+networks:
+  public:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "${PUBLIC_NETWORK_GATEWAY}"
+    ipam:
+      config:
+        - subnet: ${PUBLIC_NETWORK_SUBNET}
+          gateway: ${PUBLIC_NETWORK_GATEWAY}
+
+  gitguardian:
+    driver: bridge
+
+  client:
+    driver: bridge
+
+services:
+
+### GitGuadian network
+#######################################
+
+  # GitGuardian Internal Monitoring (GIM)
+  gitguardian:
+    image: ${GGBRIDGE_IMAGE}
+    entrypoint:
+      - /usr/sbin/nginx
+    command:
+      - -c
+      - /etc/nginx/nginx.conf
+      - -g
+      - daemon off;
+    volumes:
+      - ./files/gitguardian/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - name: gitguardian
+        target: 80
+        host_ip: ${PUBLIC_NETWORK_GATEWAY}
+        published: 80
+        app_protocol: http
+        mode: host
+    networks:
+      gitguardian:
+      public:
+        aliases:
+          # GIM public API endpoint (used by ggshield)
+          - api.gitguardian.public
+          # GIM dashboard endpoint
+          - dashboard.gitguardian.public
+          # GIM incoming webhooks endpoint
+          - receiver.gitguardian.public
+
+  # ggbridge server
+  server:
+    image: ${GGBRIDGE_IMAGE}
+    entrypoint: ggbridge
+    command: server
+    environment:
+      SERVER_LISTEN: 0.0.0.0:80
+      LOG_LEVEL: ${LOG_LEVEL}
+    networks:
+      gitguardian:
+        aliases:
+          - proxy.gitguardian.internal
+      public:
+        aliases:
+          # GitGuardian tunnel endpoint
+          - tunnel.gitguardian.public
+
+### Client network
+#######################################
+
+  # ggbridge client
+  client:
+    image: ${GGBRIDGE_IMAGE}
+    entrypoint: ggbridge
+    command: client
+    deploy:
+      replicas: 1
+    environment:
+      SERVER_ADDRESS: tunnel.gitguardian.public:80
+      LOG_LEVEL: ${LOG_LEVEL}
+    networks:
+      - client
+      - public
+    depends_on:
+      - server
+
+  # Version Control System server
+  vcs:
+    image: ${GGBRIDGE_IMAGE}
+    entrypoint:
+      - /usr/sbin/nginx
+    command:
+      - -c
+      - /etc/nginx/nginx.conf
+      - -g
+      - daemon off;
+    volumes:
+      - ./files/vcs/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      client:
+        aliases:
+          - vcs.client.internal
+    extra_hosts:
+      # GIM incoming webhooks endpoint
+      hook.gitguardian.public: "${PUBLIC_NETWORK_GATEWAY}"
+
+  # Developer host
+  developer:
+    image: ${GGBRIDGE_IMAGE}
+    entrypoint: []
+    command:
+      - sleep
+      - infinity
+    networks:
+      - client
+    extra_hosts:
+      # GIM public API endpoint (used by ggshield)
+      api.gitguardian.public: "${PUBLIC_NETWORK_GATEWAY}"
+      # GIM dashboard endpoint
+      dashboard.gitguardian.public: "${PUBLIC_NETWORK_GATEWAY}"

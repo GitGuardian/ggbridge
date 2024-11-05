@@ -1,0 +1,22 @@
+# Deploy ggbridge server and expose using Kubernetes Gateway API
+domain: gitguardian.com
+
+server:
+  subdomain: my-subdomain
+
+  tls:
+    enabled: true
+    exisingSecret: ggbridge-server-crt
+    existingSecretKeys:
+      caCrt: ca.crt
+      crt: tls.crt
+      key: tls.key
+
+  gateway:
+    enabled: true
+    gateway:
+      create: true
+      className: traefik
+      ports:
+        http: 8000
+        https: 8443

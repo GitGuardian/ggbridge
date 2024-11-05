@@ -1,0 +1,33 @@
+{{- if .Values.server.tls.certManager.enabled -}}
+  {{- $fullname := include "ggbridge.fullname" . -}}
+  {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
+  {{- $clientFullname := include "ggbridge.client.fullname" $ -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ printf "%s-crt" $clientFullname }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.client.labels" . | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ printf "%s-crt" $clientFullname }}
+  duration: 17520h # 2 years
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  commonName: {{ $clientFullname }}
+  usages:
+    - client auth
+  issuerRef:
+    {{- if eq .Values.server.tls.certManager.issuer.name "selfSigned" }}
+    name: {{ printf "%s-ca" $fullname }}
+    {{- else }}
+    name: {{ .Values.server.tls.certManager.issuer.name }}
+    {{- end }}
+    kind: {{ .Values.server.tls.certManager.issuer.kind }}
+{{- end }}

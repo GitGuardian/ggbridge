@@ -1,0 +1,55 @@
+{{- if (include "ggbridge.server.hostname" .) }}
+  {{- $fullname := include "ggbridge.fullname" . }}
+  {{- if .Values.server.rbac.certManager.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ printf "%s-cert-manager" $fullname }}
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - 'secrets'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+  - apiGroups:
+      - 'cert-manager.io'
+    resources:
+      - 'certificates'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+      - 'create'
+  - apiGroups:
+      - 'cert-manager.io'
+    resources:
+      - 'issuers'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+      - 'create'
+    {{- if .Values.server.rbac.certManager.subjects }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-cert-manager" $fullname }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ printf "%s-cert-manager" $fullname }}
+{{- with .Values.server.rbac.certManager.subjects }}
+subjects:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+
+    {{- end }}
+  {{- end }}
+{{- end }}
