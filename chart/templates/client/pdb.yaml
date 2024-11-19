@@ -1,0 +1,32 @@
+{{- if and (include "ggbridge.client.hostname" .) .Values.client.pdb.create }}
+  {{- range $index := until (include "ggbridge.client.deploymentCount" . | int) }}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $clientFullname := include "ggbridge.client.fullname" $ }}
+    {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $indexClientFullname }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.client.labels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+  {{- if $.Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $.Values.client.pdb.minAvailable }}
+  minAvailable: {{ $.Values.client.pdb.minAvailable }}
+  {{- end  }}
+  {{- if or $.Values.client.pdb.maxUnavailable ( not $.Values.client.pdb.minAvailable ) }}
+  maxUnavailable: {{ $.Values.client.pdb.maxUnavailable | default 1 }}
+  {{- end  }}
+  selector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.client.selectorLabels" $ | nindent 6 }}
+      index: {{ $index | quote }}
+  {{- end }}
+{{- end }}

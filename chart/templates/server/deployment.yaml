@@ -1,0 +1,149 @@
+{{- if (include "ggbridge.server.hostname" .) -}}
+  {{- range $index := until (include "ggbridge.server.deploymentCount" . | int) }}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $serverFullname := include "ggbridge.server.fullname" $ }}
+    {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $indexServerFullname }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.server.labels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+  {{- if or $.Values.commonAnnotations $.Values.server.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.server.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $.Values.server.replicaCount }}
+  {{- with $.Values.server.updateStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.server.selectorLabels" $ | nindent 6 }}
+      index: {{ $index | quote }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ggbridge.labels" $ | nindent 8 }}
+        {{- include "ggbridge.server.labels" $ | nindent 8 }}
+        index: {{ $index | quote }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ggbridge.serviceAccountName" $ }}
+      {{- if $.Values.podSecurityContext.enabled }}
+      securityContext:
+        {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ggbridge
+          {{- if $.Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["ggbridge"]
+          args: ["server"]
+          env:
+            - name: SERVER_LISTEN
+              value: "0.0.0.0"
+            - name: SERVER_PORT
+              value: {{$.Values.server.service.ports.ws.containerPort | quote }}
+            {{- if $.Values.server.tls.enabled }}
+              {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+            - name: TLS_ENABLED
+              value: "true"
+              {{- end }}
+            {{- end }}
+            {{- with $.Values.logLevel }}
+            - name: LOG_LEVEL
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - name: ws
+              containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
+              protocol: TCP
+            - name: socks
+              containerPort: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
+              protocol: TCP
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: {{ $.Values.server.service.ports.ws.containerPort }}
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: {{ $.Values.server.service.ports.ws.containerPort }}
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          {{- if $.Values.server.tls.enabled }}
+            {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /certs
+              readOnly: true
+            {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+      {{- if $.Values.server.tls.enabled }}
+        {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+      volumes:
+        - name: tls-secret
+          secret:
+            {{- if $.Values.server.tls.existingSecret }}
+            secretName: {{ $.Values.server.tls.existingSecret }}
+            items:
+              - key: {{ default "ca.crt" $.Values.server.tls.existingSecretKeys.caCrt }}
+                path: ca.crt
+              - key: {{ default "tls.crt" $.Values.server.tls.existingSecretKeys.crt }}
+                path: server.crt
+              - key: {{ default "tls.key" $.Values.server.tls.existingSecretKeys.key }}
+                path: server.key
+            {{- else}}
+            secretName: {{ printf "%s-crt" $serverFullname }}
+            items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: server.crt
+              - key: tls.key
+                path: server.key
+            {{- end }}
+            defaultMode: 420
+        {{- end }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.server.affinity" $) ) "context" $ ) }}
+      affinity: {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+  {{- end }}
+{{- end }}

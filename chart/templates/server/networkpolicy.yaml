@@ -1,0 +1,65 @@
+{{- if and (include "ggbridge.server.hostname" .) .Values.server.networkPolicy.enabled }}
+  {{- $fullname := include "ggbridge.server.fullname" . }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.server.labels" . | nindent 4 }}
+  {{- if $.Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.server.selectorLabels" $ | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - ports:
+        # Allow dns resolution
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- if .Values.server.networkPolicy.extraEgress }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.server.networkPolicy.extraEgress "context" $ ) | nindent 4 }}
+    {{- end }}
+  ingress:
+    - ports:
+        # Allow external ws port
+        - port: {{ $.Values.server.service.ports.ws.containerPort }}
+          protocol: TCP
+    - ports:
+        # Allow proxy socks port
+        - port: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
+          protocol: TCP
+      {{- if not .Values.server.networkPolicy.allowExternal }}
+      from:
+        - podSelector:
+            matchLabels:
+              {{- include "ggbridge.selectorLabels" . | nindent 14 }}
+              {{- include "ggbridge.client.selectorLabels" . | nindent 14 }}
+        {{- if .Values.server.networkPolicy.ingressNSMatchLabels }}
+        - namespaceSelector:
+            matchLabels:
+              {{- range $key, $value := .Values.server.networkPolicy.ingressNSMatchLabels }}
+              {{ $key | quote }}: {{ $value | quote }}
+              {{- end }}
+          {{- if .Values.server.networkPolicy.ingressNSPodMatchLabels }}
+          podSelector:
+            matchLabels:
+              {{- range $key, $value := .Values.server.networkPolicy.ingressNSPodMatchLabels }}
+              {{ $key | quote }}: {{ $value | quote }}
+              {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- if .Values.server.networkPolicy.extraIngress }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.server.networkPolicy.extraIngress "context" . ) | nindent 4 }}
+    {{- end }}
+{{- end }}

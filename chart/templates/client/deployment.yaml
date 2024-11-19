@@ -1,0 +1,129 @@
+  {{- if (include "ggbridge.client.hostname" .) -}}
+    {{- range $index := until (include "ggbridge.client.deploymentCount" . | int) }}
+      {{- $fullname := include "ggbridge.fullname" $ }}
+      {{- $clientFullname := include "ggbridge.client.fullname" $ }}
+      {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $indexClientFullname }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.client.labels" $ | nindent 4 }}
+  {{- if or $.Values.commonAnnotations $.Values.client.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.client.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $.Values.client.replicaCount }}
+  {{- with $.Values.client.updateStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.client.selectorLabels" $ | nindent 6 }}
+      index: {{ $index | quote }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ggbridge.labels" $ | nindent 8 }}
+        {{- include "ggbridge.client.labels" $ | nindent 8 }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        index: {{ $index | quote }}
+    spec:
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ggbridge.serviceAccountName" $ }}
+      {{- if $.Values.podSecurityContext.enabled }}
+      securityContext:
+        {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          {{- if $.Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["ggbridge"]
+          args: ["client"]
+          env:
+            - name: SERVER_ADDRESS
+              value: {{ include "ggbridge.client.hostname" $ | quote }}
+            {{- if gt (int $.Values.client.deployments) 1 }}
+            - name: SERVER_PATH_PREFIX
+              value: {{ $index | quote }}
+            {{- end }}
+            - name: TLS_ENABLED
+              value: {{ $.Values.client.tls.enabled | quote }}
+            {{- with $.Values.client.dnsResolver }}
+            - name: DNS_RESOLVER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with $.Values.client.connectionMinIdle }}
+            - name: CONNECTION_MIN_IDLE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with $.Values.logLevel }}
+            - name: LOG_LEVEL
+              value: {{ . | quote }}
+            {{- end }}
+          {{- if $.Values.client.tls.enabled }}
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /certs
+              readOnly: true
+          {{- end }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+      {{- if $.Values.client.tls.enabled }}
+      volumes:
+        - name: tls-secret
+          secret:
+            {{- if $.Values.client.tls.existingSecret }}
+            secretName: {{ $.Values.client.tls.existingSecret }}
+            items:
+              - key: {{ default "tls.crt" $.Values.client.tls.existingSecretKeys.crt }}
+                path: client.crt
+              - key: {{ default "tls.key" $.Values.client.tls.existingSecretKeys.key }}
+                path: client.key
+            {{- else}}
+            secretName: {{ printf "%s-crt" $clientFullname }}
+            items:
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+            {{- end }}
+            defaultMode: 420
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.client.affinity" $) ) "context" $ ) }}
+      affinity: {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+  {{- end }}
+{{- end }}

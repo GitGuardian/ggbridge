@@ -1,0 +1,33 @@
+{{- if (include "ggbridge.server.hostname" .) }}
+  {{- range $index := until (int .Values.server.deployments) }}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $serverFullname := include "ggbridge.server.fullname" $ }}
+    {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $indexServerFullname }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.server.labels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+  {{- if $.Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $.Values.server.pdb.minAvailable }}
+  minAvailable: {{ $.Values.server.pdb.minAvailable }}
+  {{- end  }}
+  {{- if or $.Values.server.pdb.maxUnavailable ( not $.Values.server.pdb.minAvailable ) }}
+  maxUnavailable: {{ $.Values.server.pdb.maxUnavailable | default 1 }}
+  {{- end  }}
+  selector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.server.selectorLabels" $ | nindent 6 }}
+      index: {{ $index | quote }}
+
+  {{- end }}
+{{- end }}

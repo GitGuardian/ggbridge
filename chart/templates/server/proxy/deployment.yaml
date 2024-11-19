@@ -1,0 +1,116 @@
+{{- if and (include "ggbridge.server.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.server.proxy.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.proxy.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ include "ggbridge.proxy.replicaCount" . | int }}
+  {{- with .Values.server.proxy.updateStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ggbridge.selectorLabels" . | nindent 6 }}
+      {{- include "ggbridge.proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ printf "%s" (include (print .Template.BasePath "/server/proxy/configmap.yaml") .) | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ggbridge.labels" . | nindent 8 }}
+        {{- include "ggbridge.proxy.labels" . | nindent 8 }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ggbridge.serviceAccountName" . }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext:
+        {{- toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ggbridge
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['/usr/sbin/nginx']
+          args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
+          ports:
+            - name: socks
+              containerPort: {{ .Values.server.proxy.service.ports.socks.containerPort }}
+              protocol: TCP
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          #   failureThreshold: 1
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          volumeMounts:
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /run/nginx
+            - name: tmp
+              mountPath: /var/lib/nginx/tmp
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ $proxyFullname }}
+            defaultMode: 420
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if and (include "ggbridge.server.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $proxyFullname }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations:
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
+  {{- end }}
+data:
+  nginx.conf: |-
+    {{ tpl (.Files.Get "files/server/proxy/nginx.conf") . | nindent 4 }}
+{{- end }}
