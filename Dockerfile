@@ -39,8 +39,7 @@ RUN apk add --no-cache \
 FROM builder AS build
 
 WORKDIR /build
-COPY go.mod .
-COPY main.go .
+COPY main.go go.mod go.sum .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
   go build -o ggbridge -ldflags "-w" .
 
@@ -55,6 +54,7 @@ RUN apk add --no-cache \
   openssl \
   vim
 
+COPY --chown=0:0 --chmod=0444 docker/files/nginx.conf /etc/nginx/nginx.conf
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 
 
@@ -82,8 +82,10 @@ RUN apk add --no-cache \
   curl \
   openssl
 
+COPY --chown=0:0 --chmod=0444 docker/files/nginx.conf /etc/nginx/nginx.conf
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 COPY --link --from=build --chmod=755 /build/ggbridge /usr/bin/ggbridge
+
 
 USER 65532
 
@@ -97,6 +99,7 @@ FROM ${REGISTRY}/chainguard/nginx:latest AS prod
 LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
 LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
 
+COPY --chown=0:0 --chmod=0444 docker/files/nginx.conf /etc/nginx/nginx.conf
 COPY --link --from=nginx --chmod=755 /usr/lib/nginx/modules /usr/lib/nginx/modules
 COPY --link --from=nginx --chmod=755 /etc/nginx/modules /etc/nginx/modules
 COPY --link --from=nginx --chmod=755 /etc/nginx/stream.d /etc/nginx/stream.d

@@ -188,6 +188,21 @@ server:
           port: 1080
           containerPort: 1080
 
+    # -- Specify proxy Readiness Probe parameters
+    readinessProbe:
+      enabled: true
+      exec:
+        command:
+          - ggbridge
+          - healthcheck
+          - -pid-file=/var/run/nginx.pid
+          - -grace-period=60
+      initialDelaySeconds: 10
+      periodSeconds: 15
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 1
+
   # -- Services parameters
   service:
     annotations: {}
