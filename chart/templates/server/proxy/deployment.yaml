@@ -58,6 +58,9 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
+            - name: http
+              containerPort: {{ .Values.server.proxy.service.ports.http.containerPort }}
+              protocol: TCP
             - name: socks
               containerPort: {{ .Values.server.proxy.service.ports.socks.containerPort }}
               protocol: TCP
