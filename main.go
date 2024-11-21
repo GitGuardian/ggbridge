@@ -1,14 +1,28 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
+	"time"
+
+	"golang.org/x/net/proxy"
 )
 
-const RemoteProxyProtocol = "socks5"
-const RemoteProxyListen = "0.0.0.0"
-const RemoteProxyPort = 1080
+const (
+	RemoteProxyProtocol   = "socks5"
+	RemoteProxyListen     = "0.0.0.0"
+	RemoteProxyPort       = 1080
+	DefaultLogLevel       = "INFO"
+	DefaultHealthCheckURL = "http://127.0.0.1:8080/healthz"
+	DefaultPIDFile        = "/var/run/ggbridge.pid"
+)
 
 // getEnv retrieves environment variables or default values.
 func getEnv(key, defaultValue string) string {
@@ -16,6 +30,70 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func writePIDFile(pidFilePath string) error {
+	// Get the current process ID
+	pid := os.Getpid()
+
+	// Open the file for writing (create if not exists, truncate if exists)
+	file, err := os.OpenFile(pidFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open PID file: %w", err)
+	}
+	defer file.Close()
+
+	// Write the PID to the file
+	_, err = file.WriteString(strconv.Itoa(pid))
+	if err != nil {
+		return fmt.Errorf("failed to write PID to file: %w", err)
+	}
+
+	return nil
+}
+
+// performHealthCheck performs a health check via SOCKS5 proxy
+func performHealthCheck(url string) (string, error) {
+	proxyAddr := fmt.Sprintf("127.0.0.1:%d", RemoteProxyPort)
+
+	// Create a SOCKS5 dialer
+	dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
+	if err != nil {
+		return "", fmt.Errorf("error creating SOCKS5 dialer: %w", err)
+	}
+
+	// Create a custom HTTP transport
+	transport := &http.Transport{
+		Dial: func(network, addr string) (net.Conn, error) {
+			return dialer.Dial(network, addr)
+		},
+	}
+
+	// Create an HTTP client with the custom transport
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   5 * time.Second,
+	}
+
+	// Make the HTTP request
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("error making HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("HTTP request failed with status: %s", resp.Status)
+	}
+
+	// Read and return the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response body: %w", err)
+	}
+
+	return string(body), nil
 }
 
 // buildClientCommand builds the command for client mode.
@@ -45,6 +123,7 @@ func buildClientCommand() []string {
 	}
 
 	cmd := []string{
+		"--log-lvl", getEnv("LOG_LEVEL", DefaultLogLevel),
 		"client",
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
@@ -96,6 +175,7 @@ func buildServerCommand() []string {
 	}
 
 	cmd := []string{
+		"--log-lvl", getEnv("LOG_LEVEL", DefaultLogLevel),
 		"server",
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
@@ -118,36 +198,108 @@ func buildServerCommand() []string {
 	return cmd
 }
 
-func run(args []string) {
-	cmd := exec.Command("wstunnel", args...)
+// runCommand runs a command and pipes its output
+func runCommand(name string, args []string) {
+	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Println("Error running ggbridge:", err)
-		os.Exit(1)
+		log.Fatalf("Error running command '%s': %v", name, err)
 	}
 }
 
+// runNginx starts the embedded NGINX process
+func runNginx() {
+	runCommand("nginx", []string{"-c", "/etc/nginx/nginx.conf", "-e", "/dev/stderr"})
+}
+
+// runClient handles the client subcommand logic
+func runClient(pidFile string) {
+	err := writePIDFile(pidFile)
+	if err != nil {
+		log.Fatalf("Error writing PID file: %v", err)
+	}
+
+	if getEnv("NGINX_EMBEDDED", "true") == "true" {
+		runNginx()
+	}
+
+	cmd := buildClientCommand()
+	runCommand("wstunnel", cmd)
+}
+
+// runServer handles the server subcommand logic
+func runServer(pidFile string) {
+	err := writePIDFile(pidFile)
+	if err != nil {
+		log.Fatalf("Error writing PID file: %v", err)
+	}
+
+	if getEnv("NGINX_EMBEDDED", "true") == "true" {
+		runNginx()
+	}
+
+	cmd := buildServerCommand()
+	runCommand("wstunnel", cmd)
+}
+
+// runHealthCheck handles the healthcheck subcommand
+func runHealthCheck(pidFile string, gracePeriod int) {
+	if gracePeriod > 0 {
+		// Check if the PID file exists
+		fileInfo, err := os.Stat(pidFile)
+		var startTime time.Time
+		if err == nil {
+			startTime = fileInfo.ModTime()
+		} else {
+			startTime = time.Now()
+		}
+
+		// Calculate elapsed time
+		elapsedTime := time.Since(startTime).Seconds()
+		// Check if within grace period
+		if int(elapsedTime) < gracePeriod {
+			log.Print("Within grace period, skipping healthcheck errors")
+			os.Exit(0)
+		}
+	}
+
+	healthCheckURL := getEnv("HEALTHCHECK_URL", DefaultHealthCheckURL)
+	result, err := performHealthCheck(healthCheckURL)
+	if err != nil {
+		log.Fatalf("Healthcheck failed: %v", err)
+	}
+	log.Printf("Healthcheck passed: %s", result)
+}
+
 func main() {
+	clientCmd := flag.NewFlagSet("client", flag.ExitOnError)
+	clientPidFile := clientCmd.String("pid-file", DefaultPIDFile, "PID file path")
+
+	serverCmd := flag.NewFlagSet("server", flag.ExitOnError)
+	serverPidFile := serverCmd.String("pid-file", DefaultPIDFile, "PID file path")
+
+	healthCheckCmd := flag.NewFlagSet("healthcheck", flag.ExitOnError)
+	healthCheckPidFile := healthCheckCmd.String("pid-file", DefaultPIDFile, "PID file path")
+	healthCheckGracePeriod := healthCheckCmd.Int("grace-period", 0, "Grace period in seconds to ignore healthcheck failures since pod startup")
+
 	if len(os.Args) < 2 {
-		fmt.Println("Error: Missing argument 'server' or 'client'")
-		os.Exit(1)
+		log.Fatal("Error: Missing subcommand 'server', 'client', or 'healthcheck'")
 	}
 
-	cmd := []string{
-		"--log-lvl",
-		getEnv("LOG_LEVEL", "INFO"),
-	}
+	subcommand := os.Args[1]
 
-	mode := os.Args[1]
-
-	if mode == "client" {
-		cmd = append(cmd, buildClientCommand()...)
-	} else if mode == "server" {
-		cmd = append(cmd, buildServerCommand()...)
-	} else {
-		fmt.Println("Error: You must run 'client' or 'server' mode")
-		os.Exit(1)
+	switch subcommand {
+	case "client":
+		clientCmd.Parse(os.Args[2:])
+		runClient(*clientPidFile)
+	case "server":
+		serverCmd.Parse(os.Args[2:])
+		runServer(*serverPidFile)
+	case "healthcheck":
+		healthCheckCmd.Parse(os.Args[2:])
+		runHealthCheck(*healthCheckPidFile, *healthCheckGracePeriod)
+	default:
+		log.Fatalf("Error: Unknown subcommand '%s'", subcommand)
 	}
-	run(cmd)
 }

@@ -48,7 +48,7 @@ spec:
         {{- toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
       containers:
-        - name: ggbridge
+        - name: nginx
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext:
             {{- toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
@@ -58,25 +58,21 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
+            - name: http
+              containerPort: {{ .Values.server.proxy.service.ports.http.containerPort }}
+              protocol: TCP
             - name: socks
               containerPort: {{ .Values.server.proxy.service.ports.socks.containerPort }}
               protocol: TCP
-          # readinessProbe:
-          #   tcpSocket:
-          #     port: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 10
-          #   failureThreshold: 1
-          # livenessProbe:
-          #   tcpSocket:
-          #     port: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 10
+          {{- if .Values.server.proxy.readinessProbe.enabled }}
+          readinessProbe:
+            {{- toYaml (omit .Values.server.proxy.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: cache
               mountPath: /var/cache/nginx
             - name: run
-              mountPath: /run/nginx
+              mountPath: /var/run
             - name: tmp
               mountPath: /var/lib/nginx/tmp
             - name: config

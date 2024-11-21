@@ -76,6 +76,8 @@ spec:
             - name: LOG_LEVEL
               value: {{ . | quote }}
             {{- end }}
+            - name: NGINX_EMBEDDED
+              value: "false"
           ports:
             - name: ws
               containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
@@ -93,19 +95,23 @@ spec:
           #     port: {{ $.Values.server.service.ports.ws.containerPort }}
           #   initialDelaySeconds: 5
           #   periodSeconds: 10
-          {{- if $.Values.server.tls.enabled }}
-            {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
           volumeMounts:
+            - name: run
+              mountPath: /var/run
+            {{- if $.Values.server.tls.enabled }}
+              {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
+              {{- end }}
             {{- end }}
-          {{- end }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
+      volumes:
+        - name: run
+          emptyDir: {}
       {{- if $.Values.server.tls.enabled }}
         {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
-      volumes:
         - name: tls-secret
           secret:
             {{- if $.Values.server.tls.existingSecret }}
