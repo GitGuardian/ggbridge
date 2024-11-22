@@ -1,6 +1,6 @@
-{{- if .Values.server.tls.certManager.enabled -}}
+{{- if and (eq .Values.mode "server") .Values.tls.certManager.enabled -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
-  {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
+  {{- $namespace := ternary (default .Release.namespace .Values.istio.gateway.namespace) .Release.namespace .Values.istio.enabled -}}
   {{- $clientFullname := include "ggbridge.client.fullname" $ -}}
 ---
 apiVersion: cert-manager.io/v1
@@ -24,10 +24,10 @@ spec:
   usages:
     - client auth
   issuerRef:
-    {{- if eq .Values.server.tls.certManager.issuer.name "selfSigned" }}
+    {{- if eq .Values.tls.certManager.issuer.name "selfSigned" }}
     name: {{ printf "%s-ca" $fullname }}
     {{- else }}
-    name: {{ .Values.server.tls.certManager.issuer.name }}
+    name: {{ .Values.tls.certManager.issuer.name }}
     {{- end }}
-    kind: {{ .Values.server.tls.certManager.issuer.kind }}
+    kind: {{ .Values.tls.certManager.issuer.kind }}
 {{- end }}

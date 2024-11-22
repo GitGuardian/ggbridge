@@ -1,4 +1,4 @@
-{{- if and (include "ggbridge.client.hostname" .) .Values.client.networkPolicy.enabled }}
+{{- if and (eq .Values.mode "client") (include "ggbridge.hostname" .) .Values.networkPolicy.enabled }}
 {{- $clientFullname := include "ggbridge.client.fullname" . }}
 ---
 apiVersion: networking.k8s.io/v1
@@ -27,15 +27,15 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
-        {{- if .Values.client.tls.enabled }}
+        {{- if .Values.tls.enabled }}
         - port: 443
           protocol: TCP
         {{- else }}
         - port: 80
           protocol: TCP
         {{- end }}
-    {{- if .Values.client.networkPolicy.extraEgress }}
-    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.client.networkPolicy.extraEgress "context" . ) | nindent 4 }}
+    {{- if .Values.networkPolicy.extraEgress }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.networkPolicy.extraEgress "context" . ) | nindent 4 }}
     {{- end }}
   ingress: []
 {{- end }}

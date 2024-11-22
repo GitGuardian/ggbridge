@@ -1,5 +1,5 @@
-{{- if (include "ggbridge.server.hostname" .) -}}
-  {{- range $index := until (include "ggbridge.server.deploymentCount" . | int) }}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) -}}
+  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}
     {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
@@ -13,13 +13,13 @@ metadata:
     {{- include "ggbridge.labels" $ | nindent 4 }}
     {{- include "ggbridge.server.labels" $ | nindent 4 }}
     index: {{ $index | quote }}
-  {{- if or $.Values.commonAnnotations $.Values.server.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.server.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  {{- if or $.Values.commonAnnotations $.Values.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.annotations $.Values.commonAnnotations ) "context" $ ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ $.Values.server.replicaCount }}
-  {{- with $.Values.server.updateStrategy }}
+  replicas: {{ $.Values.replicaCount }}
+  {{- with $.Values.updateStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -65,9 +65,9 @@ spec:
             - name: SERVER_LISTEN
               value: "0.0.0.0"
             - name: SERVER_PORT
-              value: {{$.Values.server.service.ports.ws.containerPort | quote }}
-            {{- if $.Values.server.tls.enabled }}
-              {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+              value: {{$.Values.service.ports.ws.containerPort | quote }}
+            {{- if $.Values.tls.enabled }}
+              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
             - name: TLS_ENABLED
               value: "true"
               {{- end }}
@@ -80,26 +80,26 @@ spec:
               value: "false"
           ports:
             - name: ws
-              containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
+              containerPort: {{ $.Values.service.ports.ws.containerPort }}
               protocol: TCP
             - name: socks
-              containerPort: {{ $.Values.server.proxy.service.ports.socks.containerPort }}
+              containerPort: {{ $.Values.proxy.service.ports.socks.containerPort }}
               protocol: TCP
           # readinessProbe:
           #   tcpSocket:
-          #     port: {{ $.Values.server.service.ports.ws.containerPort }}
+          #     port: {{ $.Values.service.ports.ws.containerPort }}
           #   initialDelaySeconds: 5
           #   periodSeconds: 10
           # livenessProbe:
           #   tcpSocket:
-          #     port: {{ $.Values.server.service.ports.ws.containerPort }}
+          #     port: {{ $.Values.service.ports.ws.containerPort }}
           #   initialDelaySeconds: 5
           #   periodSeconds: 10
           volumeMounts:
             - name: run
               mountPath: /var/run
-            {{- if $.Values.server.tls.enabled }}
-              {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+            {{- if $.Values.tls.enabled }}
+              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -110,18 +110,18 @@ spec:
       volumes:
         - name: run
           emptyDir: {}
-      {{- if $.Values.server.tls.enabled }}
-        {{- if or (eq (lower $.Values.server.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+      {{- if $.Values.tls.enabled }}
+        {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
         - name: tls-secret
           secret:
-            {{- if $.Values.server.tls.existingSecret }}
-            secretName: {{ $.Values.server.tls.existingSecret }}
+            {{- if $.Values.tls.existingSecret }}
+            secretName: {{ $.Values.tls.existingSecret }}
             items:
-              - key: {{ default "ca.crt" $.Values.server.tls.existingSecretKeys.caCrt }}
+              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
                 path: ca.crt
-              - key: {{ default "tls.crt" $.Values.server.tls.existingSecretKeys.crt }}
+              - key: {{ default "tls.crt" $.Values.tls.existingSecretKeys.crt }}
                 path: server.crt
-              - key: {{ default "tls.key" $.Values.server.tls.existingSecretKeys.key }}
+              - key: {{ default "tls.key" $.Values.tls.existingSecretKeys.key }}
                 path: server.key
             {{- else}}
             secretName: {{ printf "%s-crt" $serverFullname }}

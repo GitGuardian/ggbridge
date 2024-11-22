@@ -1,47 +1,47 @@
-{{- if and (include "ggbridge.server.hostname" .) .Values.server.istio.enabled }}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.istio.enabled }}
   {{- $fullname := include "ggbridge.fullname" . }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
 
-{{- if .Values.server.istio.gateway.create }}
+{{- if .Values.istio.gateway.create }}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: {{ $serverFullname }}
-  namespace: {{ default .Release.Namespace .Values.server.istio.gateway.namespace }}
+  namespace: {{ default .Release.Namespace .Values.istio.gateway.namespace }}
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.server.istio.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.istio.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations .Values.istio.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.istio.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  selector: {{ toYaml .Values.server.istio.gateway.selector | nindent 4 }}
+  selector: {{ toYaml .Values.istio.gateway.selector | nindent 4 }}
   servers:
-    {{- if .Values.server.tls.enabled }}
+    {{- if .Values.tls.enabled }}
     - port:
-        number: {{ .Values.server.istio.gateway.ports.https }}
+        number: {{ .Values.istio.gateway.ports.https }}
         name: https
         protocol: HTTPS
       tls:
-        mode: {{ upper .Values.server.tls.mode }}
-        minProtocolVersion: {{ .Values.server.istio.gateway.tls.minProtocolVersion }}
-        {{- if ne .Values.server.tls.mode "passthrough" }}
-          {{- if .Values.server.tls.existingSecret }}
-        credentialName: {{ .Values.server.tls.existingSecret }}
+        mode: {{ upper .Values.tls.mode }}
+        minProtocolVersion: {{ .Values.istio.gateway.tls.minProtocolVersion }}
+        {{- if ne .Values.tls.mode "passthrough" }}
+          {{- if .Values.tls.existingSecret }}
+        credentialName: {{ .Values.tls.existingSecret }}
           {{- else }}
         credentialName: {{ printf "%s-crt" $serverFullname }}
           {{- end }}
         {{- end }}
     {{- else }}
     - port:
-        number: {{ .Values.server.istio.gateway.ports.http }}
+        number: {{ .Values.istio.gateway.ports.http }}
         name: http
         protocol: HTTP
     {{- end }}
       hosts:
-        - {{ include "ggbridge.server.hostname" . | quote }}
+        - {{ include "ggbridge.hostname" . | quote }}
 {{- end }}
 ---
 apiVersion: networking.istio.io/v1beta1
@@ -52,31 +52,31 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.server.istio.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.istio.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations .Values.istio.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.istio.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
   hosts:
-    - {{ include "ggbridge.server.hostname" $ | quote }}
-  {{- if .Values.server.istio.gateway.create }}
+    - {{ include "ggbridge.hostname" $ | quote }}
+  {{- if .Values.istio.gateway.create }}
   gateways:
-    - {{ printf "%s/%s" (default .Release.Namespace .Values.server.istio.gateway.namespace) $serverFullname }}
+    - {{ printf "%s/%s" (default .Release.Namespace .Values.istio.gateway.namespace) $serverFullname }}
   {{- else }}
-  gateways: {{ toYaml .Values.server.istio.gateways | nindent 4 }}
+  gateways: {{ toYaml .Values.istio.gateways | nindent 4 }}
   {{- end }}
   tls:
     - match:
-        - port: {{ $.Values.server.istio.gateway.ports.https }}
+        - port: {{ $.Values.istio.gateway.ports.https }}
           sniHosts:
-            - {{ include "ggbridge.server.hostname" $ | quote }}
+            - {{ include "ggbridge.hostname" $ | quote }}
       route:
         - destination:
             host: {{ $serverFullname }}
             port:
-              number: {{ $.Values.server.service.ports.ws.port }}
+              number: {{ $.Values.service.ports.ws.port }}
   http:
-    {{- range $index := until (include "ggbridge.server.deploymentCount" $ | int) }}
+    {{- range $index := until (include "ggbridge.deploymentCount" $ | int) }}
       {{- $serverFullname := include "ggbridge.server.fullname" $ }}
       {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
     - match:
@@ -86,12 +86,12 @@ spec:
         - destination:
             host: {{ $indexServerFullname }}
             port:
-              number: {{ $.Values.server.service.ports.ws.port }}
+              number: {{ $.Values.service.ports.ws.port }}
     {{- end }}
     - route:
         - destination:
             host: {{ $serverFullname }}
             port:
-              number: {{ $.Values.server.service.ports.ws.port }}
+              number: {{ $.Values.service.ports.ws.port }}
 
 {{- end }}

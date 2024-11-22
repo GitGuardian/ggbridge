@@ -1,19 +1,22 @@
 # Deploy ggbridge server and expose using Istio ingress gateway
+
+mode: server
 domain: gitguardian.com
+subdomain: my-subdomain
 
-server:
-  subdomain: my-subdomain
+ha:
+  enabled: false
 
-  tls:
-    enabled: true
-    exisingSecret: ggbridge-server-crt
-    existingSecretKeys:
-      caCrt: ca.crt
-      crt: tls.crt
-      key: tls.key
+tls:
+  enabled: true
+  exisingSecret: ggbridge-server-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
 
-  istio:
-    enabled: true
-    gateway:
-      create: true
-      namespace: istio-ingress
+istio:
+  enabled: true
+  gateway:
+    create: true
+    namespace: istio-ingress

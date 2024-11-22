@@ -1,8 +1,8 @@
-{{- if and (include "ggbridge.server.hostname" .) .Values.server.ingress.enabled }}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.ingress.enabled }}
   {{- $fullname := include "ggbridge.fullname" . }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
 
-{{- if and (eq .Values.server.ingress.controller "traefik") .Values.server.tls.enabled }}
+{{- if and (eq .Values.ingress.controller "traefik") .Values.tls.enabled }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: TLSOption
@@ -13,7 +13,7 @@ metadata:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
 spec:
-  {{- if eq (lower .Values.server.tls.mode) "mutual" }}
+  {{- if eq (lower .Values.tls.mode) "mutual" }}
   clientAuth:
     secretNames:
       - {{ printf "%s-crt" $serverFullname }}
@@ -32,9 +32,9 @@ metadata:
     {{- include "ggbridge.server.labels" . | nindent 4 }}
   annotations: {{ include "ggbridge.server.ingress.annotations" . | nindent 4 }}
 spec:
-  ingressClassName: {{ .Values.server.ingress.className | quote }}
+  ingressClassName: {{ .Values.ingress.className | quote }}
   rules:
-    - host: {{ include "ggbridge.server.hostname" . | quote }}
+    - host: {{ include "ggbridge.hostname" . | quote }}
       http:
         paths:
           - path: /
@@ -43,8 +43,8 @@ spec:
               service:
                 name: {{ $serverFullname }}
                 port:
-                  number: {{ $.Values.server.service.ports.ws.port }}
-          {{- range $index := until (include "ggbridge.server.deploymentCount" $ | int) }}
+                  number: {{ $.Values.service.ports.ws.port }}
+          {{- range $index := until (include "ggbridge.deploymentCount" $ | int) }}
             {{- $serverFullname := include "ggbridge.server.fullname" $ }}
             {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
           - path: {{ printf "/%d" ($index | int) }}
@@ -53,14 +53,14 @@ spec:
               service:
                 name: {{ $indexServerFullname }}
                 port:
-                  number: {{ $.Values.server.service.ports.ws.port }}
+                  number: {{ $.Values.service.ports.ws.port }}
           {{- end }}
-  {{- if .Values.server.tls.enabled }}
+  {{- if .Values.tls.enabled }}
   tls:
     - hosts:
-        - {{ include "ggbridge.server.hostname" . | quote }}
-      {{- if .Values.server.tls.existingSecret }}
-      secretName: {{ .Values.server.tls.existingSecret }}
+        - {{ include "ggbridge.hostname" . | quote }}
+      {{- if .Values.tls.existingSecret }}
+      secretName: {{ .Values.tls.existingSecret }}
       {{- else }}
       secretName: {{ printf "%s-crt" $serverFullname }}
       {{- end }}

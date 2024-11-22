@@ -1,4 +1,4 @@
-{{- if and (include "ggbridge.server.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
 ---
@@ -10,13 +10,13 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.server.proxy.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.proxy.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations .Values.proxy.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
   replicas: {{ include "ggbridge.proxy.replicaCount" . | int }}
-  {{- with .Values.server.proxy.updateStrategy }}
+  {{- with .Values.proxy.updateStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ printf "%s" (include (print .Template.BasePath "/server/proxy/configmap.yaml") .) | sha256sum }}
+        checksum/config: {{ printf "%s" (include (print .Template.BasePath "/proxy/configmap.yaml") .) | sha256sum }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -59,14 +59,14 @@ spec:
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
             - name: http
-              containerPort: {{ .Values.server.proxy.service.ports.http.containerPort }}
+              containerPort: {{ .Values.proxy.service.ports.http.containerPort }}
               protocol: TCP
             - name: socks
-              containerPort: {{ .Values.server.proxy.service.ports.socks.containerPort }}
+              containerPort: {{ .Values.proxy.service.ports.socks.containerPort }}
               protocol: TCP
-          {{- if .Values.server.proxy.readinessProbe.enabled }}
+          {{- if .Values.proxy.readinessProbe.enabled }}
           readinessProbe:
-            {{- toYaml (omit .Values.server.proxy.readinessProbe "enabled") | nindent 12 }}
+            {{- toYaml (omit .Values.proxy.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: cache

@@ -1,12 +1,12 @@
 # Deploy ggbridge client using existing TLS secret containing the client certificate
 # TLS secret can be create using the following kubectl command:
 #   kubectl create secret tls ggbridge-client-crt --cert=certs/client.crt --key=certs/client.key
-client:
-  subdomain: my-subdomain
 
-  tls:
-    enabled: true
-    existingSecret: ggbridge-client-crt
-    existingSecretKeys:
-      crt: tls.crt
-      key: tls.key
+subdomain: my-subdomain
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    crt: tls.crt
+    key: tls.key
