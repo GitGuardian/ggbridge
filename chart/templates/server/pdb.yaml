@@ -1,5 +1,5 @@
-{{- if (include "ggbridge.server.hostname" .) }}
-  {{- range $index := until (int .Values.server.deployments) }}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) }}
+  {{- range $index := until (int .Values.deploymentCount) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}
     {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
@@ -17,11 +17,11 @@ metadata:
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if $.Values.server.pdb.minAvailable }}
-  minAvailable: {{ $.Values.server.pdb.minAvailable }}
+  {{- if $.Values.pdb.minAvailable }}
+  minAvailable: {{ $.Values.pdb.minAvailable }}
   {{- end  }}
-  {{- if or $.Values.server.pdb.maxUnavailable ( not $.Values.server.pdb.minAvailable ) }}
-  maxUnavailable: {{ $.Values.server.pdb.maxUnavailable | default 1 }}
+  {{- if or $.Values.pdb.maxUnavailable ( not $.Values.pdb.minAvailable ) }}
+  maxUnavailable: {{ $.Values.pdb.maxUnavailable | default 1 }}
   {{- end  }}
   selector:
     matchLabels:

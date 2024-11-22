@@ -1,4 +1,4 @@
-{{- if and (include "ggbridge.server.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
 ---
 apiVersion: v1
@@ -14,5 +14,5 @@ metadata:
   {{- end }}
 data:
   nginx.conf: |-
-    {{ tpl (.Files.Get "files/server/proxy/nginx.conf") . | nindent 4 }}
+    {{ tpl (.Files.Get "files/proxy/nginx.conf") . | nindent 4 }}
 {{- end }}

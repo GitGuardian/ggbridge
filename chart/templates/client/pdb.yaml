@@ -1,5 +1,5 @@
-{{- if and (include "ggbridge.client.hostname" .) .Values.client.pdb.create }}
-  {{- range $index := until (include "ggbridge.client.deploymentCount" . | int) }}
+{{- if and (eq .Values.mode "client") (include "ggbridge.hostname" .) .Values.pdb.create }}
+  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $clientFullname := include "ggbridge.client.fullname" $ }}
     {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
@@ -17,11 +17,11 @@ metadata:
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if $.Values.client.pdb.minAvailable }}
-  minAvailable: {{ $.Values.client.pdb.minAvailable }}
+  {{- if $.Values.pdb.minAvailable }}
+  minAvailable: {{ $.Values.pdb.minAvailable }}
   {{- end  }}
-  {{- if or $.Values.client.pdb.maxUnavailable ( not $.Values.client.pdb.minAvailable ) }}
-  maxUnavailable: {{ $.Values.client.pdb.maxUnavailable | default 1 }}
+  {{- if or $.Values.pdb.maxUnavailable ( not $.Values.pdb.minAvailable ) }}
+  maxUnavailable: {{ $.Values.pdb.maxUnavailable | default 1 }}
   {{- end  }}
   selector:
     matchLabels:

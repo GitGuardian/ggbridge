@@ -1,5 +1,5 @@
-{{- if (include "ggbridge.client.hostname" .) -}}
-  {{- range $index := until (include "ggbridge.client.deploymentCount" . | int) }}
+{{- if and (eq .Values.mode "client") (include "ggbridge.hostname" .) -}}
+  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $clientFullname := include "ggbridge.client.fullname" $ }}
     {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
@@ -12,13 +12,13 @@ metadata:
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
     {{- include "ggbridge.client.labels" $ | nindent 4 }}
-  {{- if or $.Values.commonAnnotations $.Values.client.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.client.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  {{- if or $.Values.commonAnnotations $.Values.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.annotations $.Values.commonAnnotations ) "context" $ ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ $.Values.client.replicaCount }}
-  {{- with $.Values.client.updateStrategy }}
+  replicas: {{ $.Values.replicaCount }}
+  {{- with $.Values.updateStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -62,20 +62,20 @@ spec:
           args: ["client"]
           env:
             - name: SERVER_ADDRESS
-              value: {{ include "ggbridge.client.hostname" $ | quote }}
-            {{- if gt (int $.Values.client.deployments) 1 }}
+              value: {{ include "ggbridge.hostname" $ | quote }}
+            {{- if gt (int $.Values.deployments) 1 }}
             - name: SERVER_PATH_PREFIX
               value: {{ $index | quote }}
             {{- end }}
             - name: TLS_ENABLED
-              value: {{ $.Values.client.tls.enabled | quote }}
+              value: {{ $.Values.tls.enabled | quote }}
             - name: NGINX_EMBEDDED
               value: "false"
-            {{- with $.Values.client.dnsResolver }}
+            {{- with $.Values.dnsResolver }}
             - name: DNS_RESOLVER
               value: {{ . | quote }}
             {{- end }}
-            {{- with $.Values.client.connectionMinIdle }}
+            {{- with $.Values.connectionMinIdle }}
             - name: CONNECTION_MIN_IDLE
               value: {{ . | quote }}
             {{- end }}
@@ -86,7 +86,7 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /var/run
-            {{- if $.Values.client.tls.enabled }}
+            {{- if $.Values.tls.enabled }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -122,15 +122,15 @@ spec:
           emptyDir: {}
         - name: run
           emptyDir: {}
-        {{- if $.Values.client.tls.enabled }}
+        {{- if $.Values.tls.enabled }}
         - name: tls-secret
           secret:
-            {{- if $.Values.client.tls.existingSecret }}
-            secretName: {{ $.Values.client.tls.existingSecret }}
+            {{- if $.Values.tls.existingSecret }}
+            secretName: {{ $.Values.tls.existingSecret }}
             items:
-              - key: {{ default "tls.crt" $.Values.client.tls.existingSecretKeys.crt }}
+              - key: {{ default "tls.crt" $.Values.tls.existingSecretKeys.crt }}
                 path: client.crt
-              - key: {{ default "tls.key" $.Values.client.tls.existingSecretKeys.key }}
+              - key: {{ default "tls.key" $.Values.tls.existingSecretKeys.key }}
                 path: client.key
             {{- else}}
             secretName: {{ printf "%s-crt" $clientFullname }}

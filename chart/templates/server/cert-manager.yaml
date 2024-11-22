@@ -1,7 +1,7 @@
-{{- if and (include "ggbridge.server.hostname" .) .Values.server.tls.certManager.enabled -}}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.tls.certManager.enabled -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
-  {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
+  {{- $namespace := ternary (default .Release.namespace .Values.istio.gateway.namespace) .Release.namespace .Values.istio.enabled -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -20,16 +20,16 @@ spec:
   privateKey:
     algorithm: RSA
     size: 2048
-  commonName: {{ include "ggbridge.server.hostname" . }}
+  commonName: {{ include "ggbridge.hostname" . }}
   dnsNames:
-    - {{ include "ggbridge.server.hostname" . }}
+    - {{ include "ggbridge.hostname" . }}
   usages:
     - server auth
   issuerRef:
-    {{- if eq .Values.server.tls.certManager.issuer.name "selfSigned" }}
+    {{- if eq .Values.tls.certManager.issuer.name "selfSigned" }}
     name: {{ printf "%s-ca" $fullname }}
     {{- else }}
-    name: {{ .Values.server.tls.certManager.issuer.name }}
+    name: {{ .Values.tls.certManager.issuer.name }}
     {{- end }}
-    kind: {{ .Values.server.tls.certManager.issuer.kind }}
+    kind: {{ .Values.tls.certManager.issuer.kind }}
 {{- end }}

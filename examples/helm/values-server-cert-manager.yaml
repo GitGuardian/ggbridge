@@ -1,18 +1,18 @@
 # Deploy ggbridge server and specify certManager issuer to generate server certificates
+
+mode: server
 domain: gitguardian.com
+subdomain: my-subdomain
 
-server:
-  subdomain: my-subdomain
-
-  tls:
+tls:
+  enabled: true
+  certManager:
     enabled: true
-    certManager:
-      enabled: true
-      issuer:
-        name: ggbridge-issuer
-        kind: Issuer
+    issuer:
+      name: ggbridge-issuer
+      kind: Issuer
 
-  ingress:
-    enabled: true
-    controller: nginx
-    className: nginx
+ingress:
+  enabled: true
+  controller: nginx
+  className: nginx

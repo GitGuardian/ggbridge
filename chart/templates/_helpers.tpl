@@ -83,7 +83,7 @@ Client labels
 */}}
 {{- define "ggbridge.client.labels" -}}
 {{ include "ggbridge.client.selectorLabels" . }}
-{{- with .Values.client.labels }}
+{{- with .Values.labels }}
 {{ tpl (toYaml .) $ }}
 {{- end }}
 {{- end }}
@@ -102,7 +102,7 @@ Server labels
 */}}
 {{- define "ggbridge.server.labels" -}}
 {{ include "ggbridge.server.selectorLabels" . }}
-{{- with .Values.server.labels }}
+{{- with .Values.labels }}
 {{ tpl (toYaml .) $ }}
 {{- end }}
 {{- end }}
@@ -121,7 +121,7 @@ Proxy labels
 */}}
 {{- define "ggbridge.proxy.labels" -}}
 {{ include "ggbridge.proxy.selectorLabels" . }}
-{{- with .Values.server.proxy.labels }}
+{{- with .Values.proxy.labels }}
 {{ tpl (toYaml .) $ }}
 {{- end }}
 {{- end }}
@@ -178,19 +178,19 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{ include "ggbridge.proxy.image" }}
 */}}
 {{- define "ggbridge.proxy.image" -}}
-{{- $registryName := .Values.server.proxy.image.registry -}}
-{{- $repositoryName := .Values.server.proxy.image.repository -}}
+{{- $registryName := .Values.proxy.image.registry -}}
+{{- $repositoryName := .Values.proxy.image.repository -}}
 {{- $separator := ":" -}}
-{{- $termination := .Values.server.proxy.image.tag | toString -}}
+{{- $termination := .Values.proxy.image.tag | toString -}}
 
-{{- if not .Values.server.proxy.image.tag }}
+{{- if not .Values.proxy.image.tag }}
   {{- if .Chart }}
     {{- $termination = .Chart.AppVersion | toString -}}
   {{- end -}}
 {{- end -}}
-{{- if .Values.server.proxy.image.digest }}
+{{- if .Values.proxy.image.digest }}
     {{- $separator = "@" -}}
-    {{- $termination = .Values.server.proxy.image.digest | toString -}}
+    {{- $termination = .Values.proxy.image.digest | toString -}}
 {{- end -}}
 {{- if $registryName }}
     {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
@@ -200,35 +200,19 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{- end -}}
 
 {{/*
-Returns client hostname
-{{ include "ggbridge.client.hostname" $ }}
+Returns hostname
+{{ include "ggbridge.hostname" $ }}
 */}}
-{{- define "ggbridge.client.hostname" -}}
-{{ default (ternary "" (printf "%s.%s" .Values.client.subdomain .Values.domain) (empty .Values.client.subdomain)) .Values.client.hostname }}
+{{- define "ggbridge.hostname" -}}
+{{ default (ternary "" (printf "%s.%s" .Values.subdomain .Values.domain) (empty .Values.subdomain)) .Values.hostname }}
 {{- end }}
 
 {{/*
-Returns server hostname
-{{ include "ggbridge.server.hostname" $ }}
+Returns deployment count
+{{ include "ggbridge.deploymentCount" $ }}
 */}}
-{{- define "ggbridge.server.hostname" -}}
-{{ default (ternary "" (printf "%s.%s" .Values.server.subdomain .Values.domain) (empty .Values.server.subdomain)) .Values.server.hostname }}
-{{- end }}
-
-{{/*
-Returns client deployment count
-{{ include "ggbridge.client.deploymentCount" $ }}
-*/}}
-{{- define "ggbridge.client.deploymentCount" -}}
-{{ ternary .Values.ha.deploymentCount .Values.client.deploymentCount .Values.ha.enabled }}
-{{- end }}
-
-{{/*
-Returns server deployment count
-{{ include "ggbridge.server.deploymentCount" $ }}
-*/}}
-{{- define "ggbridge.server.deploymentCount" -}}
-{{ ternary .Values.ha.deploymentCount .Values.server.deploymentCount .Values.ha.enabled }}
+{{- define "ggbridge.deploymentCount" -}}
+{{ ternary .Values.ha.deploymentCount .Values.deploymentCount .Values.ha.enabled }}
 {{- end }}
 
 {{/*
@@ -236,7 +220,7 @@ Returns proxy replica count
 {{ include "ggbridge.proxy.replicaCount" $ }}
 */}}
 {{- define "ggbridge.proxy.replicaCount" -}}
-{{ ternary .Values.ha.deploymentCount .Values.server.proxy.replicaCount .Values.ha.enabled }}
+{{ ternary .Values.ha.deploymentCount .Values.proxy.replicaCount .Values.ha.enabled }}
 {{- end }}
 
 {{/*
@@ -299,11 +283,11 @@ Returns server service annotations
 */}}
 {{- define "ggbridge.server.service.annotations" -}}
 {{- $annotations := dict -}}
-{{- if or .Values.commonAnnotations .Values.server.service.annotations }}
-{{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.service.annotations .Values.commonAnnotations ) "context" . ) }}
+{{- if or .Values.commonAnnotations .Values.service.annotations }}
+{{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.service.annotations .Values.commonAnnotations ) "context" . ) }}
 {{- end -}}
-{{- if eq .Values.server.ingress.controller "traefik" -}}
-  {{- if and .Values.server.tls.enabled (eq (lower .Values.server.tls.mode) "passthrough") -}}
+{{- if eq .Values.ingress.controller "traefik" -}}
+  {{- if and .Values.tls.enabled (eq (lower .Values.tls.mode) "passthrough") -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/service.serversscheme" "https" -}}
   {{- end -}}
 {{- end -}}
@@ -318,31 +302,31 @@ Returns ingress annotations
 {{- $annotations := dict -}}
 {{- $fullname := include "ggbridge.fullname" . }}
 {{- $serverFullname := include "ggbridge.server.fullname" . }}
-{{- if eq .Values.server.ingress.controller "traefik" -}}
-  {{- if .Values.server.tls.enabled -}}
+{{- if eq .Values.ingress.controller "traefik" -}}
+  {{- if .Values.tls.enabled -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.entrypoints" "websecure" -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.tls.options" (printf "%s-%s@kubernetescrd" .Release.Namespace $serverFullname ) -}}
   {{- else -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.entrypoints" "web" -}}
   {{- end -}}
-{{- else if eq .Values.server.ingress.controller "nginx" -}}
-  {{- if .Values.server.tls.enabled -}}
+{{- else if eq .Values.ingress.controller "nginx" -}}
+  {{- if .Values.tls.enabled -}}
     {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream" "false" -}}
-    {{- if eq (lower .Values.server.tls.mode) "passthrough" -}}
+    {{- if eq (lower .Values.tls.mode) "passthrough" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTPS" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-passthrough" "true" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
     {{- else -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTP" -}}
     {{- end -}}
-    {{- if eq (lower .Values.server.tls.mode) "mutual" -}}
+    {{- if eq (lower .Values.tls.mode) "mutual" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-secret" (printf "%s/%s-crt" .Release.Namespace $serverFullname) -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-verify-client" "on" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-verify-depth" "1" -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
 {{- end -}}
 
@@ -352,7 +336,7 @@ Returns gateway tls mode
 */}}
 {{- define "ggbridge.server.gateway.tlsMode" -}}
 {{- $tlsMode := "Terminate" -}}
-{{- if eq (lower .Values.server.tls.mode) "passthrough" -}}
+{{- if eq (lower .Values.tls.mode) "passthrough" -}}
 {{- $tlsMode = "Passthrough" -}}
 {{- end -}}
 {{ $tlsMode }}

@@ -56,15 +56,15 @@ services:
 Here is an example of a Helm values file to deploy the ggbridge client:
 
 ```yaml
-client:
-  subdomain: my-subdomain
+mode: client
+subdomain: my-subdomain
 
-  tls:
-    enabled: true
-    existingSecret: ggbridge-client-crt
-    existingSecretKeys:
-      crt: tls.crt
-      key: tls.key
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    crt: tls.crt
+    key: tls.key
 ```
 
 Run the following `helm` command passing you custom values file as a parameter:

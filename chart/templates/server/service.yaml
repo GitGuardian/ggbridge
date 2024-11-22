@@ -1,4 +1,4 @@
-{{- if (include "ggbridge.server.hostname" .) -}}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) -}}
   {{- $fullname := include "ggbridge.fullname" $ }}
   {{- $serverFullname := include "ggbridge.server.fullname" $ }}
 ---
@@ -15,9 +15,9 @@ metadata:
     {{- . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.server.service.type }}
+  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.server.service.ports.ws.port }}
+    - port: {{ .Values.service.ports.ws.port }}
       targetPort: ws
       protocol: TCP
       name: ws
@@ -25,7 +25,7 @@ spec:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" . | nindent 4 }}
 
-  {{- range $index := until (include "ggbridge.server.deploymentCount" . | int) }}
+  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
     {{- $indexServerProxyFullname := printf "%s-proxy-%d" $serverFullname ($index | int) }}
 ---
@@ -42,9 +42,9 @@ metadata:
     {{- . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ $.Values.server.service.type }}
+  type: {{ $.Values.service.type }}
   ports:
-    - port: {{ $.Values.server.service.ports.ws.port }}
+    - port: {{ $.Values.service.ports.ws.port }}
       targetPort: ws
       protocol: TCP
       name: ws
@@ -61,14 +61,14 @@ metadata:
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
     {{- include "ggbridge.server.labels" $ | nindent 4 }}
-  {{- if or $.Values.commonAnnotations $.Values.server.service.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.server.service.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  {{- if or $.Values.commonAnnotations $.Values.service.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.service.annotations $.Values.commonAnnotations ) "context" $ ) }}
   annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ $.Values.server.proxy.service.type }}
+  type: {{ $.Values.proxy.service.type }}
   ports:
-    - port: {{ $.Values.server.proxy.service.ports.socks.port }}
+    - port: {{ $.Values.proxy.service.ports.socks.port }}
       targetPort: socks
       protocol: TCP
       name: socks

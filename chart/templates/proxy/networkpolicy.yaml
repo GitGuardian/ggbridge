@@ -1,4 +1,4 @@
-{{- if and (include "ggbridge.server.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) .Values.server.proxy.networkPolicy.enabled -}}
+{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) .Values.proxy.networkPolicy.enabled -}}
   {{- $fullname := include "ggbridge.proxy.fullname" . }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -28,45 +28,45 @@ spec:
           protocol: TCP
     - ports:
         # Allow socks port to server
-        - port: {{ .Values.server.proxy.service.ports.socks.containerPort }}
+        - port: {{ .Values.proxy.service.ports.socks.containerPort }}
           protocol: TCP
       to:
         - podSelector:
             matchLabels:
               {{- include "ggbridge.selectorLabels" . | nindent 14 }}
               {{- include "ggbridge.server.selectorLabels" . | nindent 14 }}
-    {{- if .Values.server.proxy.networkPolicy.extraEgress }}
-    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.server.proxy.networkPolicy.extraEgress "context" . ) | nindent 4 }}
+    {{- if .Values.proxy.networkPolicy.extraEgress }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.proxy.networkPolicy.extraEgress "context" . ) | nindent 4 }}
     {{- end }}
   ingress:
     - ports:
         # Allow http port
-        - port: {{ .Values.server.proxy.service.ports.http.containerPort }}
+        - port: {{ .Values.proxy.service.ports.http.containerPort }}
           protocol: TCP
         # Allow proxy socks port
-        - port: {{ .Values.server.proxy.service.ports.socks.containerPort }}
+        - port: {{ .Values.proxy.service.ports.socks.containerPort }}
           protocol: TCP
-      {{- if not .Values.server.proxy.networkPolicy.allowExternal }}
+      {{- if not .Values.proxy.networkPolicy.allowExternal }}
       from:
         - podSelector:
             matchLabels:
               {{- include "ggbridge.selectorLabels" . | nindent 14 }}
-        {{- if .Values.server.proxy.networkPolicy.ingressNSMatchLabels }}
+        {{- if .Values.proxy.networkPolicy.ingressNSMatchLabels }}
         - namespaceSelector:
             matchLabels:
-              {{- range $key, $value := .Values.server.proxy.networkPolicy.ingressNSMatchLabels }}
+              {{- range $key, $value := .Values.proxy.networkPolicy.ingressNSMatchLabels }}
               {{ $key | quote }}: {{ $value | quote }}
               {{- end }}
-          {{- if .Values.server.proxy.networkPolicy.ingressNSPodMatchLabels }}
+          {{- if .Values.proxy.networkPolicy.ingressNSPodMatchLabels }}
           podSelector:
             matchLabels:
-              {{- range $key, $value := .Values.server.proxy.networkPolicy.ingressNSPodMatchLabels }}
+              {{- range $key, $value := .Values.proxy.networkPolicy.ingressNSPodMatchLabels }}
               {{ $key | quote }}: {{ $value | quote }}
               {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
-    {{- if .Values.server.proxy.networkPolicy.extraIngress }}
-    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.server.proxy.networkPolicy.extraIngress "context" . ) | nindent 4 }}
+    {{- if .Values.proxy.networkPolicy.extraIngress }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.proxy.networkPolicy.extraIngress "context" . ) | nindent 4 }}
     {{- end }}
 {{- end }}

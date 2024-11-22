@@ -1,15 +1,15 @@
 # Deploy ggbridge client with HA mode disabled, using existing TLS secret containing the client certificate
 # TLS secret can be create using the following kubectl command:
 #   kubectl create secret tls ggbridge-client-crt --cert=certs/client.crt --key=certs/client.key
+
 ha:
   enabled: false
 
-client:
-  subdomain: my-subdomain
+subdomain: my-subdomain
 
-  tls:
-    enabled: true
-    existingSecret: ggbridge-client-crt
-    existingSecretKeys:
-      crt: tls.crt
-      key: tls.key
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    crt: tls.crt
+    key: tls.key
