@@ -8,13 +8,15 @@ fullnameOverride: ""
 # -- Kubernetes cluster domain
 clusterDomain: cluster.local
 
-# -- Public Domain
-domain: gitguardian.com
-
-# -- Add labels to all the deployed resources
-commonLabels: {}
 # -- Add annotations to all the deployed resources
 commonAnnotations: {}
+# -- Add labels to all the deployed resources
+commonLabels: {}
+
+# -- This is for setting Kubernetes Annotations to a Pod
+podAnnotations: {}
+# -- This is for setting Kubernetes Labels to a Pod
+podLabels: {}
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
@@ -42,10 +44,17 @@ serviceAccount:
   # -- The name of the service account to use
   name: ""
 
-# -- This is for setting Kubernetes Annotations to a Pod
-podAnnotations: {}
-# -- This is for setting Kubernetes Labels to a Pod
-podLabels: {}
+# -- RBAC parameters
+rbac:
+  # -- CertManager role
+  certManager:
+    # -- Whether to create & use certManager RBAC resources or not
+    create: false
+    # -- Grants certManager permissions to the sepcfied subjects
+    subjects: []
+      # - kind: ServiceAccount
+      #   name: gim
+      #   namespace: gim
 
 podSecurityContext:
   # -- Enable Pod security Context in deployments
@@ -102,10 +111,12 @@ topologySpreadConstraints: []
 # -- Deployment mode: "client" or "server"
 mode: client
 
-# -- hostname
-hostname: ""
-# -- subdomain
+# -- Domain
+domain: gitguardian.com
+# -- Subdomain
 subdomain: ""
+# -- Hostname
+hostname: ""
 
 # -- Set log level
 logLevel: INFO
@@ -119,8 +130,6 @@ ha:
 
 # -- Dns resolver to use to lookup ips of domain name
 dnsResolver: ""
-# -- Pool of open connection to the server, in order to speed up the connection process
-connectionMinIdle: 0
 
 tls:
   # -- Enable TLS traffic support
@@ -152,7 +161,7 @@ tls:
   key: ""
 
 # -- Number of deployments
-# Set to .values.ha.deploymentCount when .Values.ha.enabled
+# Set to .Values.ha.deploymentCount when .Values.ha.enabled
 deploymentCount: 1
 # -- Number of pods for each deployment
 replicaCount: 1
@@ -167,77 +176,6 @@ updateStrategy:
 annotations: {}
 # -- Set server labels
 labels: {}
-
-proxy:
-  # -- Number of pods
-  # Set to .values.ha.deploymentCount when .Values.ha.enabled
-  replicaCount: 0
-  updateStrategy:
-    # -- Customize updateStrategy of Deployment
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
-
-  # -- Set proxy annotations
-  annotations: {}
-  # -- Set proxy labels
-  labels: {}
-
-  # -- Specify proxy Readiness Probe parameters
-  readinessProbe:
-    enabled: false
-    exec:
-      command:
-        - ggbridge
-        - healthcheck
-        - -pid-file=/var/run/nginx.pid
-        - -grace-period=60
-    initialDelaySeconds: 10
-    periodSeconds: 15
-    timeoutSeconds: 5
-    successThreshold: 1
-    failureThreshold: 1
-
-  # -- Proxy service parameters
-  service:
-    # --- Override the default service name
-    name: ""
-    annotations: {}
-    # -- Kubernetes Service type
-    type: ClusterIP
-    ports:
-      http:
-        port: 80
-        containerPort: 8080
-      socks:
-        port: 1080
-        containerPort: 1080
-
-  # -- Network Policy parameters
-  networkPolicy:
-    # -- Specifies whether a NetworkPolicy should be created
-    enabled: true
-    # -- When true, server will accept connections from any source
-    allowExternal: true
-    # -- Add extra ingress rules to the NetworkPolicy
-    extraIngress: []
-    # -- Add extra egress rules to the NetworkPolicy
-    extraEgress: []
-    # -- Labels to match to allow traffic to the proxy server from other namespaces
-    ingressNSMatchLabels: {}
-    # -- Pod labels to match to allow traffic to the proxy server from other namespaces
-    ingressNSPodMatchLabels: {}
-
-# -- Services parameters
-service:
-  annotations: {}
-  # -- Kubernetes Service type
-  type: ClusterIP
-  ports:
-    ws:
-      port: 8000
-      containerPort: 8000
 
 # -- Pod Disruption Budget parameters
 pdb:
@@ -263,73 +201,224 @@ networkPolicy:
   # -- Pod labels to match to allow traffic to the proxy server from other namespaces
   ingressNSPodMatchLabels: {}
 
-# -- RBAC parameters
-rbac:
-  # -- CertManager role
-  certManager:
-    # -- Whether to create & use certManager RBAC resources or not
-    create: false
-    # -- Grants certManager permissions to the sepcfied subjects
-    subjects: []
-      # - kind: ServiceAccount
-      #   name: gim
-      #   namespace: gim
+client:
+  # -- Pool of open connection to the server, in order to speed up the connection process
+  connectionMinIdle: 0
 
-# -- Configure the ingress resources that allows you to connect to the server
-ingress:
-  # -- Enable server exposure using Kubernetes Ingress API
-  enabled: false
-  # -- Specify the ingress controller
-  controller: ""
-  # -- Set the ingress ClassName
-  className: ""
-  # -- Set ingress annotations
-  annotations: {}
-
-# -- Configure the gateway resources that allows you to connect to the server
-gateway:
-  # -- Enable server exposure using Kubernetes Gateway API
-  enabled: false
-  # -- Specify the gateway controller
-  controller: ""
-  # -- Set the gateway ClassName
-  className: ""
-  gateway:
-    # -- Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute)
-    create: true
-    # -- Set the  gatewayClassName
-    className: ""
-    # -- Specify Gateway ports number
-    ports:
-      http: 80
-      https: 443
-  # -- Specify the existing gateway resources
-  parentRefs: []
-  # -- Set gateway annotations
-  annotations: {}
-
-# -- Configure the istio resources that allows you to connect to the server
-istio:
-  # -- Enable server exposure using Istio ingress
-  enabled: false
-  gateway:
-    # -- Specifies whether an Istio Gateway resource should be created alongside the Virtual Service
-    create: true
-    # -- Specify the gateway namespace
-    namespace: ""
-    # -- Set Istio Gateway selector
-    selector:
-      istio: ingress
-    # -- Specify Istio Gateway ports number
-    ports:
-      http: 80
-      https: 443
-    # -- Specify Gateway TLS options
+  # -- Specify tunnels to enabled on the client side
+  tunnels:
+    health:
+      enabled: true
+    socks:
+      enabled: false
     tls:
-      # -- Set the exising TLS secret
-      credentialName: ""
-      minProtocolVersion: TLSV1_2
-  # -- Specify the existing gateway resources for Virtual Service
-  gateways: []
-  # -- Set Istio annotations
+      enabled: false
+
+   # -- Specify Client Readiness Probe parameters
+  readinessProbe:
+    enabled: true
+    exec:
+      command:
+        - ggbridge
+        - healthcheck
+        - -grace-period=60
+        - http://127.0.0.1:9081/healthz
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 1
+
+server:
+  # -- Services parameters
+  service:
+    annotations: {}
+    # -- Kubernetes Service type
+    type: ClusterIP
+    ports:
+      ws:
+        port: 9000
+        containerPort: 9000
+
+  # -- Configure the gateway resources that allows you to connect to the server
+  gateway:
+    # -- Enable server exposure using Kubernetes Gateway API
+    enabled: false
+    # -- Specify the gateway controller
+    controller: ""
+    # -- Set the gateway ClassName
+    className: ""
+    gateway:
+      # -- Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute)
+      create: true
+      # -- Set the  gatewayClassName
+      className: ""
+      # -- Specify Gateway ports number
+      ports:
+        http: 80
+        https: 443
+    # -- Specify the existing gateway resources
+    parentRefs: []
+    # -- Set gateway annotations
+    annotations: {}
+
+  # -- Configure the istio resources that allows you to connect to the server
+  istio:
+    # -- Enable server exposure using Istio ingress
+    enabled: false
+    gateway:
+      # -- Specifies whether an Istio Gateway resource should be created alongside the Virtual Service
+      create: true
+      # -- Specify the gateway namespace
+      namespace: ""
+      # -- Set Istio Gateway selector
+      selector:
+        istio: ingress
+      # -- Specify Istio Gateway ports number
+      ports:
+        http: 80
+        https: 443
+      # -- Specify Gateway TLS options
+      tls:
+        # -- Set the exising TLS secret
+        credentialName: ""
+        minProtocolVersion: TLSV1_2
+    # -- Specify the existing gateway resources for Virtual Service
+    gateways: []
+    # -- Set Istio annotations
+    annotations: {}
+
+  # -- Specify tunnels to enabled on the server side
+  tunnels:
+    health:
+      enabled: true
+    socks:
+      enabled: true
+    tls:
+      enabled: false
+
+proxy:
+  # -- Number of pods
+  # Set to .Values.ha.deploymentCount when .Values.ha.enabled
+  replicaCount: 0
+  updateStrategy:
+    # -- Customize updateStrategy of Deployment
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  # -- Set proxy annotations
   annotations: {}
+  # -- Set proxy labels
+  labels: {}
+
+  # -- Specify proxy Readiness Probe parameters
+  readinessProbe:
+    enabled: false
+    exec:
+      command:
+        - ggbridge
+        - healthcheck
+        - -pid-file=/var/run/nginx.pid
+        - -grace-period=60
+        - http://127.0.0.1:8081/healthz
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 1
+
+   # -- Proxy service parameters
+  service:
+    # --- Override the default service name
+    name: ""
+    annotations: {}
+    # -- Kubernetes Service type
+    type: ClusterIP
+    ports:
+      socks:
+        port: 1080
+        containerPort: 9080
+        # -- Defines whether the SOCKS port is exposed if service.type is LoadBalancer or NodePort
+        exposed: true
+        hosts: []
+      tls:
+        port: 443
+        containerPort: 9443
+        remoteContainerPort: 8443
+        # -- Defines whether the TCP port is exposed if service.type is LoadBalancer or NodePort
+        exposed: true
+        # --
+        hosts:
+          - host: api.gitguardian.com
+            port: 443
+          - host: hook.gitguardian.com
+            port: 443
+      health:
+        port: 8081
+        containerPort: 9081
+        remoteContainerPort: 8081
+        # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
+        exposed: false
+        hosts: []
+
+  # -- Network Policy parameters
+  networkPolicy:
+    # -- Specifies whether a NetworkPolicy should be created
+    enabled: true
+    # -- When true, server will accept connections from any source
+    allowExternal: true
+    # -- Add extra ingress rules to the NetworkPolicy
+    extraIngress: []
+    # -- Add extra egress rules to the NetworkPolicy
+    extraEgress: []
+    # -- Labels to match to allow traffic to the proxy server from other namespaces
+    ingressNSMatchLabels: {}
+    # -- Pod labels to match to allow traffic to the proxy server from other namespaces
+    ingressNSPodMatchLabels: {}
+
+  # -- Configure the ingress resources for proxy
+  ingress:
+    # -- Enable exposure using Kubernetes Ingress API
+    enabled: false
+    # -- Specify the ingress controller
+    controller: ""
+    # -- Set the ingress ClassName
+    className: ""
+    # -- Set ingress annotations
+    annotations: {}
+    # -- Set traefik ingress entrypoints
+    entryPoints:
+      - websecure
+
+  # -- Configure the gateway resources that allows you to connect to the proxy
+  gateway:
+    # -- Enable proxy exposure using Kubernetes Gateway API
+    enabled: false
+    # -- Specify the gateway controller
+    controller: ""
+    # -- Set the gateway ClassName
+    className: ""
+    gateway:
+      # -- Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute)
+      create: true
+      # -- Set the  gatewayClassName
+      className: ""
+      # -- Specify Gateway ports number
+      ports:
+        http: 80
+        https: 443
+    # -- Specify the existing gateway resources
+    parentRefs: []
+    # -- Set gateway annotations
+    annotations: {}
+
+  # -- Node labels for pod assignment
+  nodeSelector: {}
+  # -- Affinity for pod assignment
+  affinity: {}
+  # -- Tolerations for pod assignment
+  tolerations: []
+  # -- Topology spread constraints for pod assignment
+  topologySpreadConstraints: []

@@ -48,7 +48,7 @@ Create a default fully qualified server name.
 
 {{/*
 Create a default fully qualified proxy name.
-{{ include "ggbridge.proxy.name" }}
+{{ include "ggbridge.proxy.fullname" }}
 */}}
 {{- define "ggbridge.proxy.fullname" -}}
 {{- printf "%s-proxy" (include "ggbridge.fullname" .) | trunc 63 | trimSuffix "-" }}
@@ -216,12 +216,36 @@ Returns deployment count
 {{- end }}
 
 {{/*
+Returns proxy service name
+{{ include "ggbridge.proxy.serviceName" $ }}
+*/}}
+{{- define "ggbridge.proxy.serviceName" -}}
+{{- $name := .Values.proxy.service.name -}}
+{{- if not $name -}}
+{{ ternary .Values.subdomain (include "ggbridge.proxy.fullname" .) (eq .Values.mode "server") }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Returns proxy replica count
 {{ include "ggbridge.proxy.replicaCount" $ }}
 */}}
 {{- define "ggbridge.proxy.replicaCount" -}}
 {{ ternary .Values.ha.deploymentCount .Values.proxy.replicaCount .Values.ha.enabled }}
 {{- end }}
+
+{{/*
+Returns true when proxy is enabled
+{{ include "ggbridge.proxy.enabled" $ }}
+*/}}
+{{- define "ggbridge.proxy.enabled" -}}
+{{- $result := "false" -}}
+{{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+{{- if $ports -}}
+  {{- $result = "true" -}}
+{{- end -}}
+{{ $result }}
+{{- end -}}
 
 {{/*
 Returns client pod affinity.
@@ -278,15 +302,42 @@ podAntiAffinity:
 {{- end -}}
 
 {{/*
+Returns proxy pod affinity.
+{{ include "ggbridge.proxy.affinity" $ }}
+*/}}
+{{- define "ggbridge.proxy.affinity" -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - proxy
+        topologyKey: "kubernetes.io/hostname"
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - proxy
+        topologyKey: "topology.kubernetes.io/zone"
+{{- end -}}
+
+{{/*
 Returns server service annotations
 {{ include "ggbridge.server.service.annotations" $ }}
 */}}
 {{- define "ggbridge.server.service.annotations" -}}
 {{- $annotations := dict -}}
 {{- if or .Values.commonAnnotations .Values.service.annotations }}
-{{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.service.annotations .Values.commonAnnotations ) "context" . ) }}
+{{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.service.annotations .Values.commonAnnotations ) "context" . ) }}
 {{- end -}}
-{{- if eq .Values.ingress.controller "traefik" -}}
+{{- if eq .Values.server.ingress.controller "traefik" -}}
   {{- if and .Values.tls.enabled (eq (lower .Values.tls.mode) "passthrough") -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/service.serversscheme" "https" -}}
   {{- end -}}
@@ -295,21 +346,21 @@ Returns server service annotations
 {{- end -}}
 
 {{/*
-Returns ingress annotations
+Returns server ingress annotations
 {{ include "ggbridge.server.ingress.annotations" $ }}
 */}}
 {{- define "ggbridge.server.ingress.annotations" -}}
 {{- $annotations := dict -}}
 {{- $fullname := include "ggbridge.fullname" . }}
 {{- $serverFullname := include "ggbridge.server.fullname" . }}
-{{- if eq .Values.ingress.controller "traefik" -}}
+{{- if eq .Values.server.ingress.controller "traefik" -}}
   {{- if .Values.tls.enabled -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.entrypoints" "websecure" -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.tls.options" (printf "%s-%s@kubernetescrd" .Release.Namespace $serverFullname ) -}}
   {{- else -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.entrypoints" "web" -}}
   {{- end -}}
-{{- else if eq .Values.ingress.controller "nginx" -}}
+{{- else if eq .Values.server.ingress.controller "nginx" -}}
   {{- if .Values.tls.enabled -}}
     {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream" "false" -}}
     {{- if eq (lower .Values.tls.mode) "passthrough" -}}
@@ -326,13 +377,34 @@ Returns ingress annotations
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
+{{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
+{{- end -}}
+
+{{/*
+Returns proxy ingress annotations
+{{ include "ggbridge.proxy.ingress.annotations" $ }}
+*/}}
+{{- define "ggbridge.proxy.ingress.annotations" -}}
+{{- $annotations := dict -}}
+{{- if eq .Values.proxy.ingress.controller "nginx" -}}
+  {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTPS" -}}
+  {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-passthrough" "true" -}}
+  {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
+{{- else if .Values.proxy.ingress.controller "aws" -}}
+  {{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-type" "nlb" -}}
+  {{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-scheme" "internal" -}}
+  {{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" "tcp" -}}
+  {{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" "443" -}}
+  {{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-proxy-protocol" "*" -}}
+{{- end -}}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
 {{- end -}}
 
 {{/*
 Returns gateway tls mode
-{{ include "ggbridge.gateway.tlsMode" $ }}
+{{ include "ggbridge.server.gateway.tlsMode" $ }}
 */}}
 {{- define "ggbridge.server.gateway.tlsMode" -}}
 {{- $tlsMode := "Terminate" -}}

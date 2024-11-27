@@ -1,5 +1,4 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
-    {{- $fullname := include "ggbridge.fullname" $ }}
+{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
 ---
 apiVersion: apps/v1
@@ -58,12 +57,14 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            - name: http
-              containerPort: {{ .Values.proxy.service.ports.http.containerPort }}
+            {{- range $key, $value := .Values.server.tunnels }}
+              {{- if $value.enabled }}
+                {{- $port := get $.Values.proxy.service.ports $key }}
+            - name: {{ $key }}
+              containerPort: {{ $port.containerPort }}
               protocol: TCP
-            - name: socks
-              containerPort: {{ .Values.proxy.service.ports.socks.containerPort }}
-              protocol: TCP
+              {{- end }}
+            {{- end }}
           {{- if .Values.proxy.readinessProbe.enabled }}
           readinessProbe:
             {{- toYaml (omit .Values.proxy.readinessProbe "enabled") | nindent 12 }}
@@ -92,19 +93,18 @@ spec:
           configMap:
             name: {{ $proxyFullname }}
             defaultMode: 420
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.proxy.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.affinity (include "ggbridge.proxy.affinity" $) ) "context" $ ) }}
       affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
+        {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
+      {{- with .Values.proxy.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $.Values.topologySpreadConstraints }}
+      {{- with $.Values.proxy.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

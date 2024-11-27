@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strconv"
@@ -16,12 +17,15 @@ import (
 )
 
 const (
-	RemoteProxyProtocol   = "socks5"
-	RemoteProxyListen     = "0.0.0.0"
-	RemoteProxyPort       = 1080
-	DefaultLogLevel       = "INFO"
-	DefaultHealthCheckURL = "http://127.0.0.1:8080/healthz"
-	DefaultPIDFile        = "/var/run/ggbridge.pid"
+	DefaultHealthcheckUrl        = "http://127.0.0.1:9081/healthz"
+	DefaultLogLevel              = "INFO"
+	DefaultPIDFile               = "/var/run/ggbridge.pid"
+	DefaultPingFrequency         = 10
+	DefaultTunnelSocksPort        = 9080
+	DefaultTunnelHealthPort       = 9081
+	DefaultTunnelHealthRemotePort = 8081
+	DefaultTunnelTlsPort          = 9443
+	DefaultTunnelTlsRemotePort    = 8443
 )
 
 // getEnv retrieves environment variables or default values.
@@ -52,31 +56,38 @@ func writePIDFile(pidFilePath string) error {
 	return nil
 }
 
-// performHealthCheck performs a health check via SOCKS5 proxy
-func performHealthCheck(url string) (string, error) {
-	proxyAddr := fmt.Sprintf("127.0.0.1:%d", RemoteProxyPort)
+// performHealthCheck performs a health check using the specified URL
+func performHealthCheck(healthCheckUrl string, proxyUrl string) (string, error) {
 
-	// Create a SOCKS5 dialer
-	dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
-	if err != nil {
-		return "", fmt.Errorf("error creating SOCKS5 dialer: %w", err)
-	}
-
-	// Create a custom HTTP transport
-	transport := &http.Transport{
-		Dial: func(network, addr string) (net.Conn, error) {
-			return dialer.Dial(network, addr)
-		},
-	}
-
-	// Create an HTTP client with the custom transport
+	// Create an HTTP client
 	client := &http.Client{
-		Transport: transport,
-		Timeout:   5 * time.Second,
+		Timeout: 5 * time.Second,
+	}
+
+	if proxyUrl != "" {
+		// Parse the proxy URL
+		proxyUrl, err := url.Parse(proxyUrl)
+		if err != nil {
+			log.Fatalf("Invalid proxy address", err)
+		}
+		// Create a SOCKS5 dialer
+		dialer, err := proxy.SOCKS5("tcp", proxyUrl.Host, nil, proxy.Direct)
+		if err != nil {
+			return "", fmt.Errorf("error creating SOCKS5 dialer: %w", err)
+		}
+
+		// Create a custom HTTP transport
+		transport := &http.Transport{
+			Dial: func(network, healthCheckUrl string) (net.Conn, error) {
+				return dialer.Dial(network, healthCheckUrl)
+			},
+		}
+		// Update HTTP client transport
+		client.Transport = transport
 	}
 
 	// Make the HTTP request
-	resp, err := client.Get(url)
+	resp, err := client.Get(healthCheckUrl)
 	if err != nil {
 		return "", fmt.Errorf("error making HTTP request: %w", err)
 	}
@@ -103,9 +114,30 @@ func buildClientCommand() []string {
 	serverPort := os.Getenv("SERVER_PORT")
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
 	tlsEnabled := getEnv("TLS_ENABLED", "false")
-	pingFrequency := getEnv("PING_FREQUENCY", "10")
+	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	connectionMinIdle := getEnv("CONNECTION_MIN_IDLE", "0")
 	dnsResolver := os.Getenv("DNS_RESOLVER")
+	clientTunnelSocksEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_SOCKS_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for clientTunnelSocksEnabled:", err)
+	}
+	clientTunnelTlsEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_TLS_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for clientTunnelTlsEnabled:", err)
+	}
+	serverTunnelSocksEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_SOCKS_ENABLED", "true"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for serverTunnelSocksEnabled:", err)
+	}
+	serverTunnelTlsEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_TLS_ENABLED", "true"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for serverTunnelTlsEnabled:", err)
+	}
+	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
+	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
+	tunnelSocksPort := getEnv("TUNNEL_SOCKS_PORT", strconv.Itoa(DefaultTunnelSocksPort))
+	tunnelTlsPort := getEnv("TUNNEL_TLS_PORT", strconv.Itoa(DefaultTunnelTlsPort))
+	tunnelTlsRemotePort := getEnv("TUNNEL_TLS_REMOTE_PORT", strconv.Itoa(DefaultTunnelTlsRemotePort))
 
 	if serverAddress == "" {
 		fmt.Println("Error: SERVER_ADDRESS is mandatory")
@@ -128,7 +160,9 @@ func buildClientCommand() []string {
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
 		"--connection-min-idle", connectionMinIdle,
-		"--remote-to-local", fmt.Sprintf("%s://%s:%d", RemoteProxyProtocol, RemoteProxyListen, RemoteProxyPort),
+		// Healthcheck tunnel
+		"--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelHealthPort, tunnelHealthRemotePort),
+		"--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelHealthPort, tunnelHealthRemotePort),
 	}
 
 	// Use a specific prefix that will show up in the http path during the upgrade request
@@ -147,6 +181,26 @@ func buildClientCommand() []string {
 		cmd = append(cmd, "--dns-resolver", dnsResolver)
 	}
 
+	// Enables client to server proxy tunnel
+	if clientTunnelSocksEnabled {
+		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
+	}
+
+	// Enables client to server tcp tunnel
+	if clientTunnelTlsEnabled {
+		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort))
+	}
+
+	// Enables server to client proxy tunnel
+	if serverTunnelSocksEnabled {
+		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
+	}
+
+	// Enables server to client tcp tunnel
+	if serverTunnelTlsEnabled {
+		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort))
+	}
+
 	return cmd
 }
 
@@ -157,7 +211,13 @@ func buildServerCommand() []string {
 	serverPort := os.Getenv("SERVER_PORT")
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
 	tlsEnabled := getEnv("TLS_ENABLED", "false")
-	pingFrequency := getEnv("PING_FREQUENCY", "10")
+	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
+	dnsResolver := os.Getenv("DNS_RESOLVER")
+	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
+	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
+	tunnelSocksPort := getEnv("TUNNEL_SOCKS_PORT", strconv.Itoa(DefaultTunnelSocksPort))
+	tunnelTlsPort := getEnv("TUNNEL_TLS_PORT", strconv.Itoa(DefaultTunnelTlsPort))
+	tunnelTlsRemotePort := getEnv("TUNNEL_TLS_REMOTE_PORT", strconv.Itoa(DefaultTunnelTlsRemotePort))
 
 	if serverListen == "" {
 		fmt.Println("Error: SERVER_LISTEN is mandatory")
@@ -179,8 +239,11 @@ func buildServerCommand() []string {
 		"server",
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
-		"--restrict-to",
-		fmt.Sprintf("%s://%s:%d", RemoteProxyProtocol, RemoteProxyListen, RemoteProxyPort),
+		"--restrict-to", fmt.Sprintf("127.0.0.1:%s", tunnelHealthRemotePort),
+		"--restrict-to", fmt.Sprintf("127.0.0.1:%s", tunnelTlsRemotePort),
+		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelHealthPort),
+		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelSocksPort),
+		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelTlsPort),
 	}
 
 	// Server will only accept connection from if this specific path prefix is used during websocket upgrade.
@@ -193,6 +256,11 @@ func buildServerCommand() []string {
 		cmd = append(cmd, "--tls-client-ca-certs", "/certs/ca.crt")
 		cmd = append(cmd, "--tls-certificate", "/certs/server.crt")
 		cmd = append(cmd, "--tls-private-key", "/certs/server.key")
+	}
+
+	// Add DNS resolver flag if set
+	if dnsResolver != "" {
+		cmd = append(cmd, "--dns-resolver", dnsResolver)
 	}
 
 	return cmd
@@ -244,8 +312,8 @@ func runServer(pidFile string) {
 }
 
 // runHealthCheck handles the healthcheck subcommand
-func runHealthCheck(pidFile string, gracePeriod int) {
-	if gracePeriod > 0 {
+func runHealthCheck(healthCheckUrl string, proxyUrl string, pidFile string, gracePeriod int) {
+	if gracePeriod > 0 && pidFile != "" {
 		// Check if the PID file exists
 		fileInfo, err := os.Stat(pidFile)
 		var startTime time.Time
@@ -264,8 +332,7 @@ func runHealthCheck(pidFile string, gracePeriod int) {
 		}
 	}
 
-	healthCheckURL := getEnv("HEALTHCHECK_URL", DefaultHealthCheckURL)
-	result, err := performHealthCheck(healthCheckURL)
+	result, err := performHealthCheck(healthCheckUrl, proxyUrl)
 	if err != nil {
 		log.Fatalf("Healthcheck failed: %v", err)
 	}
@@ -282,6 +349,7 @@ func main() {
 	healthCheckCmd := flag.NewFlagSet("healthcheck", flag.ExitOnError)
 	healthCheckPidFile := healthCheckCmd.String("pid-file", DefaultPIDFile, "PID file path")
 	healthCheckGracePeriod := healthCheckCmd.Int("grace-period", 0, "Grace period in seconds to ignore healthcheck failures since pod startup")
+	healthCheckProxyUrl := healthCheckCmd.String("proxy", "", "Proxy address")
 
 	if len(os.Args) < 2 {
 		log.Fatal("Error: Missing subcommand 'server', 'client', or 'healthcheck'")
@@ -298,7 +366,11 @@ func main() {
 		runServer(*serverPidFile)
 	case "healthcheck":
 		healthCheckCmd.Parse(os.Args[2:])
-		runHealthCheck(*healthCheckPidFile, *healthCheckGracePeriod)
+		healthCheckUrl := DefaultHealthcheckUrl
+		if len(healthCheckCmd.Args()) > 0 {
+			healthCheckUrl = healthCheckCmd.Arg(0)
+		}
+		runHealthCheck(healthCheckUrl, *healthCheckProxyUrl, *healthCheckPidFile, *healthCheckGracePeriod)
 	default:
 		log.Fatalf("Error: Unknown subcommand '%s'", subcommand)
 	}
