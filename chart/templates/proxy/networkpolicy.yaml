@@ -30,7 +30,7 @@ spec:
         {{- range $key, $value := .Values.server.tunnels }}
           {{- if $value.enabled }}
             {{- $port := get $.Values.proxy.service.ports $key }}
-        - port: {{ $port.port }}
+        - port: {{ $port.containerPort }}
           protocol: TCP
           {{- end }}
         {{- end }}
@@ -46,7 +46,7 @@ spec:
         {{- range $key, $value := .Values.server.tunnels }}
           {{- if $value.enabled }}
             {{- $port := get $.Values.proxy.service.ports $key }}
-        - port: {{ $port.port }}
+        - port: {{ $port.containerPort }}
           protocol: TCP
           {{- end }}
         {{- end }}

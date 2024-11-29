@@ -8,14 +8,14 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
-  {{- if $.Values.commonAnnotations }}
-  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
   {{- end }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
-      {{- include "ggbridge.server.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.selectorLabels" . | nindent 6 }}
+      {{- include "ggbridge.server.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress
@@ -29,6 +29,13 @@ spec:
         # Allow https
         - port: 443
           protocol: TCP
+        {{- range $key, $value := .Values.server.tunnels }}
+          {{- if $value.enabled }}
+            {{- $port := get $.Values.proxy.service.ports $key }}
+        - port: {{ $port.containerPort }}
+          protocol: TCP
+          {{- end }}
+        {{- end }}
     {{- if .Values.networkPolicy.extraEgress }}
     {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.networkPolicy.extraEgress "context" $ ) | nindent 4 }}
     {{- end }}
