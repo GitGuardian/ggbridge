@@ -1,8 +1,7 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.ingress.enabled }}
-  {{- $fullname := include "ggbridge.fullname" . }}
+{{- if and (eq .Values.mode "server") .Values.server.ingress.enabled }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
 
-{{- if and (eq .Values.ingress.controller "traefik") .Values.tls.enabled }}
+{{- if and (eq .Values.server.ingress.controller "traefik") .Values.tls.enabled }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: TLSOption
@@ -32,7 +31,7 @@ metadata:
     {{- include "ggbridge.server.labels" . | nindent 4 }}
   annotations: {{ include "ggbridge.server.ingress.annotations" . | nindent 4 }}
 spec:
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  ingressClassName: {{ .Values.server.ingress.className | quote }}
   rules:
     - host: {{ include "ggbridge.hostname" . | quote }}
       http:
@@ -43,7 +42,7 @@ spec:
               service:
                 name: {{ $serverFullname }}
                 port:
-                  number: {{ $.Values.service.ports.ws.port }}
+                  number: {{ $.Values.server.service.ports.ws.port }}
           {{- range $index := until (include "ggbridge.deploymentCount" $ | int) }}
             {{- $serverFullname := include "ggbridge.server.fullname" $ }}
             {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
@@ -53,7 +52,7 @@ spec:
               service:
                 name: {{ $indexServerFullname }}
                 port:
-                  number: {{ $.Values.service.ports.ws.port }}
+                  number: {{ $.Values.server.service.ports.ws.port }}
           {{- end }}
   {{- if .Values.tls.enabled }}
   tls:

@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "client") (include "ggbridge.hostname" .) -}}
+{{- if (eq .Values.mode "client") -}}
   {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $clientFullname := include "ggbridge.client.fullname" $ }}
@@ -29,8 +29,9 @@ spec:
       index: {{ $index | quote }}
   template:
     metadata:
-      {{- with $.Values.podAnnotations }}
       annotations:
+        checksum/config: {{ printf "%s" (include (print $.Template.BasePath "/client/configmap.yaml") $) | sha256sum }}
+      {{- with $.Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -60,13 +61,22 @@ spec:
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: ["ggbridge"]
           args: ["client"]
+          {{- if $.Values.client.tunnels }}
+          ports:
+            {{- range $key, $value := $.Values.client.tunnels }}
+              {{- if $value.enabled }}
+                {{- $port := get $.Values.proxy.service.ports $key }}
+            - name: {{ $key }}
+              containerPort: {{ $port.containerPort }}
+              protocol: TCP
+              {{- end }}
+            {{- end }}
+          {{- end }}
           env:
             - name: SERVER_ADDRESS
               value: {{ include "ggbridge.hostname" $ | quote }}
-            {{- if gt (int $.Values.deployments) 1 }}
             - name: SERVER_PATH_PREFIX
               value: {{ $index | quote }}
-            {{- end }}
             - name: TLS_ENABLED
               value: {{ $.Values.tls.enabled | quote }}
             - name: NGINX_EMBEDDED
@@ -75,7 +85,7 @@ spec:
             - name: DNS_RESOLVER
               value: {{ . | quote }}
             {{- end }}
-            {{- with $.Values.connectionMinIdle }}
+            {{- with $.Values.client.connectionMinIdle }}
             - name: CONNECTION_MIN_IDLE
               value: {{ . | quote }}
             {{- end }}
@@ -83,6 +93,28 @@ spec:
             - name: LOG_LEVEL
               value: {{ . | quote }}
             {{- end }}
+            - name: CLIENT_TUNNEL_SOCKS_ENABLED
+              value: {{ $.Values.client.tunnels.socks.enabled | quote }}
+            - name: CLIENT_TUNNEL_TLS_ENABLED
+              value: {{ $.Values.client.tunnels.tls.enabled | quote }}
+            - name: SERVER_TUNNEL_SOCKS_ENABLED
+              value: {{ $.Values.server.tunnels.socks.enabled | quote }}
+            - name: SERVER_TUNNEL_TLS_ENABLED
+              value: {{ $.Values.server.tunnels.tls.enabled | quote }}
+            - name: TUNNEL_SOCKS_PORT
+              value: {{ $.Values.proxy.service.ports.socks.containerPort | quote }}
+            - name: TUNNEL_TLS_PORT
+              value: {{ $.Values.proxy.service.ports.tls.containerPort | quote }}
+            - name: TUNNEL_TLS_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.tls.remoteContainerPort | quote }}
+            - name: TUNNEL_HEALTH_PORT
+              value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
+            - name: TUNNEL_HEALTH_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.health.remoteContainerPort | quote }}
+          {{- if $.Values.client.readinessProbe.enabled }}
+          readinessProbe:
+            {{- toYaml (omit $.Values.client.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: run
               mountPath: /var/run
@@ -103,8 +135,8 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            - name: http
-              containerPort: 8080
+            - name: healthz
+              containerPort: 8081
               protocol: TCP
           volumeMounts:
             - name: nginx-cache
@@ -113,6 +145,10 @@ spec:
               mountPath: /var/lib/nginx/tmp
             - name: run
               mountPath: /var/run
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:
@@ -122,6 +158,10 @@ spec:
           emptyDir: {}
         - name: run
           emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ $clientFullname }}
+            defaultMode: 420
         {{- if $.Values.tls.enabled }}
         - name: tls-secret
           secret:
@@ -147,7 +187,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.client.affinity" $) ) "context" $ ) }}
-      affinity: {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
+      affinity:
+        {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
       {{- with $.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}

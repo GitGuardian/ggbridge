@@ -1,11 +1,10 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) -}}
-    {{- $fullname := include "ggbridge.fullname" $ }}
+{{- if (eq (include "ggbridge.proxy.enabled" .) "true") -}}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.subdomain }}
+  name: {{ include "ggbridge.proxy.serviceName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
@@ -17,17 +16,24 @@ metadata:
 spec:
   type: {{ .Values.proxy.service.type }}
   ports:
-    - port: {{ .Values.proxy.service.ports.socks.port }}
-      targetPort: socks
+    {{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+    {{- range $key, $value := $ports }}
+      {{- if $value.enabled }}
+        {{- $port := get $.Values.proxy.service.ports $key }}
+        {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
+    - port: {{ $port.port }}
+      targetPort: {{ $key }}
+      {{- with $port.nodePort }}
+      nodePort: {{ . }}
+      {{- end }}
       protocol: TCP
-      name: socks
-    - port: {{ .Values.proxy.service.ports.http.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
+      name: {{ $key }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
   selector:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
-    {{- if gt (include "ggbridge.proxy.replicaCount" . | int) 0 }}
+    {{- if and (eq .Values.mode "server") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) }}
     {{- include "ggbridge.proxy.selectorLabels" . | nindent 4 }}
     {{- else }}
       {{- if eq .Values.mode "server" }}

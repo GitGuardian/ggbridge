@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) -}}
+{{- if (eq .Values.mode "server") -}}
   {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}
@@ -30,8 +30,9 @@ spec:
       index: {{ $index | quote }}
   template:
     metadata:
-      {{- with $.Values.podAnnotations }}
       annotations:
+        checksum/config: {{ printf "%s" (include (print $.Template.BasePath "/server/configmap.yaml") $) | sha256sum }}
+      {{- with $.Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -65,9 +66,9 @@ spec:
             - name: SERVER_LISTEN
               value: "0.0.0.0"
             - name: SERVER_PORT
-              value: {{$.Values.service.ports.ws.containerPort | quote }}
+              value: {{$.Values.server.service.ports.ws.containerPort | quote }}
             {{- if $.Values.tls.enabled }}
-              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
+              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
             - name: TLS_ENABLED
               value: "true"
               {{- end }}
@@ -78,28 +79,33 @@ spec:
             {{- end }}
             - name: NGINX_EMBEDDED
               value: "false"
+            - name: TUNNEL_HEALTH_PORT
+              value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
+            - name: TUNNEL_HEALTH_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.health.remoteContainerPort | quote }}
+            - name: TUNNEL_SOCKS_PORT
+              value: {{ $.Values.proxy.service.ports.socks.containerPort | quote }}
+            - name: TUNNEL_TLS_PORT
+              value: {{ $.Values.proxy.service.ports.tls.containerPort | quote }}
+            - name: TUNNEL_TLS_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.tls.remoteContainerPort | quote }}
           ports:
             - name: ws
-              containerPort: {{ $.Values.service.ports.ws.containerPort }}
+              containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
               protocol: TCP
-            - name: socks
-              containerPort: {{ $.Values.proxy.service.ports.socks.containerPort }}
+            {{- range $key, $value := $.Values.server.tunnels }}
+              {{- if $value.enabled }}
+                {{- $port := get $.Values.proxy.service.ports $key }}
+            - name: {{ $key }}
+              containerPort: {{ $port.containerPort }}
               protocol: TCP
-          # readinessProbe:
-          #   tcpSocket:
-          #     port: {{ $.Values.service.ports.ws.containerPort }}
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 10
-          # livenessProbe:
-          #   tcpSocket:
-          #     port: {{ $.Values.service.ports.ws.containerPort }}
-          #   initialDelaySeconds: 5
-          #   periodSeconds: 10
+              {{- end }}
+            {{- end }}
           volumeMounts:
             - name: run
               mountPath: /var/run
             {{- if $.Values.tls.enabled }}
-              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
+              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -107,11 +113,45 @@ spec:
             {{- end }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
+        - name: nginx
+          {{- if $.Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ['/usr/sbin/nginx']
+          args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
+          ports:
+            - name: healthz
+              containerPort: 8081
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-tmp
+              mountPath: /var/lib/nginx/tmp
+            - name: run
+              mountPath: /var/run
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
       volumes:
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-tmp
+          emptyDir: {}
         - name: run
           emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ $serverFullname }}
+            defaultMode: 420
       {{- if $.Values.tls.enabled }}
-        {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.ingress.enabled) (not $.Values.gateway.enabled) (not $.Values.istio.enabled)) }}
+        {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
         - name: tls-secret
           secret:
             {{- if $.Values.tls.existingSecret }}
@@ -141,7 +181,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.server.affinity" $) ) "context" $ ) }}
-      affinity: {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
+      affinity:
+        {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
       {{- with $.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}

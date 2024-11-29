@@ -1,6 +1,5 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) }}
+{{- if .Values.rbac.certManager.create }}
   {{- $fullname := include "ggbridge.fullname" . }}
-  {{- if .Values.rbac.certManager.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -34,7 +33,7 @@ rules:
       - 'list'
       - 'watch'
       - 'create'
-    {{- if .Values.rbac.certManager.subjects }}
+  {{- if .Values.rbac.certManager.subjects }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -50,6 +49,5 @@ subjects:
   {{- toYaml . | nindent 2 }}
 {{- end }}
 
-    {{- end }}
   {{- end }}
 {{- end }}

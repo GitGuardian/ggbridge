@@ -1,9 +1,8 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.gateway.enabled }}
-  {{- $fullname := include "ggbridge.fullname" . }}
+{{- if and (eq .Values.mode "server") .Values.server.gateway.enabled }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
 
-{{- if $.Values.gateway.gateway.create }}
-  {{- if and (eq .Values.gateway.controller "traefik") .Values.tls.enabled }}
+{{- if .Values.server.gateway.gateway.create }}
+  {{- if and (eq .Values.server.gateway.controller "traefik") .Values.tls.enabled }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: TLSOption
@@ -31,12 +30,12 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.gateway.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations .Values.server.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ .Values.gateway.gateway.className | quote }}
+  gatewayClassName: {{ .Values.server.gateway.gateway.className | quote }}
   listeners:
     - hostname: {{ include "ggbridge.hostname" . }}
       allowedRoutes:
@@ -44,7 +43,7 @@ spec:
           from: Same
       {{- if .Values.tls.enabled }}
       name: https
-      port: {{ .Values.gateway.gateway.ports.https }}
+      port: {{ .Values.server.gateway.gateway.ports.https }}
       tls:
         mode: {{ include "ggbridge.server.gateway.tlsMode" . }}
         {{- if eq (lower .Values.tls.mode) "passthrough" }}
@@ -62,7 +61,7 @@ spec:
         {{- end }}
       {{- else }}
       name: http
-      port: {{ .Values.gateway.gateway.ports.http }}
+      port: {{ .Values.server.gateway.gateway.ports.http }}
       protocol: HTTP
       {{- end }}
 {{- end }}
@@ -80,25 +79,25 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.server.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.gateway.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations .Values.server.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.gateway.gateway.create }}
+  {{- if .Values.server.gateway.gateway.create }}
   parentRefs:
     - name: {{ $serverFullname }}
       namespace: {{ .Release.Namespace }}
       sectionName: {{ ternary "https" "http" .Values.tls.enabled }}
   {{- else }}
-  parentRefs: {{ toYaml .Values.gateway.parentRefs | nindent 4 }}
+  parentRefs: {{ toYaml .Values.server.gateway.parentRefs | nindent 4 }}
   {{- end }}
   hostnames:
     - {{ include "ggbridge.hostname" . }}
   rules:
     - backendRefs:
         - name: {{ $serverFullname }}
-          port: {{ $.Values.service.ports.ws.port }}
+          port: {{ $.Values.server.service.ports.ws.port }}
       {{- if ne (lower .Values.tls.mode) "passthrough" }}
       matches:
         - path:
@@ -113,7 +112,7 @@ spec:
             value: {{ printf "/%d" ($index | int) }}
       backendRefs:
         - name: {{ $indexServerFullname }}
-          port: {{ $.Values.service.ports.ws.port }}
+          port: {{ $.Values.server.service.ports.ws.port }}
         {{- end }}
       {{- end }}
 {{- end }}

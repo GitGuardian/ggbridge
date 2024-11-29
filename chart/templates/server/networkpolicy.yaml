@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) .Values.networkPolicy.enabled }}
+{{- if and (eq .Values.mode "server") .Values.networkPolicy.enabled }}
   {{- $fullname := include "ggbridge.server.fullname" . }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -26,24 +26,30 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
+        # Allow https
+        - port: 443
+          protocol: TCP
     {{- if .Values.networkPolicy.extraEgress }}
     {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.networkPolicy.extraEgress "context" $ ) | nindent 4 }}
     {{- end }}
   ingress:
     - ports:
-        # Allow external ws port
-        - port: {{ $.Values.service.ports.ws.containerPort }}
+        - port: {{ $.Values.server.service.ports.ws.containerPort }}
           protocol: TCP
+    {{- if $.Values.server.tunnels }}
     - ports:
-        # Allow proxy socks port
-        - port: {{ $.Values.proxy.service.ports.socks.containerPort }}
+        {{- range $key, $value := $.Values.server.tunnels }}
+          {{- if $value.enabled }}
+            {{- $port := get $.Values.proxy.service.ports $key }}
+        - port: {{ $port.containerPort }}
           protocol: TCP
+          {{- end }}
+        {{- end }}
       {{- if not .Values.networkPolicy.allowExternal }}
       from:
         - podSelector:
             matchLabels:
               {{- include "ggbridge.selectorLabels" . | nindent 14 }}
-              {{- include "ggbridge.client.selectorLabels" . | nindent 14 }}
         {{- if .Values.networkPolicy.ingressNSMatchLabels }}
         - namespaceSelector:
             matchLabels:
@@ -59,6 +65,7 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
+    {{- end }}
     {{- if .Values.networkPolicy.extraIngress }}
     {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.networkPolicy.extraIngress "context" . ) | nindent 4 }}
     {{- end }}

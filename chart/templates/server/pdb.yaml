@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (include "ggbridge.hostname" .) }}
+{{- if and (eq .Values.mode "server") }}
   {{- range $index := until (int .Values.deploymentCount) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}

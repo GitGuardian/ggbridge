@@ -1,0 +1,75 @@
+{{- if and (eq (include "ggbridge.proxy.enabled" .) "true") .Values.proxy.gateway.enabled -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+  {{- if .Values.proxy.gateway.gateway.create }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.proxy.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ .Values.proxy.gateway.gateway.className | quote }}
+  listeners:
+    - allowedRoutes:
+        namespaces:
+          from: Same
+      name: https
+      port: {{ $.Values.proxy.gateway.gateway.ports.https }}
+      protocol: TLS
+      tls:
+        mode: Passthrough
+  {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: {{ $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.proxy.gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.proxy.gateway.gateway.create }}
+  parentRefs:
+    - name: {{ $proxyFullname }}
+      namespace: {{ $.Release.Namespace }}
+      sectionName: https
+  {{- else }}
+  parentRefs: {{ toYaml .Values.proxy.gateway.parentRefs | nindent 4 }}
+  {{- end }}
+  hostnames:
+    {{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+    {{- range $key, $value := $ports }}
+      {{- if $value.enabled }}
+        {{- $port := get $.Values.proxy.service.ports $key }}
+        {{- if $port.exposed }}
+          {{- range $port.hosts }}
+    - {{ .host | quote }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  rules:
+    {{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+    {{- range $key, $value := $ports }}
+      {{- if $value.enabled }}
+        {{- $port := get $.Values.proxy.service.ports $key }}
+        {{- if $port.exposed }}
+    - backendRefs:
+        - name: {{ include "ggbridge.proxy.serviceName" $ }}
+          port: {{ $port.port }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}

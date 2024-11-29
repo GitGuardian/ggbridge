@@ -17,7 +17,14 @@ Make sure both tools are installed and properly configured before proceeding wit
 
 ## Run the demo
 
-- Start the demo
+- Generate TLS certificates:
+
+```shell
+cd demo
+./scripts/gen-certs.sh
+```
+
+- Start services using docker compose:
 
 ```shell
 cd demo
@@ -45,7 +52,7 @@ ggbridge-vcs-1           gitguardian/ggbridge:latest-debug   "/usr/sbin/nginx -c
 
 ```shell
 docker compose exec gitguardian \
-  curl http://vcs.client.internal
+  curl https://vcs.client.internal
 ```
 
 expected output:
@@ -60,7 +67,7 @@ We cannot reach the VCS from GitGuardian because they are on two separate networ
 
 ```shell
 docker compose exec gitguardian \
-  curl --proxy socks5h://proxy.gitguardian.internal http://vcs.client.internal
+  curl --proxy socks5h://proxy.gitguardian.internal https://vcs.client.internal
 ```
 
 Et voilà! The request is now routed through the **ggbirdge** proxy and the internal VCS DNS name is resolved by the proxy. You should have the following JSON response for the VCS server:
