@@ -1,63 +1,68 @@
-{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
+{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+  {{- range $index := until (.Values.deploymentCount | int) }}
+    {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
+    {{- $indexProxyFullname := printf "%s-%d" $proxyFullname ($index | int) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $proxyFullname }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ $indexProxyFullname }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "ggbridge.labels" . | nindent 4 }}
-    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.annotations .Values.commonAnnotations ) "context" . ) }}
-  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
+  {{- if or $.Values.commonAnnotations $.Values.proxy.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ include "ggbridge.proxy.replicaCount" . | int }}
-  {{- with .Values.proxy.updateStrategy }}
+  replicas: {{ $.Values.proxy.replicaCount }}
+  {{- with $.Values.proxy.updateStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "ggbridge.selectorLabels" . | nindent 6 }}
-      {{- include "ggbridge.proxy.selectorLabels" . | nindent 6 }}
+      {{- include "ggbridge.selectorLabels" $ | nindent 6 }}
+      {{- include "ggbridge.proxy.selectorLabels" $ | nindent 6 }}
+      index: {{ $index | quote }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ printf "%s" (include (print .Template.BasePath "/proxy/configmap.yaml") .) | sha256sum }}
-      {{- with .Values.podAnnotations }}
+        checksum/config: {{ printf "%s" (include (print $.Template.BasePath "/proxy/configmap.yaml") $) | sha256sum }}
+      {{- with $.Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "ggbridge.labels" . | nindent 8 }}
-        {{- include "ggbridge.proxy.labels" . | nindent 8 }}
+        {{- include "ggbridge.labels" $ | nindent 8 }}
+        {{- include "ggbridge.proxy.labels" $ | nindent 8 }}
         {{- with $.Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        index: {{ $index | quote }}
     spec:
-      {{- with .Values.image.pullSecrets }}
+      {{- with $.Values.image.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "ggbridge.serviceAccountName" . }}
-      {{- if .Values.podSecurityContext.enabled }}
+      serviceAccountName: {{ include "ggbridge.serviceAccountName" $ }}
+      {{- if $.Values.podSecurityContext.enabled }}
       securityContext:
-        {{- toYaml (omit .Values.podSecurityContext "enabled") | nindent 8 }}
+        {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
       containers:
         - name: nginx
-          {{- if .Values.containerSecurityContext.enabled }}
+          {{- if $.Values.containerSecurityContext.enabled }}
           securityContext:
-            {{- toYaml (omit .Values.containerSecurityContext "enabled") | nindent 12 }}
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
-          image: {{ include "ggbridge.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: {{ include "ggbridge.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            {{- range $key, $value := .Values.server.tunnels }}
+            {{- range $key, $value := $.Values.server.tunnels }}
               {{- if $value.enabled }}
                 {{- $port := get $.Values.proxy.service.ports $key }}
             - name: {{ $key }}
@@ -65,9 +70,9 @@ spec:
               protocol: TCP
               {{- end }}
             {{- end }}
-          {{- if .Values.proxy.readinessProbe.enabled }}
+          {{- if $.Values.proxy.readinessProbe.enabled }}
           readinessProbe:
-            {{- toYaml (omit .Values.proxy.readinessProbe "enabled") | nindent 12 }}
+            {{- toYaml (omit $.Values.proxy.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: cache
@@ -81,7 +86,7 @@ spec:
               subPath: nginx.conf
               readOnly: true
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml $.Values.proxy.resources | nindent 12 }}
       volumes:
         - name: cache
           emptyDir: {}
@@ -91,16 +96,16 @@ spec:
           emptyDir: {}
         - name: config
           configMap:
-            name: {{ $proxyFullname }}
+            name: {{ $indexProxyFullname }}
             defaultMode: 420
-      {{- with .Values.proxy.nodeSelector }}
+      {{- with $.Values.proxy.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.affinity (include "ggbridge.proxy.affinity" $) ) "context" $ ) }}
+      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.affinity (include "ggbridge.proxy.affinity" (dict "index" $index "context" $)) ) "context" $ ) }}
       affinity:
         {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
-      {{- with .Values.proxy.tolerations }}
+      {{- with $.Values.proxy.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -109,4 +114,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
+
+  {{- end }}
 {{- end }}

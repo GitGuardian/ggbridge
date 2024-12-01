@@ -33,7 +33,7 @@ spec:
     {{- end }}
   selector:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
-    {{- if and (eq .Values.mode "server") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) }}
+    {{- if and (eq .Values.mode "server") (gt (.Values.proxy.replicaCount | int) 0) }}
     {{- include "ggbridge.proxy.selectorLabels" . | nindent 4 }}
     {{- else }}
       {{- if eq .Values.mode "server" }}

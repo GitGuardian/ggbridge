@@ -1,5 +1,5 @@
 {{- if (eq .Values.mode "server") -}}
-  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
+  {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}
     {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
@@ -180,7 +180,7 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.server.affinity" $) ) "context" $ ) }}
+      {{- $affinity := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.affinity (include "ggbridge.affinity" (dict "index" $index "context" $)) ) "context" $ ) }}
       affinity:
         {{- include "ggbridge.tplvalues.render" ( dict "value" $affinity "context" $) | nindent 8 }}
       {{- with $.Values.tolerations }}

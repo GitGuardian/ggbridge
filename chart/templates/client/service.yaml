@@ -1,6 +1,6 @@
 {{- if and (eq .Values.mode "client") .Values.client.tunnels -}}
   {{- $clientFullname := include "ggbridge.client.fullname" $ }}
-  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
+  {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
     {{- $indexClientProxyFullname := printf "%s-proxy-%d" $clientFullname ($index | int) }}
 ---

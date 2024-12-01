@@ -1,18 +1,23 @@
-{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) -}}
-  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+  {{- range $index := until (.Values.deploymentCount | int) }}
+    {{- $fullname := include "ggbridge.fullname" $ }}
+    {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
+    {{- $indexProxyFullname := printf "%s-%d" $proxyFullname ($index | int) }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $proxyFullname }}
+  name: {{ $indexProxyFullname }}
   labels:
-    {{- include "ggbridge.labels" . | nindent 4 }}
-    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if .Values.commonAnnotations }}
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+  {{- if $.Values.commonAnnotations }}
   annotations:
-    {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
+    {{- include "ggbridge.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
   nginx.conf: |-
-    {{ tpl (.Files.Get "files/proxy/nginx.conf") . | nindent 4 }}
+    {{ tpl ($.Files.Get "files/proxy/nginx.conf") (dict "index" $index "context" $) | nindent 4 }}
+  {{- end }}
 {{- end }}

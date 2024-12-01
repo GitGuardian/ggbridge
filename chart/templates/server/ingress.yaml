@@ -43,7 +43,7 @@ spec:
                 name: {{ $serverFullname }}
                 port:
                   number: {{ $.Values.server.service.ports.ws.port }}
-          {{- range $index := until (include "ggbridge.deploymentCount" $ | int) }}
+          {{- range $index := until ($.Values.deploymentCount | int) }}
             {{- $serverFullname := include "ggbridge.server.fullname" $ }}
             {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
           - path: {{ printf "/%d" ($index | int) }}

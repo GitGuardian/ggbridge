@@ -115,18 +115,9 @@ mode: client
 domain: gitguardian.com
 # -- Subdomain
 subdomain: ""
-# -- Hostname
-hostname: ""
 
 # -- Set log level
 logLevel: INFO
-
-# -- High Availability parameters
-ha:
-  # -- Enable High Availability architecture
-  enabled: true
-  # -- The number of ggbridge client/server deployments
-  deploymentCount: 3
 
 # -- Dns resolver to use to lookup ips of domain name
 dnsResolver: ""
@@ -298,11 +289,10 @@ server:
       enabled: false
 
 proxy:
-  # -- Number of pods
-  # Set to .Values.ha.deploymentCount when .Values.ha.enabled
-  replicaCount: 0
+  # -- Number of pods for each deployment
+  replicaCount: 1
   updateStrategy:
-    # -- Customize updateStrategy of Deployment
+    # -- Customize updateStrategy
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
@@ -333,7 +323,8 @@ proxy:
   service:
     # --- Override the default service name
     name: ""
-    annotations: {}
+    annotations:
+      service.kubernetes.io/topology-mode: "Auto"
     # -- Kubernetes Service type
     type: ClusterIP
     ports:
@@ -422,3 +413,10 @@ proxy:
   tolerations: []
   # -- Topology spread constraints for pod assignment
   topologySpreadConstraints: []
+
+  # -- Set proxy container requests and limits
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits: {}

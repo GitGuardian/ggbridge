@@ -64,6 +64,7 @@ helm.sh/chart: {{ include "ggbridge.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+tenant: {{ .Values.subdomain }}
 {{- with .Values.commonLabels }}
 {{ tpl (toYaml .) $ }}
 {{- end -}}
@@ -204,15 +205,7 @@ Returns hostname
 {{ include "ggbridge.hostname" $ }}
 */}}
 {{- define "ggbridge.hostname" -}}
-{{ default (ternary "" (printf "%s.%s" .Values.subdomain .Values.domain) (empty .Values.subdomain)) .Values.hostname }}
-{{- end }}
-
-{{/*
-Returns deployment count
-{{ include "ggbridge.deploymentCount" $ }}
-*/}}
-{{- define "ggbridge.deploymentCount" -}}
-{{ ternary .Values.ha.deploymentCount .Values.deploymentCount .Values.ha.enabled }}
+{{ printf "%s.%s" .Values.subdomain .Values.domain }}
 {{- end }}
 
 {{/*
@@ -225,14 +218,6 @@ Returns proxy service name
 {{ ternary .Values.subdomain (include "ggbridge.proxy.fullname" .) (eq .Values.mode "server") }}
 {{- end -}}
 {{- end -}}
-
-{{/*
-Returns proxy replica count
-{{ include "ggbridge.proxy.replicaCount" $ }}
-*/}}
-{{- define "ggbridge.proxy.replicaCount" -}}
-{{ ternary .Values.ha.deploymentCount .Values.proxy.replicaCount .Values.ha.enabled }}
-{{- end }}
 
 {{/*
 Returns true when proxy is enabled
@@ -248,21 +233,12 @@ Returns true when proxy is enabled
 {{- end -}}
 
 {{/*
-Returns client pod affinity.
-{{ include "ggbridge.client.affinity" $ }}
+Returns pod affinity.
+{{ include "ggbridge.affinity" (dict "index" 0 "context" $) }}
 */}}
-{{- define "ggbridge.client.affinity" -}}
+{{- define "ggbridge.affinity" -}}
 podAntiAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 1
-      podAffinityTerm:
-        labelSelector:
-          matchExpressions:
-            - key: app.kubernetes.io/component
-              operator: In
-              values:
-                - client
-        topologyKey: "kubernetes.io/hostname"
     - weight: 100
       podAffinityTerm:
         labelSelector:
@@ -270,26 +246,27 @@ podAntiAffinity:
             - key: app.kubernetes.io/component
               operator: In
               values:
-                - client
+                - {{ .context.Values.mode }}
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
         topologyKey: "topology.kubernetes.io/zone"
-{{- end -}}
-
-{{/*
-Returns server pod affinity.
-{{ include "ggbridge.server.affinity" $ }}
-*/}}
-{{- define "ggbridge.server.affinity" -}}
-podAntiAffinity:
-  preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 1
+    - weight: 10
       podAffinityTerm:
         labelSelector:
           matchExpressions:
             - key: app.kubernetes.io/component
               operator: In
               values:
-                - server
+                - {{ .context.Values.mode }}
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
         topologyKey: "kubernetes.io/hostname"
+podAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
     - weight: 100
       podAffinityTerm:
         labelSelector:
@@ -297,26 +274,25 @@ podAntiAffinity:
             - key: app.kubernetes.io/component
               operator: In
               values:
-                - server
+                - {{ .context.Values.mode }}
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
+            - key: index
+              operator: In
+              values:
+                - {{ .index | quote }}
         topologyKey: "topology.kubernetes.io/zone"
 {{- end -}}
 
 {{/*
 Returns proxy pod affinity.
-{{ include "ggbridge.proxy.affinity" $ }}
+{{ include "ggbridge.proxy.affinity" (dict "index" 0 "context" $) }}
 */}}
 {{- define "ggbridge.proxy.affinity" -}}
-podAntiAffinity:
+podAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 1
-      podAffinityTerm:
-        labelSelector:
-          matchExpressions:
-            - key: app.kubernetes.io/component
-              operator: In
-              values:
-                - proxy
-        topologyKey: "kubernetes.io/hostname"
     - weight: 100
       podAffinityTerm:
         labelSelector:
@@ -324,8 +300,33 @@ podAntiAffinity:
             - key: app.kubernetes.io/component
               operator: In
               values:
-                - proxy
+                - {{ .context.Values.mode }}
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
+            - key: index
+              operator: In
+              values:
+                - {{ .index | quote }}
         topologyKey: "topology.kubernetes.io/zone"
+    - weight: 10
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - {{ .context.Values.mode }}
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
+            - key: index
+              operator: In
+              values:
+                - {{ .index | quote }}
+        topologyKey: "kubernetes.io/hostname"
 {{- end -}}
 
 {{/*

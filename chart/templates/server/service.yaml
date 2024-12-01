@@ -26,7 +26,7 @@ spec:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" . | nindent 4 }}
 
-  {{- range $index := until (include "ggbridge.deploymentCount" . | int) }}
+  {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
     {{- $indexServerProxyFullname := printf "%s-proxy-%d" $serverFullname ($index | int) }}
 ---

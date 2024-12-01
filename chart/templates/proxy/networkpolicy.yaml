@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") (gt (include "ggbridge.proxy.replicaCount" . | int) 0) .Values.proxy.networkPolicy.enabled -}}
+{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") .Values.proxy.networkPolicy.enabled -}}
   {{- $fullname := include "ggbridge.proxy.fullname" . }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

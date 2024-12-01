@@ -4,9 +4,6 @@ mode: server
 domain: gitguardian.com
 subdomain: my-subdomain
 
-ha:
-  enabled: false
-
 tls:
   enabled: true
   exisingSecret: ggbridge-server-crt

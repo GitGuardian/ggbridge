@@ -103,7 +103,7 @@ spec:
         - path:
             type: PathPrefix
             value: /
-        {{- range $index := until (include "ggbridge.deploymentCount" $ | int) }}
+        {{- range $index := until ($.Values.deploymentCount | int) }}
           {{- $serverFullname := include "ggbridge.server.fullname" $ }}
           {{- $indexServerFullname := printf "%s-%d" $serverFullname ($index | int) }}
     - matches:
