@@ -363,8 +363,8 @@ Returns server service annotations
 */}}
 {{- define "ggbridge.server.service.annotations" -}}
 {{- $annotations := dict -}}
-{{- if or .Values.commonAnnotations .Values.service.annotations }}
-{{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.service.annotations .Values.commonAnnotations ) "context" . ) }}
+{{- if or .Values.commonAnnotations .Values.server.service.annotations }}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.server.service.annotations .Values.commonAnnotations ) "context" . ) }}
 {{- end -}}
 {{- if eq .Values.server.ingress.controller "traefik" -}}
   {{- if and .Values.tls.enabled (eq (lower .Values.tls.mode) "passthrough") -}}
