@@ -291,6 +291,34 @@ Returns proxy pod affinity.
 {{ include "ggbridge.proxy.affinity" (dict "index" 0 "context" $) }}
 */}}
 {{- define "ggbridge.proxy.affinity" -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - proxy
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
+        topologyKey: "topology.kubernetes.io/zone"
+    - weight: 10
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - proxy
+            - key: tenant
+              operator: In
+              values:
+                - {{ .context.Values.subdomain }}
+        topologyKey: "kubernetes.io/hostname"
 podAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
     - weight: 100
