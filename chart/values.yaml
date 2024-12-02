@@ -231,6 +231,20 @@ server:
         port: 9000
         containerPort: 9000
 
+  # -- Configure the ingress resources for proxy
+  ingress:
+    # -- Enable exposure using Kubernetes Ingress API
+    enabled: false
+    # -- Specify the ingress controller
+    controller: ""
+    # -- Set the ingress ClassName
+    className: ""
+    # -- Set ingress annotations
+    annotations: {}
+    # -- Set traefik ingress entrypoints
+    entryPoints:
+      - websecure
+
   # -- Configure the gateway resources that allows you to connect to the server
   gateway:
     # -- Enable server exposure using Kubernetes Gateway API
