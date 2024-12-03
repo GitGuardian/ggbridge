@@ -51,7 +51,7 @@ spec:
       securityContext:
         {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
-      {{- if $.Values.tls.enabled }}
+      {{- if and $.Values.tls.enabled $.Values.client.tlsVerifyCert }}
       initContainers:
         - name: ca
           {{- if $.Values.containerSecurityContext.enabled }}
@@ -104,7 +104,7 @@ spec:
             - name: TLS_ENABLED
               value: {{ $.Values.tls.enabled | quote }}
             - name: TLS_VERIFY_CERTIFICATE
-              value: {{ $.Values.client.tlsVerifyCert | quote }}
+              value: {{ (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) | quote }}
             - name: NGINX_EMBEDDED
               value: "false"
             {{- with $.Values.dnsResolver }}
@@ -152,8 +152,10 @@ spec:
             - name: run
               mountPath: /var/run
             {{- if $.Values.tls.enabled }}
+              {{- if  $.Values.client.tlsVerifyCert }}
             - name: ca-certs
               mountPath: /ca-certs
+              {{- end }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -198,8 +200,10 @@ spec:
             name: {{ $clientFullname }}
             defaultMode: 420
         {{- if $.Values.tls.enabled }}
+          {{- if  $.Values.client.tlsVerifyCert }}
         - name: ca-certs
           emptyDir: {}
+          {{- end }}
         - name: tls-secret
           secret:
             {{- if $.Values.tls.existingSecret }}

@@ -218,6 +218,7 @@ networkPolicy:
   ingressNSPodMatchLabels: {}
 
 client:
+  # -- Enable TLS certificate verification
   tlsVerifyCert: true
   # -- Pool of open connection to the server, in order to speed up the connection process
   connectionMinIdle: 0
