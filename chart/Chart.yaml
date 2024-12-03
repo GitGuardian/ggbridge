@@ -3,4 +3,4 @@ name: ggbridge
 description: A Helm chart for installing ggbridge
 type: application
 version: 0.0.0
-appVersion: "v0.0.0"
+appVersion: "unstable"
