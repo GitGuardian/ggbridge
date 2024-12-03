@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ["debug", "prod"]
+        target: ["shell", "prod"]
 
     permissions:
       contents: read
@@ -53,14 +53,14 @@ jobs:
         id: tag
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            if [[ "${{ matrix.target }}" == "debug" ]]; then
-              echo "tag=unstable-debug" >> $GITHUB_ENV
+            if [[ "${{ matrix.target }}" == "shell" ]]; then
+              echo "tag=unstable-shell" >> $GITHUB_ENV
             else
               echo "tag=unstable" >> $GITHUB_ENV
             fi
           else
-            if [[ "${{ matrix.target }}" == "debug" ]]; then
-              echo "tag=build-${{ env.short_sha }}-debug" >> $GITHUB_ENV
+            if [[ "${{ matrix.target }}" == "shell" ]]; then
+              echo "tag=build-${{ env.short_sha }}-shell" >> $GITHUB_ENV
             else
               echo "tag=build-${{ env.short_sha }}" >> $GITHUB_ENV
             fi

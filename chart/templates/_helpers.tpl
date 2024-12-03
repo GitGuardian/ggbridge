@@ -174,6 +174,33 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{- end -}}
 
 {{/*
+Return the proper shell image name.
+If image tag and digest are not defined, termination fallbacks to chart appVersion.
+{{ include "ggbridge.shell.image" }}
+*/}}
+{{- define "ggbridge.shell.image" -}}
+{{- $registryName := .Values.shell.image.registry -}}
+{{- $repositoryName := .Values.shell.image.repository -}}
+{{- $separator := ":" -}}
+{{- $termination := .Values.shell.image.tag | toString -}}
+
+{{- if not .Values.shell.image.tag }}
+  {{- if .Chart }}
+    {{- $termination = printf "%s-shell" .Chart.AppVersion | toString -}}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.shell.image.digest }}
+    {{- $separator = "@" -}}
+    {{- $termination = .Values.shell.image.digest | toString -}}
+{{- end -}}
+{{- if $registryName }}
+    {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
+{{- else -}}
+    {{- printf "%s%s%s"  $repositoryName $separator $termination -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Return the proper image name.
 If image tag and digest are not defined, termination fallbacks to chart appVersion.
 {{ include "ggbridge.proxy.image" }}

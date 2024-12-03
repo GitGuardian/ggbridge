@@ -72,8 +72,8 @@ RUN apk add --no-cache \
 USER 65532
 
 
-### Debug
-FROM nginx AS debug
+### Shell
+FROM nginx AS shell
 
 USER 0
 

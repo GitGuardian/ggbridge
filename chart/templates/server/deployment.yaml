@@ -89,6 +89,9 @@ spec:
               value: {{ $.Values.proxy.service.ports.tls.containerPort | quote }}
             - name: TUNNEL_TLS_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.tls.remoteContainerPort | quote }}
+            {{- if $.Values.extraEnv }}
+            {{- include "ggbridge.tplvalues.render" (dict "value" $.Values.extraEnv "context" $) | nindent 12 }}
+            {{- end }}
           ports:
             - name: ws
               containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
@@ -157,8 +160,10 @@ spec:
             {{- if $.Values.tls.existingSecret }}
             secretName: {{ $.Values.tls.existingSecret }}
             items:
-              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
+              {{- with $.Values.tls.existingSecretKeys.caCrt }}
+              - key: {{ . }}
                 path: ca.crt
+              {{- end }}
               - key: {{ default "tls.crt" $.Values.tls.existingSecretKeys.crt }}
                 path: server.crt
               - key: {{ default "tls.key" $.Values.tls.existingSecretKeys.key }}

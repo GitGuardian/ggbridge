@@ -51,6 +51,30 @@ spec:
       securityContext:
         {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
+      {{- if $.Values.tls.enabled }}
+      initContainers:
+        - name: ca
+          {{- if $.Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.shell.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat $SSL_CERT_FILE > /ca-certs/ca-bundle.crt
+              if [ -s /certs/ca.crt ]; then
+                cat /certs/ca.crt  >> /ca-certs/ca-bundle.crt
+              fi
+              chmod 0444 /ca-certs/ca-bundle.crt
+          volumeMounts:
+            - name: ca-certs
+              mountPath: /ca-certs
+            - name: tls-secret
+              mountPath: /certs
+              readOnly: true
+      {{- end }}
       containers:
         - name: ggbridge
           {{- if $.Values.containerSecurityContext.enabled }}
@@ -79,6 +103,8 @@ spec:
               value: {{ $index | quote }}
             - name: TLS_ENABLED
               value: {{ $.Values.tls.enabled | quote }}
+            - name: TLS_VERIFY_CERTIFICATE
+              value: {{ $.Values.client.tlsVerifyCert | quote }}
             - name: NGINX_EMBEDDED
               value: "false"
             {{- with $.Values.dnsResolver }}
@@ -111,6 +137,13 @@ spec:
               value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
             - name: TUNNEL_HEALTH_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.health.remoteContainerPort | quote }}
+            {{- if $.Values.tls.enabled }}
+            - name: SSL_CERT_FILE
+              value: /ca-certs/ca-bundle.crt
+            {{- end }}
+            {{- if $.Values.extraEnv }}
+            {{- include "ggbridge.tplvalues.render" (dict "value" $.Values.extraEnv "context" $) | nindent 12 }}
+            {{- end }}
           {{- if $.Values.client.readinessProbe.enabled }}
           readinessProbe:
             {{- toYaml (omit $.Values.client.readinessProbe "enabled") | nindent 12 }}
@@ -119,6 +152,8 @@ spec:
             - name: run
               mountPath: /var/run
             {{- if $.Values.tls.enabled }}
+            - name: ca-certs
+              mountPath: /ca-certs
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -163,18 +198,26 @@ spec:
             name: {{ $clientFullname }}
             defaultMode: 420
         {{- if $.Values.tls.enabled }}
+        - name: ca-certs
+          emptyDir: {}
         - name: tls-secret
           secret:
             {{- if $.Values.tls.existingSecret }}
             secretName: {{ $.Values.tls.existingSecret }}
             items:
+              {{- with $.Values.tls.existingSecretKeys.caCrt }}
+              - key: {{ . }}
+                path: ca.crt
+              {{- end }}
               - key: {{ default "tls.crt" $.Values.tls.existingSecretKeys.crt }}
                 path: client.crt
               - key: {{ default "tls.key" $.Values.tls.existingSecretKeys.key }}
                 path: client.key
-            {{- else}}
+            {{- else }}
             secretName: {{ printf "%s-crt" $clientFullname }}
             items:
+              - key: ca.crt
+                path: ca.crt
               - key: tls.crt
                 path: client.crt
               - key: tls.key

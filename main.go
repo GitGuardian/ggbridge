@@ -113,10 +113,17 @@ func buildClientCommand() []string {
 	serverAddress := os.Getenv("SERVER_ADDRESS")
 	serverPort := os.Getenv("SERVER_PORT")
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
-	tlsEnabled := getEnv("TLS_ENABLED", "false")
 	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	connectionMinIdle := getEnv("CONNECTION_MIN_IDLE", "0")
 	dnsResolver := os.Getenv("DNS_RESOLVER")
+	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for tlsEnabled:", err)
+	}
+	tlsVerifyCertificate, err := strconv.ParseBool(getEnv("TLS_VERIFY_CERTIFICATE", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for tlsVerifyCertificate:", err)
+	}
 	clientTunnelSocksEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_SOCKS_ENABLED", "false"))
 	if err != nil {
 		log.Fatalf("Invalid boolean for clientTunnelSocksEnabled:", err)
@@ -129,7 +136,7 @@ func buildClientCommand() []string {
 	if err != nil {
 		log.Fatalf("Invalid boolean for serverTunnelSocksEnabled:", err)
 	}
-	serverTunnelTlsEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_TLS_ENABLED", "true"))
+	serverTunnelTlsEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_TLS_ENABLED", "false"))
 	if err != nil {
 		log.Fatalf("Invalid boolean for serverTunnelTlsEnabled:", err)
 	}
@@ -144,7 +151,7 @@ func buildClientCommand() []string {
 		os.Exit(1)
 	}
 
-	if tlsEnabled == "true" {
+	if tlsEnabled {
 		serverProtocol = "wss"
 	}
 
@@ -171,9 +178,14 @@ func buildClientCommand() []string {
 	}
 
 	// Add SSL flags if enabled
-	if tlsEnabled == "true" {
+	if tlsEnabled {
 		cmd = append(cmd, "--tls-certificate", "/certs/client.crt")
 		cmd = append(cmd, "--tls-private-key", "/certs/client.key")
+	}
+
+	// Verify TLS Certificate
+	if tlsVerifyCertificate {
+		cmd = append(cmd, "--tls-verify-certificate")
 	}
 
 	// Add DNS resolver flag if set
@@ -210,7 +222,6 @@ func buildServerCommand() []string {
 	serverListen := getEnv("SERVER_LISTEN", "0.0.0.0")
 	serverPort := os.Getenv("SERVER_PORT")
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
-	tlsEnabled := getEnv("TLS_ENABLED", "false")
 	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	dnsResolver := os.Getenv("DNS_RESOLVER")
 	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
@@ -218,13 +229,17 @@ func buildServerCommand() []string {
 	tunnelSocksPort := getEnv("TUNNEL_SOCKS_PORT", strconv.Itoa(DefaultTunnelSocksPort))
 	tunnelTlsPort := getEnv("TUNNEL_TLS_PORT", strconv.Itoa(DefaultTunnelTlsPort))
 	tunnelTlsRemotePort := getEnv("TUNNEL_TLS_REMOTE_PORT", strconv.Itoa(DefaultTunnelTlsRemotePort))
+	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for tlsEnabled:", err)
+	}
 
 	if serverListen == "" {
 		fmt.Println("Error: SERVER_LISTEN is mandatory")
 		os.Exit(1)
 	}
 
-	if tlsEnabled == "true" {
+	if tlsEnabled {
 		serverProtocol = "wss"
 	}
 
@@ -252,7 +267,7 @@ func buildServerCommand() []string {
 	}
 
 	// Add SSL flags if enabled
-	if tlsEnabled == "true" {
+	if tlsEnabled {
 		cmd = append(cmd, "--tls-client-ca-certs", "/certs/ca.crt")
 		cmd = append(cmd, "--tls-certificate", "/certs/server.crt")
 		cmd = append(cmd, "--tls-private-key", "/certs/server.key")

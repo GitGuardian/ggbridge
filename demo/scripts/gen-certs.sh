@@ -31,6 +31,7 @@ openssl req -new -key server.key -out server.csr \
   -subj "/CN=tunnel.gitguardian.public"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out server.crt -days 365 -sha256 -extfile server.ext
+cat ca.crt >> server.crt
 
 # Generates client certificate
 cat <<EOF > "client.ext"
@@ -42,10 +43,9 @@ EOF
 
 openssl genrsa -out client.key 2048
 openssl req -new -key client.key -out client.csr \
-  -subj "/CN=client"
+  -subj "/CN=client.gitguardian.public"
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out client.crt -days 365 -sha256 -extfile client.ext
-
 
 # Generates GitGuardian server certificate
 cat <<EOF > "gitguardian.ext"

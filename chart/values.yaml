@@ -34,6 +34,23 @@ image:
   # -- Image pull secrets
   pullSecrets: []
 
+# This sets the shell image for init/job containers
+shell:
+  image:
+    # -- Image registry
+    registry: ghcr.io
+    # -- Image repository
+    repository: gitguardian/ggbridge
+    # -- Image tag
+    tag: ""
+    # -- Image digest in the way sha256:aa....
+    digest: ""
+
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+    # -- Image pull secrets
+    pullSecrets: []
+
 serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
@@ -91,6 +108,14 @@ containerSecurityContext:
   # @ignored
   seccompProfile:
     type: "RuntimeDefault"
+
+# -- Array with extra environment variables
+## e.g:
+## extraEnv:
+##   - name: FOO
+##     value: "bar"
+##
+extraEnv: []
 
 # -- Set container requests and limits
 resources:
@@ -193,6 +218,7 @@ networkPolicy:
   ingressNSPodMatchLabels: {}
 
 client:
+  tlsVerifyCert: true
   # -- Pool of open connection to the server, in order to speed up the connection process
   connectionMinIdle: 0
 

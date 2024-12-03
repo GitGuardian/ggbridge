@@ -74,6 +74,8 @@ services:
         aliases:
           # GitGuardian tunnel endpoint
           - tunnel.gitguardian.public
+    extra_hosts:
+      kube-dns.kube-system.svc.cluster.local: "127.0.0.11"
 
 ### Client network
 #######################################
@@ -89,8 +91,7 @@ services:
       SERVER_ADDRESS: "tunnel.gitguardian.public"
       TLS_ENABLED: "true"
       LOG_LEVEL: ${LOG_LEVEL}
-      LOCAL_PROXY_TCP_ENABLED: "true"
-      CURL_CA_BUNDLE: "/certs/ca.crt"
+      CLIENT_TUNNEL_TLS_ENABLED: "true"
     volumes:
        - ./certs:/certs
     networks:
@@ -100,6 +101,8 @@ services:
           - dashboard.gitguardian.public
           - hook.gitguardian.public
       public:
+    extra_hosts:
+      kube-dns.kube-system.svc.cluster.local: "127.0.0.11"
     depends_on:
       - server
 

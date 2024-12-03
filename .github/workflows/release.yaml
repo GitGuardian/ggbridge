@@ -22,7 +22,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ["debug", "prod"]
+        target: ["shell", "prod"]
 
     permissions:
       contents: read

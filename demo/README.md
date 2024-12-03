@@ -40,12 +40,12 @@ docker compose ps
 expected output:
 
 ```shell
-NAME                     IMAGE                              COMMAND                  SERVICE       CREATED         STATUS        PORTS
-ggbridge-client-1        gitguardian/ggbridge:latest         "/usr/bin/ggbridge c…"   client        2 seconds ago   Up 1 second
-ggbridge-developer-1     gitguardian/ggbridge:latest-debug   "sleep infinity"         developer     2 seconds ago   Up 1 second
-ggbridge-gitguardian-1   gitguardian/ggbridge:latest-debug   "/usr/sbin/nginx -c …"   gitguardian   2 seconds ago   Up 1 second   10.19.85.1:80->80/tcp
-ggbridge-server-1        gitguardian/ggbridge:latest         "/usr/bin/ggbridge s…"   server        2 seconds ago   Up 1 second
-ggbridge-vcs-1           gitguardian/ggbridge:latest-debug   "/usr/sbin/nginx -c …"   vcs           2 seconds ago   Up 1 second
+NAME                     IMAGE                                COMMAND                  SERVICE       CREATED         STATUS        PORTS
+ggbridge-client-1        gitguardian/ggbridge:unstable-shell  "/usr/bin/ggbridge c…"   client        2 seconds ago   Up 1 second
+ggbridge-developer-1     gitguardian/ggbridge:unstable-shell  "sleep infinity"         developer     2 seconds ago   Up 1 second
+ggbridge-gitguardian-1   gitguardian/ggbridge:unstable-shell  "/usr/sbin/nginx -c …"   gitguardian   2 seconds ago   Up 1 second   10.19.85.1:80->80/tcp
+ggbridge-server-1        gitguardian/ggbridge:unstable-shell  "/usr/bin/ggbridge s…"   server        2 seconds ago   Up 1 second
+ggbridge-vcs-1           gitguardian/ggbridge:unstable-shell  "/usr/sbin/nginx -c …"   vcs           2 seconds ago   Up 1 second
 ```
 
 - Try to make an HTTP request to the client’s VCS from GitGuardian
@@ -67,7 +67,7 @@ We cannot reach the VCS from GitGuardian because they are on two separate networ
 
 ```shell
 docker compose exec gitguardian \
-  curl --proxy socks5h://proxy.gitguardian.internal https://vcs.client.internal
+  curl --proxy socks5h://proxy.gitguardian.internal:9080 https://vcs.client.internal
 ```
 
 Et voilà! The request is now routed through the **ggbirdge** proxy and the internal VCS DNS name is resolved by the proxy. You should have the following JSON response for the VCS server:
