@@ -159,8 +159,13 @@ tls:
     enabled: false
     # -- Cert-Manager issuer
     issuer:
-      name: selfSigned
+      create: true
+      # -- Set Issuer name to use when create is disabled
+      name: ""
+      # -- Issuer kind ("Issuer" or "ClusterIssuer")
       kind: Issuer
+      # -- Set Issuer spec when create is enabled
+      spec: {}
   existingSecret: ""
   existingSecretKeys:
     # -- Existing secret key storing the Certificate Authority
@@ -177,8 +182,7 @@ tls:
   key: ""
 
 # -- Number of deployments
-# Set to .Values.ha.deploymentCount when .Values.ha.enabled
-deploymentCount: 1
+deploymentCount: 3
 # -- Number of pods for each deployment
 replicaCount: 1
 updateStrategy:
@@ -210,8 +214,6 @@ networkPolicy:
   allowExternal: true
   # -- Add extra ingress rules to the NetworkPolicy
   extraIngress: []
-  # -- Add extra egress rules to the NetworkPolicy
-  extraEgress: []
   # -- Labels to match to allow traffic to the proxy server from other namespaces
   ingressNSMatchLabels: {}
   # -- Pod labels to match to allow traffic to the proxy server from other namespaces

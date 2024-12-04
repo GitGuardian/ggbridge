@@ -24,7 +24,7 @@ spec:
   usages:
     - client auth
   issuerRef:
-    {{- if eq .Values.tls.certManager.issuer.name "selfSigned" }}
+    {{- if .Values.tls.certManager.issuer.create }}
     name: {{ printf "%s-ca" $fullname }}
     {{- else }}
     name: {{ .Values.tls.certManager.issuer.name }}

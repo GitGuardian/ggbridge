@@ -252,11 +252,35 @@ Returns true when proxy is enabled
 */}}
 {{- define "ggbridge.proxy.enabled" -}}
 {{- $result := "false" -}}
-{{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
-{{- if $ports -}}
-  {{- $result = "true" -}}
+{{- $tunnels := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+{{- range $key, $value := $tunnels -}}
+  {{- if $value.enabled -}}
+    {{- $result = "true" -}}
+  {{- end -}}
 {{- end -}}
 {{ $result }}
+{{- end -}}
+
+{{/*
+Returns the list of proxy service ports
+{{ include "ggbridge.proxy.service.ports" $ }}
+*/}}
+{{- define "ggbridge.proxy.service.ports" -}}
+{{- $tunnels := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+{{- range $key, $value := $tunnels -}}
+  {{- if $value.enabled -}}
+    {{- $port := get $.Values.proxy.service.ports $key -}}
+    {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
+- port: {{ $port.port }}
+  targetPort: {{ $key }}
+  {{- with $port.nodePort }}
+  nodePort: {{ . }}
+  {{- end }}
+  protocol: TCP
+  name: {{ $key }}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

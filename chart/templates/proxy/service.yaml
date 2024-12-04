@@ -1,5 +1,7 @@
 {{- if (eq (include "ggbridge.proxy.enabled" .) "true") -}}
-    {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
+  {{- $ports := include "ggbridge.proxy.service.ports" . | fromYaml -}}
+  {{- if $ports -}}
+    {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
 ---
 apiVersion: v1
 kind: Service
@@ -16,21 +18,7 @@ metadata:
 spec:
   type: {{ .Values.proxy.service.type }}
   ports:
-    {{- $ports := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
-    {{- range $key, $value := $ports }}
-      {{- if $value.enabled }}
-        {{- $port := get $.Values.proxy.service.ports $key }}
-        {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
-    - port: {{ $port.port }}
-      targetPort: {{ $key }}
-      {{- with $port.nodePort }}
-      nodePort: {{ . }}
-      {{- end }}
-      protocol: TCP
-      name: {{ $key }}
-          {{- end }}
-        {{- end }}
-    {{- end }}
+    {{- include "ggbridge.proxy.service.ports" . | nindent 4 }}
   selector:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
     {{- if and (eq .Values.mode "server") (gt (.Values.proxy.replicaCount | int) 0) }}
@@ -42,4 +30,5 @@ spec:
         {{- include "ggbridge.client.selectorLabels" . | nindent 4 }}
       {{- end }}
     {{- end }}
+  {{- end }}
 {{- end }}

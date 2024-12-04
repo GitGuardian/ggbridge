@@ -1,7 +1,8 @@
 {{- if .Values.tls.certManager.enabled -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
   {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
-  {{- if eq .Values.tls.certManager.issuer.name "selfSigned" }}
+  {{- if and .Values.tls.certManager.issuer.create }}
+    {{- if (hasKey .Values.tls.certManager.issuer.spec "selfSigned") -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -9,7 +10,7 @@ metadata:
   name: {{ printf "%s-selfsigned" $fullname }}
   namespace: {{ $namespace }}
   labels:
-    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.labels" . | nindent 4 }}
   {{- if .Values.commonAnnotations }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
   {{- end }}
@@ -51,5 +52,20 @@ metadata:
 spec:
   ca:
     secretName: {{ printf "%s-ca" $fullname }}
+    {{- else }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ printf "%s-ca" $fullname }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- .Values.tls.certManager.issuer.spec | nindent 2 }}
+    {{- end }}
   {{- end }}
 {{- end }}

@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "client") .Values.client.tunnels -}}
+{{- if and (eq .Values.mode "client") (eq (include "ggbridge.proxy.enabled" .) "true") -}}
   {{- $clientFullname := include "ggbridge.client.fullname" $ }}
   {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $indexClientFullname := printf "%s-%d" $clientFullname ($index | int) }}
@@ -18,12 +18,11 @@ metadata:
   annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ $.Values.proxy.service.type }}
+  type: ClusterIP
   ports:
     {{- range $key, $value := $.Values.client.tunnels }}
       {{- if $value.enabled }}
         {{- $port := get $.Values.proxy.service.ports $key }}
-        {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
     - port: {{ $port.port }}
       targetPort: {{ $key }}
         {{- with $port.nodePort }}
@@ -31,7 +30,6 @@ spec:
         {{- end }}
       protocol: TCP
       name: {{ $key }}
-        {{- end }}
       {{- end }}
     {{- end }}
   selector:
