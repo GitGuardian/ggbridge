@@ -1,8 +1,8 @@
 {{- if .Values.tls.certManager.enabled -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
   {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
-  {{- if and .Values.tls.certManager.issuer.create }}
-    {{- if (hasKey .Values.tls.certManager.issuer.spec "selfSigned") -}}
+  {{- if .Values.tls.certManager.issuer.spec }}
+    {{- if hasKey .Values.tls.certManager.issuer.spec "selfSigned" -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer

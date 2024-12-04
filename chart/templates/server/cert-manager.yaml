@@ -26,7 +26,7 @@ spec:
   usages:
     - server auth
   issuerRef:
-    {{- if .Values.tls.certManager.create }}
+    {{- if .Values.tls.certManager.spec }}
     name: {{ printf "%s-ca" $fullname }}
     {{- else }}
     name: {{ .Values.tls.certManager.issuer.name }}
