@@ -26,7 +26,7 @@ spec:
           {{- range $port.hosts }}
     - match: {{ printf "HostSNI(`%s`)" .host }}
       services:
-        - name: {{ $.Values.subdomain }}
+        - name: {{ include "ggbridge.proxy.serviceName" $ }}
           port: {{ $port.port }}
           {{- end }}
         {{- end }}
