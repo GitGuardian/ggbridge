@@ -63,6 +63,7 @@ tls:
   enabled: true
   existingSecret: ggbridge-client-crt
   existingSecretKeys:
+    caCrt: ca.crt
     crt: tls.crt
     key: tls.key
 ```
