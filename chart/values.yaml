@@ -61,18 +61,6 @@ serviceAccount:
   # -- The name of the service account to use
   name: ""
 
-# -- RBAC parameters
-rbac:
-  # -- CertManager role
-  certManager:
-    # -- Whether to create & use certManager RBAC resources or not
-    create: false
-    # -- Grants certManager permissions to the sepcfied subjects
-    subjects: []
-      # - kind: ServiceAccount
-      #   name: gim
-      #   namespace: gim
-
 podSecurityContext:
   # -- Enable Pod security Context in deployments
   enabled: true
@@ -157,6 +145,18 @@ tls:
   certManager:
     # -- Manage certifcates with cert-manager
     enabled: false
+    # -- cert-manager namespace
+    namespace: cert-manager
+    # -- cert-manager service account name
+    serviceAccount: cert-manager
+    # -- Create cert-manager RBAC resources
+    rbac:
+      create: true
+      # -- Grants cert-manager permissions to the sepcfied subjects (Deprecated)
+      subjects: []
+        # - kind: ServiceAccount
+        #   name: gim
+        #   namespace: gim
     # -- Cert-Manager issuer
     issuer:
       # -- Set Issuer to use

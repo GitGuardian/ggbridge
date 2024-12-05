@@ -1,5 +1,43 @@
-{{- if .Values.rbac.certManager.create }}
+{{- if .Values.tls.certManager.rbac.create }}
   {{- $fullname := include "ggbridge.fullname" . }}
+  {{- if hasKey .Values.tls.certManager.issuer.spec "vault" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ printf "%s-issuer" $fullname }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.serviceAccount.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.serviceAccount.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ printf "%s-issuer" $fullname }}
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ['']
+    resources: ['serviceaccounts/token']
+    resourceNames: [{{ printf "%s-issuer" $fullname | quote }}]
+    verbs: ['create']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "%s-issuer" $fullname }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.tls.certManager.serviceAccount }}
+    namespace: {{ .Values.tls.certManager.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ printf "%s-issuer" $fullname }}
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -33,7 +71,7 @@ rules:
       - 'list'
       - 'watch'
       - 'create'
-  {{- if .Values.rbac.certManager.subjects }}
+  {{- if .Values.tls.certManager.rbac.subjects }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -44,7 +82,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: {{ printf "%s-cert-manager" $fullname }}
-{{- with .Values.rbac.certManager.subjects }}
+{{- with .Values.tls.certManager.rbac.subjects }}
 subjects:
   {{- toYaml . | nindent 2 }}
 {{- end }}
