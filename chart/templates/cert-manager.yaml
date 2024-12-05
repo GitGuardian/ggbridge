@@ -65,7 +65,7 @@ metadata:
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- .Values.tls.certManager.issuer.spec | nindent 2 }}
+  {{- toYaml .Values.tls.certManager.issuer.spec | nindent 2 }}
     {{- end }}
   {{- end }}
 {{- end }}

@@ -19,14 +19,14 @@ spec:
   duration: 17520h # 2 years
   privateKey:
     algorithm: RSA
-    size: 2048
+    size: 4096
   commonName: {{ include "ggbridge.hostname" . }}
   dnsNames:
     - {{ include "ggbridge.hostname" . }}
   usages:
     - server auth
   issuerRef:
-    {{- if .Values.tls.certManager.spec }}
+    {{- if .Values.tls.certManager.issuer.spec }}
     name: {{ printf "%s-ca" $fullname }}
     {{- else }}
     name: {{ .Values.tls.certManager.issuer.name }}

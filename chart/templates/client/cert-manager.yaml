@@ -19,8 +19,8 @@ spec:
   duration: 17520h # 2 years
   privateKey:
     algorithm: RSA
-    size: 2048
-  commonName: {{ $clientFullname }}
+    size: 4096
+  commonName: {{ printf "client.%s" (include "ggbridge.hostname" .) }}
   usages:
     - client auth
   issuerRef:
