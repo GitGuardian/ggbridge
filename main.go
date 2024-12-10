@@ -200,7 +200,7 @@ func buildClientCommand() []string {
 
 	// Enables client to server tcp tunnel
 	if clientTunnelTlsEnabled {
-		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort))
+		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
 	}
 
 	// Enables server to client proxy tunnel
@@ -210,7 +210,7 @@ func buildClientCommand() []string {
 
 	// Enables server to client tcp tunnel
 	if serverTunnelTlsEnabled {
-		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort))
+		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
 	}
 
 	return cmd

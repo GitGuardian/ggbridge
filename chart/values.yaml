@@ -382,7 +382,9 @@ proxy:
         remoteContainerPort: 8443
         # -- Defines whether the TCP port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
-        # --
+        # -- When true, enables proxy protocol v2
+        proxyProtocolEnabled: true
+        # -- Specify hosts whitelist
         hosts:
           - host: api.gitguardian.com
             port: 443
