@@ -6,7 +6,7 @@ With ggbirdge, organizations can maintain their internal infrastructure and secu
 
 ## How it Works
 
-![ggbridge](./docs/assets/ggbridge.drawio.png)
+![ggbridge](./docs/images/ggbridge.drawio.png)
 
 **ggbridge** is composed of two main parts:
 
