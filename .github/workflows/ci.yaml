@@ -26,7 +26,7 @@ env:
 
 jobs:
   docker-unstable:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
 
     name: Push Docker image
     runs-on: ubuntu-latest
@@ -129,7 +129,8 @@ jobs:
               --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
 
   helm-unstable:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
+
     name: Push Helm Chart
     runs-on: ubuntu-latest
 
