@@ -1,6 +1,6 @@
 # ggbridge demo
 
-![ggbridge demo](../docs/assets/ggbridge_demo.drawio.png)
+![ggbridge demo](../docs/images/ggbridge_demo.drawio.png)
 
 Here is a demo built with [Docker Compose](https://docs.docker.com/compose/) to simulate the deployment of a **ggbridge** tunnel between a client’s network and the GitGuardian platform. The ggbridge proxy allows the GitGuardian platform to securely access the client’s Version Control Systems without requiring direct exposure of the client’s internal services to the internet.
 
