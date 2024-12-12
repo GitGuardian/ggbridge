@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  DAGGER_VERSION: "0.14.0"
+  DAGGER_VERSION: "0.15.1"
   DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
   DOCKER_REPOSITORY: ${{ vars.DOCKER_REPOSITORY }}
   DOCKER_REGISTRY_USERNAME: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Publish Docker image to GitHub
-        uses: dagger/dagger-for-github@v7.0.1
+        uses: dagger/dagger-for-github@v7.0.2
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -43,7 +43,7 @@ jobs:
         with:
           version: ${{ env.DAGGER_VERSION }}
           engine-stop: false
-          module: github.com/opopops/daggerverse/docker@v1.2.0
+          module: github.com/opopops/daggerverse/docker@v1.2.1
           verb: call
           args: |
             --registry=ghcr.io \
@@ -62,7 +62,7 @@ jobs:
               --private-key=env:COSIGN_PRIVATE_KEY \
 
       - name: Copy Docker image to Docker Hub
-        uses: dagger/dagger-for-github@v7.0.1
+        uses: dagger/dagger-for-github@v7.0.2
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -71,7 +71,7 @@ jobs:
         with:
           version: ${{ env.DAGGER_VERSION }}
           engine-stop: false
-          module: github.com/opopops/daggerverse/crane@v1.2.0
+          module: github.com/opopops/daggerverse/crane@v1.2.1
           verb: call
           args: |
             with-registry-auth \
@@ -90,12 +90,12 @@ jobs:
               --tag=latest \
 
       - name: Scan Docker image
-        uses: dagger/dagger-for-github@v7.0.1
+        uses: dagger/dagger-for-github@v7.0.2
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ env.DAGGER_VERSION }}
-          module: github.com/opopops/daggerverse/grype@v1.2.0
+          module: github.com/opopops/daggerverse/grype@v1.2.1
           verb: call
           args: |
             with-registry-auth \
@@ -121,11 +121,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint
-        uses: dagger/dagger-for-github@v7.0.1
+        uses: dagger/dagger-for-github@v7.0.2
         with:
           version: ${{ env.DAGGER_VERSION }}
           engine-stop: false
-          module: github.com/opopops/daggerverse/helm@v1.2.0
+          module: github.com/opopops/daggerverse/helm@v1.2.1
           verb: call
           args: |
             lint \
@@ -133,12 +133,12 @@ jobs:
               --strict \
 
       - name: Publish Helm chart
-        uses: dagger/dagger-for-github@v7.0.1
+        uses: dagger/dagger-for-github@v7.0.2
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ env.DAGGER_VERSION }}
-          module: github.com/opopops/daggerverse/helm@v1.2.0
+          module: github.com/opopops/daggerverse/helm@v1.2.1
           verb: call
           args: |
             package-push \
