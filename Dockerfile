@@ -18,7 +18,7 @@ RUN apk add --no-cache \
 ### WSTunnel
 FROM base AS wstunnel
 
-ARG WSTUNNEL_VERSION="10.1.6"
+ARG WSTUNNEL_VERSION="10.1.7"
 ENV WSTUNNEL_VERSION=$WSTUNNEL_VERSION
 RUN curl -fsSL https://github.com/erebe/wstunnel/releases/download/v${WSTUNNEL_VERSION}/wstunnel_${WSTUNNEL_VERSION}_${TARGETOS}_${TARGETARCH}.tar.gz | \
   tar xvzf - -C /usr/bin wstunnel && \
