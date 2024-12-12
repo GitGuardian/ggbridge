@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 env:
   DAGGER_VERSION: "0.15.1"
   DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
@@ -23,12 +29,6 @@ jobs:
     strategy:
       matrix:
         target: ["shell", "prod"]
-
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
 
     steps:
       - name: Checkout
@@ -109,12 +109,6 @@ jobs:
   helm:
     name: Push Helm Chart
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
 
     steps:
       - name: Checkout

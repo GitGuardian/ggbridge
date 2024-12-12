@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches:
       - '*'
@@ -13,12 +12,28 @@ on:
       - 'examples/**'
       - 'LICENSE'
       - 'README.md'
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
   workflow_dispatch:
     inputs:
       runner:
         description: "Specify the runner to use"
         required: true
         default: "ubuntu-latest"
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   DAGGER_VERSION: "0.15.1"
@@ -39,12 +54,6 @@ jobs:
     strategy:
       matrix:
         target: ["shell", "prod"]
-
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
 
     steps:
       - name: Checkout
@@ -138,12 +147,6 @@ jobs:
 
     name: Push Helm Chart
     runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
-
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
 
     steps:
       - name: Checkout
