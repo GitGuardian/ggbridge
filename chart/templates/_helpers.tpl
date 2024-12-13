@@ -426,6 +426,18 @@ Returns server service annotations
 {{- end -}}
 
 {{/*
+Returns true when traffic routing is handled by K8S (Ingress, Gateway, ...)
+{{ include "ggbridge.server.trafficRouting.enabled" $ }}
+*/}}
+{{- define "ggbridge.server.trafficRouting.enabled" -}}
+{{- $result := "false" -}}
+{{ if or .Values.server.ingress.enabled .Values.server.gateway.enabled .Values.server.istio.enabled }}
+{{- $result = "true" -}}
+{{- end -}}
+{{ $result }}
+{{- end -}}
+
+{{/*
 Returns server ingress annotations
 {{ include "ggbridge.server.ingress.annotations" $ }}
 */}}
@@ -443,13 +455,7 @@ Returns server ingress annotations
 {{- else if eq .Values.server.ingress.controller "nginx" -}}
   {{- if .Values.tls.enabled -}}
     {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream" "false" -}}
-    {{- if eq (lower .Values.tls.mode) "passthrough" -}}
-      {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTPS" -}}
-      {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-passthrough" "true" -}}
-      {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
-    {{- else -}}
-      {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTP" -}}
-    {{- end -}}
+    {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTP" -}}
     {{- if eq (lower .Values.tls.mode) "mutual" -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-secret" (printf "%s/%s-crt" .Release.Namespace $serverFullname) -}}
       {{- $_ := set $annotations "nginx.ingress.kubernetes.io/auth-tls-verify-client" "on" -}}
@@ -480,18 +486,6 @@ Returns proxy ingress annotations
 {{- end -}}
 {{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
-{{- end -}}
-
-{{/*
-Returns gateway tls mode
-{{ include "ggbridge.server.gateway.tlsMode" $ }}
-*/}}
-{{- define "ggbridge.server.gateway.tlsMode" -}}
-{{- $tlsMode := "Terminate" -}}
-{{- if eq (lower .Values.tls.mode) "passthrough" -}}
-{{- $tlsMode = "Passthrough" -}}
-{{- end -}}
-{{ $tlsMode }}
 {{- end -}}
 
 {{/*

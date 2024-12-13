@@ -24,14 +24,12 @@ spec:
         name: https
         protocol: HTTPS
       tls:
-        mode: {{ upper .Values.tls.mode }}
+        mode: {{ ternary "MUTUAL" "SIMPLE" (eq (lower .Values.tls.mode) "mutual") }}
         minProtocolVersion: {{ .Values.server.istio.gateway.tls.minProtocolVersion }}
-        {{- if ne .Values.tls.mode "passthrough" }}
-          {{- if .Values.tls.existingSecret }}
+        {{- if .Values.tls.existingSecret }}
         credentialName: {{ .Values.tls.existingSecret }}
-          {{- else }}
+        {{- else }}
         credentialName: {{ printf "%s-crt" $serverFullname }}
-          {{- end }}
         {{- end }}
     {{- else }}
     - port:

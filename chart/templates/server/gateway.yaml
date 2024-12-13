@@ -44,20 +44,18 @@ spec:
       {{- if .Values.tls.enabled }}
       name: https
       port: {{ .Values.server.gateway.gateway.ports.https }}
+      protocol: HTTPS
       tls:
-        mode: {{ include "ggbridge.server.gateway.tlsMode" . }}
-        {{- if eq (lower .Values.tls.mode) "passthrough" }}
-      protocol: TLS
-        {{- else }}
+        mode: Terminate
         certificateRefs:
           {{- if .Values.tls.existingSecret }}
           - name: {{ .Values.tls.existingSecret }}
           {{- else }}
           - name: {{ printf "%s-crt" $serverFullname }}
           {{- end }}
+        {{- if (eq (lower .Values.tls.mode) "mutual") }}
         options:
-          gateway.istio.io/tls-terminate-mode: MUTUAL
-      protocol: HTTPS
+          clientCertificateRef: {{ printf "%s-crt" $serverFullname }}
         {{- end }}
       {{- else }}
       name: http
@@ -66,13 +64,8 @@ spec:
       {{- end }}
 {{- end }}
 ---
-{{- if eq (lower .Values.tls.mode) "passthrough" }}
-apiVersion: gateway.networking.k8s.io/v1alpha2
-kind: TLSRoute
-{{- else }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
-{{- end }}
 metadata:
   name: {{ $serverFullname }}
   namespace: {{ .Release.Namespace }}
@@ -98,7 +91,6 @@ spec:
     - backendRefs:
         - name: {{ $serverFullname }}
           port: {{ $.Values.server.service.ports.ws.port }}
-      {{- if ne (lower .Values.tls.mode) "passthrough" }}
       matches:
         - path:
             type: PathPrefix
@@ -114,5 +106,4 @@ spec:
         - name: {{ $indexServerFullname }}
           port: {{ $.Values.server.service.ports.ws.port }}
         {{- end }}
-      {{- end }}
 {{- end }}

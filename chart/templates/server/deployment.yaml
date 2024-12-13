@@ -67,11 +67,9 @@ spec:
               value: "0.0.0.0"
             - name: SERVER_PORT
               value: {{$.Values.server.service.ports.ws.containerPort | quote }}
-            {{- if $.Values.tls.enabled }}
-              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+            {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
             - name: TLS_ENABLED
               value: "true"
-              {{- end }}
             {{- end }}
             {{- with $.Values.logLevel }}
             - name: LOG_LEVEL
@@ -107,12 +105,10 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /var/run
-            {{- if $.Values.tls.enabled }}
-              {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+            {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
-              {{- end }}
             {{- end }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
@@ -153,8 +149,7 @@ spec:
           configMap:
             name: {{ $serverFullname }}
             defaultMode: 420
-      {{- if $.Values.tls.enabled }}
-        {{- if or (eq (lower $.Values.tls.mode) "passthrough") (and (not $.Values.server.ingress.enabled) (not $.Values.server.gateway.enabled) (not $.Values.server.istio.enabled)) }}
+      {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
         - name: tls-secret
           secret:
             {{- if $.Values.tls.existingSecret }}
@@ -179,7 +174,6 @@ spec:
                 path: server.key
             {{- end }}
             defaultMode: 420
-        {{- end }}
       {{- end }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
