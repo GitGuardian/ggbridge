@@ -23,7 +23,7 @@ on:
       runner:
         description: "Specify the runner to use"
         required: true
-        default: "ubuntu-latest"
+        default: "self-hosted"
 
 permissions:
   contents: read
@@ -49,7 +49,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     name: Push Docker image
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
 
     strategy:
       matrix:
@@ -146,7 +146,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     name: Push Helm Chart
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
 
     steps:
       - name: Checkout
