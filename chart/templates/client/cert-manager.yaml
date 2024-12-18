@@ -20,7 +20,7 @@ spec:
   privateKey:
     algorithm: RSA
     size: 4096
-  commonName: {{ printf "client.%s" (include "ggbridge.hostname" .) }}
+  commonName: {{ include "ggbridge.hostname" . }}
   usages:
     - client auth
   issuerRef:
