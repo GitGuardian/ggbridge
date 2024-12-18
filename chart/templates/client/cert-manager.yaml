@@ -1,6 +1,6 @@
 {{- if .Values.tls.certManager.enabled -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
-  {{- $namespace := ternary (default .Release.namespace .Values.server.istio.gateway.namespace) .Release.namespace .Values.server.istio.enabled -}}
+  {{- $namespace := ternary (default .Release.Namespace .Values.server.istio.gateway.namespace) .Release.Namespace .Values.server.istio.enabled -}}
   {{- $clientFullname := include "ggbridge.client.fullname" $ -}}
 ---
 apiVersion: cert-manager.io/v1
