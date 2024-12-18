@@ -209,10 +209,8 @@ spec:
             {{- if $.Values.tls.existingSecret }}
             secretName: {{ $.Values.tls.existingSecret }}
             items:
-              {{- with $.Values.tls.existingSecretKeys.caCrt }}
-              - key: {{ . }}
+              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
                 path: ca.crt
-              {{- end }}
               - key: {{ default "tls.crt" $.Values.tls.existingSecretKeys.crt }}
                 path: client.crt
               - key: {{ default "tls.key" $.Values.tls.existingSecretKeys.key }}
