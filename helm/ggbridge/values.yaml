@@ -121,6 +121,8 @@ tolerations: []
 # -- Topology spread constraints for pod assignment
 topologySpreadConstraints: []
 
+terminationGracePeriodSeconds: 300
+
 # -- Deployment mode: "client" or "server"
 mode: client
 

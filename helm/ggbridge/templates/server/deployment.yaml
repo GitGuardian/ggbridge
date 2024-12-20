@@ -138,6 +138,7 @@ spec:
               readOnly: true
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       volumes:
         - name: nginx-cache
           emptyDir: {}

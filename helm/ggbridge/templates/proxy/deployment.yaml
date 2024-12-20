@@ -87,6 +87,7 @@ spec:
               readOnly: true
           resources:
             {{- toYaml $.Values.proxy.resources | nindent 12 }}
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       volumes:
         - name: cache
           emptyDir: {}
