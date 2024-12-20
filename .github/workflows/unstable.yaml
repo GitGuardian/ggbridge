@@ -1,0 +1,178 @@
+name: Unstable
+
+on:
+  push:
+    branches:
+      - 'main'
+    tags-ignore:
+      - '*'
+    paths-ignore:
+      - 'demo/**'
+      - 'docs/**'
+      - 'examples/**'
+      - 'LICENSE'
+      - 'README.md'
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Specify the runner to use"
+        required: true
+        default: "ubuntu-latest"
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  DAGGER_VERSION: "0.15.1"
+  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
+  DOCKER_REPOSITORY: ${{ vars.DOCKER_REPOSITORY }}
+  DOCKER_REGISTRY_USERNAME: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+  DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+  GH_DOCKER_REPOSITORY: ${{ vars.GH_DOCKER_REPOSITORY }}
+  GH_HELM_REPOSITORY: ${{ vars.GH_HELM_REPOSITORY }}
+
+jobs:
+  docker-unstable:
+    if: github.ref == 'refs/heads/main'
+
+    name: Push Docker image
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
+
+    strategy:
+      matrix:
+        target: ["shell", "prod"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Set image tag
+        id: tag
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            if [[ "${{ matrix.target }}" == "shell" ]]; then
+              echo "tag=unstable-shell" >> $GITHUB_ENV
+            else
+              echo "tag=unstable" >> $GITHUB_ENV
+            fi
+          else
+            if [[ "${{ matrix.target }}" == "shell" ]]; then
+              echo "tag=build-${{ env.short_sha }}-shell" >> $GITHUB_ENV
+            else
+              echo "tag=build-${{ env.short_sha }}" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Publish Docker image to Github
+        uses: dagger/dagger-for-github@v7.0.3
+        env:
+          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ env.DAGGER_VERSION }}
+          engine-stop: false
+          module: github.com/opopops/daggerverse/docker@v1.2.1
+          verb: call
+          args: |
+            --registry=ghcr.io \
+            --username=${{ github.actor }} \
+            --password=env:GH_REGISTRY_PASSWORD \
+            build \
+              --context=. \
+              --target=${{ matrix.target }} \
+              --platform=linux/amd64,linux/arm64 \
+            publish \
+              --image=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
+            ref \
+
+      - name: Copy Docker image to Docker Hub
+        uses: dagger/dagger-for-github@v7.0.3
+        env:
+          DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ env.DAGGER_VERSION }}
+          engine-stop: false
+          module: github.com/opopops/daggerverse/crane@v1.2.1
+          verb: call
+          args: |
+            with-registry-auth \
+              --address=ghcr.io \
+              --username=${{ github.actor }} \
+              --secret=env:GH_REGISTRY_PASSWORD \
+            with-registry-auth \
+              --address=$DOCKER_REGISTRY \
+              --username=$DOCKER_REGISTRY_USERNAME \
+              --secret=env:DOCKER_REGISTRY_PASSWORD \
+            with-copy \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
+              --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.tag }} \
+
+      - name: Scan Docker image
+        uses: dagger/dagger-for-github@v7.0.3
+        env:
+          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ env.DAGGER_VERSION }}
+          module: github.com/opopops/daggerverse/grype@v1.2.1
+          verb: call
+          args: |
+            with-registry-auth \
+              --address=ghcr.io \
+              --username=${{ github.actor }} \
+              --secret=env:GH_REGISTRY_PASSWORD \
+            scan \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
+
+  helm-unstable:
+    if: github.ref == 'refs/heads/main'
+
+    name: Push Helm Chart
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Lint
+        uses: dagger/dagger-for-github@v7.0.3
+        with:
+          version: ${{ env.DAGGER_VERSION }}
+          engine-stop: false
+          module: github.com/opopops/daggerverse/helm@v1.2.1
+          verb: call
+          args: |
+            lint \
+              --path=helm/ggbridge \
+              --strict \
+
+      - name: Publish Helm chart
+        uses: dagger/dagger-for-github@v7.0.3
+        env:
+          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: ${{ env.DAGGER_VERSION }}
+          module: github.com/opopops/daggerverse/helm@v1.2.1
+          verb: call
+          args: |
+            package-push \
+              --path=helm/ggbridge \
+              --version="0.0.0" \
+              --app-version="unstable" \
+              --registry=ghcr.io/${GH_HELM_REPOSITORY} \
+              --username=${{ github.actor }} \
+              --password=env:GH_REGISTRY_PASSWORD \
