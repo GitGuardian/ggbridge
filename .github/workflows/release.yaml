@@ -123,7 +123,7 @@ jobs:
           verb: call
           args: |
             lint \
-              --path chart \
+              --path=helm/ggbridge \
               --strict \
 
       - name: Publish Helm chart
@@ -136,7 +136,7 @@ jobs:
           verb: call
           args: |
             package-push \
-              --path=chart \
+              --path=helm/ggbridge \
               --app-version="${{ github.ref_name }}" \
               --registry=ghcr.io/${GH_HELM_REPOSITORY} \
               --username=${{ github.actor }} \

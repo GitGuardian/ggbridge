@@ -56,7 +56,6 @@ services:
 Here is an example of a Helm values file to deploy the ggbridge client:
 
 ```yaml
-mode: client
 subdomain: my-subdomain
 
 tls:

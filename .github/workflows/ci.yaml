@@ -165,7 +165,7 @@ jobs:
           verb: call
           args: |
             lint \
-              --path chart \
+              --path=helm/ggbridge \
               --strict \
 
       - name: Publish Helm chart
@@ -178,7 +178,7 @@ jobs:
           verb: call
           args: |
             package-push \
-              --path=chart \
+              --path=helm/ggbridge \
               --version="0.0.0" \
               --app-version="unstable" \
               --registry=ghcr.io/${GH_HELM_REPOSITORY} \
