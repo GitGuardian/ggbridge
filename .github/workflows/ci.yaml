@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: Publish Docker image to Github
-        uses: dagger/dagger-for-github@v7.0.2
+        uses: dagger/dagger-for-github@v7.0.3
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -102,7 +102,7 @@ jobs:
             ref \
 
       - name: Copy Docker image to Docker Hub
-        uses: dagger/dagger-for-github@v7.0.2
+        uses: dagger/dagger-for-github@v7.0.3
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -127,7 +127,7 @@ jobs:
               --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.tag }} \
 
       - name: Scan Docker image
-        uses: dagger/dagger-for-github@v7.0.2
+        uses: dagger/dagger-for-github@v7.0.3
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -157,7 +157,7 @@ jobs:
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Lint
-        uses: dagger/dagger-for-github@v7.0.2
+        uses: dagger/dagger-for-github@v7.0.3
         with:
           version: ${{ env.DAGGER_VERSION }}
           engine-stop: false
@@ -169,7 +169,7 @@ jobs:
               --strict \
 
       - name: Publish Helm chart
-        uses: dagger/dagger-for-github@v7.0.2
+        uses: dagger/dagger-for-github@v7.0.3
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
