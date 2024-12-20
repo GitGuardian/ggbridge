@@ -46,6 +46,7 @@ services:
       TLS_ENABLED: "true"
       LOG_LEVEL: INFO
     volumes:
+      - ./certs/client.key:/certs/ca.crt:ro
       - ./certs/client.crt:/certs/client.crt:ro
       - ./certs/client.key:/certs/client.key:ro
     restart: on-failure
