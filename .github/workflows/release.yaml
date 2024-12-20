@@ -137,6 +137,7 @@ jobs:
           args: |
             package-push \
               --path=helm/ggbridge \
+              --version="${{ github.ref_name }}" \
               --app-version="${{ github.ref_name }}" \
               --registry=ghcr.io/${GH_HELM_REPOSITORY} \
               --username=${{ github.actor }} \
