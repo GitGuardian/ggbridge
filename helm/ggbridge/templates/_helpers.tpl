@@ -64,7 +64,7 @@ helm.sh/chart: {{ include "ggbridge.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-tenant: {{ .Values.subdomain }}
+tenant: {{ include "ggbridge.subdomain" . }}
 {{- with .Values.commonLabels }}
 {{ tpl (toYaml .) $ }}
 {{- end -}}
@@ -232,7 +232,15 @@ Returns hostname
 {{ include "ggbridge.hostname" $ }}
 */}}
 {{- define "ggbridge.hostname" -}}
-{{ printf "%s.%s" .Values.subdomain .Values.domain }}
+{{ default (ternary "" (printf "%s.%s" .Values.subdomain .Values.domain) (empty .Values.subdomain)) .Values.hostname }}
+{{- end }}
+
+{{/*
+Returns subdomain
+{{ include "ggbridge.subdomain" $ }}
+*/}}
+{{- define "ggbridge.subdomain" -}}
+{{ default (split "." .Values.hostname)._0 .Values.subdomain }}
 {{- end }}
 
 {{/*
@@ -242,7 +250,7 @@ Returns proxy service name
 {{- define "ggbridge.proxy.serviceName" -}}
 {{- $name := .Values.proxy.service.name -}}
 {{- if not $name -}}
-{{ ternary .Values.subdomain (include "ggbridge.proxy.fullname" .) (eq .Values.mode "server") }}
+{{ ternary (include "ggbridge.subdomain" .) (include "ggbridge.proxy.fullname" .) (eq .Values.mode "server") }}
 {{- end -}}
 {{- end -}}
 
@@ -301,7 +309,7 @@ podAntiAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
         topologyKey: "topology.kubernetes.io/zone"
     - weight: 10
       podAffinityTerm:
@@ -314,7 +322,7 @@ podAntiAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
         topologyKey: "kubernetes.io/hostname"
 podAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
@@ -329,7 +337,7 @@ podAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
             - key: index
               operator: In
               values:
@@ -355,7 +363,7 @@ podAntiAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
         topologyKey: "topology.kubernetes.io/zone"
     - weight: 10
       podAffinityTerm:
@@ -368,7 +376,7 @@ podAntiAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
         topologyKey: "kubernetes.io/hostname"
 podAffinity:
   preferredDuringSchedulingIgnoredDuringExecution:
@@ -383,7 +391,7 @@ podAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
             - key: index
               operator: In
               values:
@@ -400,7 +408,7 @@ podAffinity:
             - key: tenant
               operator: In
               values:
-                - {{ .context.Values.subdomain }}
+                - {{ include "ggbridge.subdomain" .context }}
             - key: index
               operator: In
               values:

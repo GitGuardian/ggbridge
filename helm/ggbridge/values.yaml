@@ -130,6 +130,8 @@ mode: client
 domain: gitguardian.com
 # -- Subdomain
 subdomain: ""
+# -- Hostname
+hostname: ""
 
 # -- Set log level
 logLevel: INFO
