@@ -104,8 +104,6 @@ jobs:
       - name: Copy Docker image to Docker Hub
         uses: dagger/dagger-for-github@v7.0.3
         env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:

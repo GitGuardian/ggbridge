@@ -64,8 +64,6 @@ jobs:
       - name: Copy Docker image to Docker Hub
         uses: dagger/dagger-for-github@v7.0.3
         env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -105,40 +103,3 @@ jobs:
             scan \
               --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ github.ref_name }} \
               --fail-on=high \
-
-  helm:
-    name: Push Helm Chart
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Lint
-        uses: dagger/dagger-for-github@v7.0.3
-        with:
-          version: ${{ env.DAGGER_VERSION }}
-          engine-stop: false
-          module: github.com/opopops/daggerverse/helm@v1.2.1
-          verb: call
-          args: |
-            lint \
-              --path=helm/ggbridge \
-              --strict \
-
-      - name: Publish Helm chart
-        uses: dagger/dagger-for-github@v7.0.3
-        env:
-          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          version: ${{ env.DAGGER_VERSION }}
-          module: github.com/opopops/daggerverse/helm@v1.2.1
-          verb: call
-          args: |
-            package-push \
-              --path=helm/ggbridge \
-              --version="${{ github.ref_name }}" \
-              --app-version="${{ github.ref_name }}" \
-              --registry=ghcr.io/${GH_HELM_REPOSITORY} \
-              --username=${{ github.actor }} \
-              --password=env:GH_REGISTRY_PASSWORD \
