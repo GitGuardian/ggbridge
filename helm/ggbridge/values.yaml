@@ -379,7 +379,6 @@ proxy:
         containerPort: 9080
         # -- Defines whether the SOCKS port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
-        hosts: []
       tls:
         port: 443
         containerPort: 9443
@@ -400,7 +399,6 @@ proxy:
         remoteContainerPort: 8081
         # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
         exposed: false
-        hosts: []
 
   # -- Network Policy parameters
   networkPolicy:
