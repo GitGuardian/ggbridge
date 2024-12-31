@@ -1,0 +1,56 @@
+{{- $tunnel :=  ternary .Values.server.tunnels.tls .Values.client.tunnels.tls (eq .Values.mode "server") -}}
+{{- $servicePort :=  .Values.proxy.service.ports.tls -}}
+{{- if and .Values.proxy.ingress.tls.enabled $tunnel.enabled -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+  {{- if (eq .Values.proxy.ingress.tls.controller "traefik") }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ printf "%s-tls" $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.proxy.ingress.tls.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.tls.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  routes:
+    {{- range $tunnel.listeners }}
+    - match: {{ printf "HostSNI(`%s`)" .hostname }}
+      services:
+        - name: {{ include "ggbridge.proxy.serviceName" $ }}
+          port: {{ $servicePort.port }}
+    {{- end }}
+  tls:
+    passthrough: true
+  {{- else }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-tls" $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  annotations: {{ include "ggbridge.proxy.ingress.tls.annotations" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.proxy.ingress.tls.className | quote }}
+  rules:
+    {{- range $tunnel.listeners }}
+    - host: {{ .hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "ggbridge.proxy.serviceName" $ }}
+                port:
+                  number: {{ $servicePort.port }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -51,7 +51,7 @@ spec:
       securityContext:
         {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
-      {{- if and $.Values.tls.enabled $.Values.client.tlsVerifyCert }}
+      {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) }}
       initContainers:
         - name: ca
           {{- if $.Values.containerSecurityContext.enabled }}
@@ -63,7 +63,11 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+              set -x
               cat $SSL_CERT_FILE > /ca-certs/ca-bundle.crt
+              if [ -s /ca-bundle/ca-bundle.crt ]; then
+                cat /ca-bundle/ca-bundle.crt  >> /ca-certs/ca-bundle.crt
+              fi
               if [ -s /certs/ca.crt ]; then
                 cat /certs/ca.crt  >> /ca-certs/ca-bundle.crt
               fi
@@ -71,9 +75,16 @@ spec:
           volumeMounts:
             - name: ca-certs
               mountPath: /ca-certs
+            {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+            - name: ca-bundle
+              mountPath: /ca-bundle
+              readOnly: true
+            {{- end }}
+            {{- if $.Values.tls.enabled }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
+            {{- end }}
       {{- end }}
       containers:
         - name: ggbridge
@@ -104,7 +115,7 @@ spec:
             - name: TLS_ENABLED
               value: {{ $.Values.tls.enabled | quote }}
             - name: TLS_VERIFY_CERTIFICATE
-              value: {{ (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) | quote }}
+              value: {{ (and $.Values.tls.enabled $.Values.tls.verifyCert) | quote }}
             - name: NGINX_EMBEDDED
               value: "false"
             {{- with $.Values.dnsResolver }}
@@ -123,21 +134,29 @@ spec:
               value: {{ $.Values.client.tunnels.socks.enabled | quote }}
             - name: CLIENT_TUNNEL_TLS_ENABLED
               value: {{ $.Values.client.tunnels.tls.enabled | quote }}
+            - name: CLIENT_TUNNEL_WEB_ENABLED
+              value: {{ $.Values.client.tunnels.web.enabled | quote }}
             - name: SERVER_TUNNEL_SOCKS_ENABLED
               value: {{ $.Values.server.tunnels.socks.enabled | quote }}
             - name: SERVER_TUNNEL_TLS_ENABLED
               value: {{ $.Values.server.tunnels.tls.enabled | quote }}
+            - name: SERVER_TUNNEL_WEB_ENABLED
+              value: {{ $.Values.server.tunnels.web.enabled | quote }}
+            - name: TUNNEL_HEALTH_PORT
+              value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
+            - name: TUNNEL_HEALTH_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.health.remoteContainerPort | quote }}
             - name: TUNNEL_SOCKS_PORT
               value: {{ $.Values.proxy.service.ports.socks.containerPort | quote }}
             - name: TUNNEL_TLS_PORT
               value: {{ $.Values.proxy.service.ports.tls.containerPort | quote }}
             - name: TUNNEL_TLS_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.tls.remoteContainerPort | quote }}
-            - name: TUNNEL_HEALTH_PORT
-              value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
-            - name: TUNNEL_HEALTH_REMOTE_PORT
-              value: {{ $.Values.proxy.service.ports.health.remoteContainerPort | quote }}
-            {{- if $.Values.tls.enabled }}
+            - name: TUNNEL_WEB_PORT
+              value: {{ $.Values.proxy.service.ports.web.internalPort | quote }}
+            - name: TUNNEL_WEB_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
+            {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) }}
             - name: SSL_CERT_FILE
               value: /ca-certs/ca-bundle.crt
             {{- end }}
@@ -151,11 +170,10 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /var/run
-            {{- if $.Values.tls.enabled }}
-              {{- if  $.Values.client.tlsVerifyCert }}
             - name: ca-certs
               mountPath: /ca-certs
-              {{- end }}
+              readOnly: true
+            {{- if $.Values.tls.enabled }}
             - name: tls-secret
               mountPath: /certs
               readOnly: true
@@ -172,10 +190,18 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            - name: healthz
-              containerPort: 8081
+            - name: health
+              containerPort: {{ $.Values.proxy.service.ports.health.containerPort }}
               protocol: TCP
+          {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+          env:
+            - name: SSL_CERT_FILE
+              value: /ca-certs/ca-bundle.crt
+          {{- end }}
           volumeMounts:
+            - name: ca-certs
+              mountPath: /ca-certs
+              readOnly: true
             - name: nginx-cache
               mountPath: /var/cache/nginx
             - name: nginx-tmp
@@ -200,11 +226,24 @@ spec:
           configMap:
             name: {{ $clientFullname }}
             defaultMode: 420
-        {{- if $.Values.tls.enabled }}
-          {{- if  $.Values.client.tlsVerifyCert }}
         - name: ca-certs
           emptyDir: {}
-          {{- end }}
+        {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+        - name: ca-bundle
+          secret:
+            {{- if $.Values.caBundle.certs }}
+            secretName: {{ printf "%s-ca-bundle" $fullname }}
+            items:
+              - key: ca.crt
+                path: ca-bundle.crt
+            {{- else }}
+            secretName: {{ $.Values.caBundle.existingSecret }}
+            items:
+              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
+                path: ca-bundle.crt
+            {{- end }}
+        {{- end }}
+        {{- if $.Values.tls.enabled }}
         - name: tls-secret
           secret:
             {{- if $.Values.tls.existingSecret }}

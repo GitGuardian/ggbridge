@@ -17,15 +17,17 @@ import (
 )
 
 const (
-	DefaultHealthcheckUrl        = "http://127.0.0.1:9081/healthz"
-	DefaultLogLevel              = "INFO"
-	DefaultPIDFile               = "/var/run/ggbridge.pid"
-	DefaultPingFrequency         = 10
-	DefaultTunnelSocksPort        = 9080
+	DefaultHealthcheckUrl         = "http://127.0.0.1:9081/healthz"
+	DefaultLogLevel               = "INFO"
+	DefaultPIDFile                = "/var/run/ggbridge.pid"
+	DefaultPingFrequency          = 10
+	DefaultTunnelSocksPort        = 9180
 	DefaultTunnelHealthPort       = 9081
 	DefaultTunnelHealthRemotePort = 8081
 	DefaultTunnelTlsPort          = 9443
 	DefaultTunnelTlsRemotePort    = 8443
+	DefaultTunnelWebPort          = 8090
+	DefaultTunnelWebRemotePort    = 8443
 )
 
 // getEnv retrieves environment variables or default values.
@@ -132,6 +134,10 @@ func buildClientCommand() []string {
 	if err != nil {
 		log.Fatalf("Invalid boolean for clientTunnelTlsEnabled:", err)
 	}
+	clientTunnelWebEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_WEB_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for clientTunnelWebEnabled:", err)
+	}
 	serverTunnelSocksEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_SOCKS_ENABLED", "true"))
 	if err != nil {
 		log.Fatalf("Invalid boolean for serverTunnelSocksEnabled:", err)
@@ -140,11 +146,17 @@ func buildClientCommand() []string {
 	if err != nil {
 		log.Fatalf("Invalid boolean for serverTunnelTlsEnabled:", err)
 	}
+	serverTunnelWebEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_WEB_ENABLED", "false"))
+	if err != nil {
+		log.Fatalf("Invalid boolean for serverTunnelWebEnabled:", err)
+	}
 	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
 	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
 	tunnelSocksPort := getEnv("TUNNEL_SOCKS_PORT", strconv.Itoa(DefaultTunnelSocksPort))
 	tunnelTlsPort := getEnv("TUNNEL_TLS_PORT", strconv.Itoa(DefaultTunnelTlsPort))
 	tunnelTlsRemotePort := getEnv("TUNNEL_TLS_REMOTE_PORT", strconv.Itoa(DefaultTunnelTlsRemotePort))
+	tunnelWebPort := getEnv("TUNNEL_WEB_PORT", strconv.Itoa(DefaultTunnelWebPort))
+	tunnelWebRemotePort := getEnv("TUNNEL_WEB_REMOTE_PORT", strconv.Itoa(DefaultTunnelWebRemotePort))
 
 	if serverAddress == "" {
 		fmt.Println("Error: SERVER_ADDRESS is mandatory")
@@ -203,6 +215,11 @@ func buildClientCommand() []string {
 		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
 	}
 
+	// Enables client to server web tunnel
+	if clientTunnelWebEnabled {
+		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
+	}
+
 	// Enables server to client proxy tunnel
 	if serverTunnelSocksEnabled {
 		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
@@ -211,6 +228,11 @@ func buildClientCommand() []string {
 	// Enables server to client tcp tunnel
 	if serverTunnelTlsEnabled {
 		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
+	}
+
+	// Enables server to client web tunnel
+	if serverTunnelWebEnabled {
+		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
 	}
 
 	return cmd
