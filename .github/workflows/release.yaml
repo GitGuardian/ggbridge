@@ -42,6 +42,17 @@ jobs:
           VERSION=${RAW_VERSION#v}
           echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
 
+      - name: Set Docker image tag
+        id: tag
+        run: |
+          if [[ "${{ matrix.target }}" == "shell" ]]; then
+            echo "DOCKER_TAG=${{ env.RELEASE_VERSION }}-shell" >> $GITHUB_ENV
+            echo "DOCKER_LATEST_TAG=latest-shell" >> $GITHUB_ENV
+          else
+            echo "DOCKER_TAG=${{ env.RELEASE_VERSION }}" >> $GITHUB_ENV
+            echo "DOCKER_LATEST_TAG=latest" >> $GITHUB_ENV
+          fi
+
       - name: Publish Docker image to GitHub
         uses: dagger/dagger-for-github@v7.0.3
         env:
@@ -62,9 +73,9 @@ jobs:
               --target=${{ matrix.target }} \
               --platform=linux/amd64,linux/arm64 \
             publish \
-              --image=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
+              --image=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
             with-tag \
-              --tag=latest \
+              --tag=${{ env.DOCKER_LATEST_TAG }} \
             sign \
               --password=env:COSIGN_PASSWORD \
               --private-key=env:COSIGN_PRIVATE_KEY \
@@ -89,11 +100,11 @@ jobs:
               --username=$DOCKER_REGISTRY_USERNAME \
               --secret=env:DOCKER_REGISTRY_PASSWORD \
             with-copy \
-              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
-              --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
+              --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
             tag \
-              --image=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
-              --tag=latest \
+              --image=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
+              --tag=${{ env.DOCKER_LATEST_TAG }} \
 
       - name: Scan Docker image
         uses: dagger/dagger-for-github@v7.0.3
@@ -109,5 +120,5 @@ jobs:
               --username=${{ github.actor }} \
               --secret=env:GH_REGISTRY_PASSWORD \
             scan \
-              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
               --fail-on=critical \

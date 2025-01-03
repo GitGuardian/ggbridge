@@ -55,22 +55,22 @@ jobs:
 
       - name: Set short SHA
         id: sha
-        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Set image tag
+      - name: Set Docker image tag
         id: tag
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             if [[ "${{ matrix.target }}" == "shell" ]]; then
-              echo "tag=unstable-shell" >> $GITHUB_ENV
+              echo "DOCKER_TAG=unstable-shell" >> $GITHUB_ENV
             else
-              echo "tag=unstable" >> $GITHUB_ENV
+              echo "DOCKER_TAG=unstable" >> $GITHUB_ENV
             fi
           else
             if [[ "${{ matrix.target }}" == "shell" ]]; then
-              echo "tag=build-${{ env.short_sha }}-shell" >> $GITHUB_ENV
+              echo "DOCKER_TAG=build-${{ env.SHORT_SHA }}-shell" >> $GITHUB_ENV
             else
-              echo "tag=build-${{ env.short_sha }}" >> $GITHUB_ENV
+              echo "DOCKER_TAG=build-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
             fi
           fi
 
@@ -92,7 +92,7 @@ jobs:
               --target=${{ matrix.target }} \
               --platform=linux/amd64,linux/arm64 \
             publish \
-              --image=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
+              --image=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
             ref \
 
       - name: Copy Docker image to Docker Hub
@@ -115,8 +115,8 @@ jobs:
               --username=$DOCKER_REGISTRY_USERNAME \
               --secret=env:DOCKER_REGISTRY_PASSWORD \
             with-copy \
-              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
-              --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.tag }} \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
+              --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
 
       - name: Scan Docker image
         uses: dagger/dagger-for-github@v7.0.3
@@ -132,7 +132,7 @@ jobs:
               --username=${{ github.actor }} \
               --secret=env:GH_REGISTRY_PASSWORD \
             scan \
-              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.tag }} \
+              --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
 
   helm-unstable:
     if: github.ref == 'refs/heads/main'
@@ -143,10 +143,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set short SHA
-        id: sha
-        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Lint
         uses: dagger/dagger-for-github@v7.0.3
