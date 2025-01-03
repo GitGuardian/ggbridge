@@ -25,6 +25,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set release version
+        id: version
+        run: |
+          # Extract the tag, remove "v" prefix if it exists
+          RAW_VERSION=${GITHUB_REF##*/}
+          VERSION=${RAW_VERSION#v}
+          echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+
       - name: Lint
         uses: dagger/dagger-for-github@v7.0.3
         with:
@@ -48,8 +56,8 @@ jobs:
           args: |
             package-push \
               --path=helm/ggbridge \
-              --version="${{ github.ref_name }}" \
-              --app-version="${{ github.ref_name }}" \
+              --version="${{ env.RELEASE_VERSION }}" \
+              --app-version="${{ env.RELEASE_VERSION }}" \
               --registry=ghcr.io/${GH_HELM_REPOSITORY} \
               --username=${{ github.actor }} \
               --password=env:GH_REGISTRY_PASSWORD \
