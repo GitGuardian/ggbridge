@@ -88,7 +88,7 @@ jobs:
               --address=$DOCKER_REGISTRY \
               --username=$DOCKER_REGISTRY_USERNAME \
               --secret=env:DOCKER_REGISTRY_PASSWORD \
-            copy \
+            with-copy \
               --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
               --target=${DOCKER_REGISTRY}/${DOCKER_REPOSITORY}:${{ env.RELEASE_VERSION }} \
             tag \
