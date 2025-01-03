@@ -512,6 +512,20 @@ Returns proxy WEB ingress annotations
 {{- end -}}
 
 {{/*
+Returns cert-manager issuer spec for TLS config
+{{ include "ggbridge.certManager.issuer.spec" $ }}
+*/}}
+{{- define "ggbridge.certManager.issuer.spec" -}}
+{{- $fullname := include "ggbridge.fullname" . -}}
+{{- $spec := dict -}}
+{{- if hasKey .Values.tls.certManager.issuer.spec "vault" -}}
+  {{- $spec = dict "vault" (dict "auth" (dict "kubernetes" (dict "secretRef" (dict "name" (printf "%s-issuer-token" $fullname) "key" "token")))) -}}
+{{- end -}}
+{{- $spec = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.tls.certManager.issuer.spec $spec ) "context" . ) | fromYaml -}}
+{{ include "ggbridge.tplvalues.render" ( dict "value" $spec "context" .) }}
+{{- end -}}
+
+{{/*
 Renders a value that contains template perhaps with scope if the scope is present.
 Usage:
 {{ include "ggbridge.tplvalues.render" ( dict "value" .Values.path.to.the.Value "context" $ ) }}
