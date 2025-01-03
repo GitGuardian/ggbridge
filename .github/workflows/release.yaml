@@ -121,4 +121,4 @@ jobs:
               --secret=env:GH_REGISTRY_PASSWORD \
             scan \
               --source=ghcr.io/${GH_DOCKER_REPOSITORY}:${{ env.DOCKER_TAG }} \
-              --fail-on=critical \
+              --fail-on=high \

@@ -3,7 +3,7 @@ name: Helm Release
 on:
   push:
     tags:
-      - '/helm/chart/v*'
+      - 'helm/chart/v*'
 
 permissions:
   contents: read
