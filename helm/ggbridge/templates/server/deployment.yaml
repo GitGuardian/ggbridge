@@ -52,6 +52,31 @@ spec:
       securityContext:
         {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
+      {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+      initContainers:
+        - name: ca
+          {{- if $.Values.containerSecurityContext.enabled }}
+          securityContext:
+            {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
+          {{- end }}
+          image: {{ include "ggbridge.shell.image" $ }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -x
+              cat $SSL_CERT_FILE > /ca-certs/ca-bundle.crt
+              if [ -s /ca-bundle/ca-bundle.crt ]; then
+                cat /ca-bundle/ca-bundle.crt  >> /ca-certs/ca-bundle.crt
+              fi
+              chmod 0444 /ca-certs/ca-bundle.crt
+          volumeMounts:
+            - name: ca-certs
+              mountPath: /ca-certs
+            - name: ca-bundle
+              mountPath: /ca-bundle
+              readOnly: true
+      {{- end }}
       containers:
         - name: ggbridge
           {{- if $.Values.containerSecurityContext.enabled }}
@@ -87,6 +112,14 @@ spec:
               value: {{ $.Values.proxy.service.ports.tls.containerPort | quote }}
             - name: TUNNEL_TLS_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.tls.remoteContainerPort | quote }}
+            - name: TUNNEL_WEB_PORT
+              value: {{ $.Values.proxy.service.ports.web.internalPort | quote }}
+            - name: TUNNEL_WEB_REMOTE_PORT
+              value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
+            {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+            - name: SSL_CERT_FILE
+              value: /ca-certs/ca-bundle.crt
+            {{- end }}
             {{- if $.Values.extraEnv }}
             {{- include "ggbridge.tplvalues.render" (dict "value" $.Values.extraEnv "context" $) | nindent 12 }}
             {{- end }}
@@ -105,6 +138,9 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /var/run
+            - name: ca-certs
+              mountPath: /ca-certs
+              readOnly: true
             {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
             - name: tls-secret
               mountPath: /certs
@@ -122,10 +158,18 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            - name: healthz
-              containerPort: 8081
+            - name: health
+              containerPort: {{ $.Values.proxy.service.ports.health.containerPort }}
               protocol: TCP
+          {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+          env:
+            - name: SSL_CERT_FILE
+              value: /ca-certs/ca-bundle.crt
+          {{- end }}
           volumeMounts:
+            - name: ca-certs
+              mountPath: /ca-certs
+              readOnly: true
             - name: nginx-cache
               mountPath: /var/cache/nginx
             - name: nginx-tmp
@@ -140,6 +184,23 @@ spec:
             {{- toYaml $.Values.resources | nindent 12 }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       volumes:
+        - name: ca-certs
+          emptyDir: {}
+        {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
+        - name: ca-bundle
+          secret:
+            {{- if $.Values.caBundle.certs }}
+            secretName: {{ printf "%s-ca-bundle" $fullname }}
+            items:
+              - key: ca.crt
+                path: ca-bundle.crt
+            {{- else }}
+            secretName: {{ $.Values.caBundle.existingSecret }}
+            items:
+              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
+                path: ca-bundle.crt
+            {{- end }}
+        {{- end }}
         - name: nginx-cache
           emptyDir: {}
         - name: nginx-tmp

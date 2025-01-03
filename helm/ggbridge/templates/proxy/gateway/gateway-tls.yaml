@@ -1,0 +1,63 @@
+{{- $tunnel :=  ternary .Values.server.tunnels.tls .Values.client.tunnels.tls (eq .Values.mode "server") -}}
+{{- $servicePort :=  .Values.proxy.service.ports.tls -}}
+{{- if and .Values.proxy.gateway.tls.enabled $tunnel.enabled -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+  {{- if .Values.proxy.gateway.tls.gateway.create }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ printf "%s-tls" $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.proxy.gateway.tls.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.tls.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ .Values.proxy.gateway.tls.gateway.className | quote }}
+  listeners:
+    {{- range $tunnel.listeners }}
+    - allowedRoutes:
+        namespaces:
+          from: Same
+      name: tls
+      hostname: {{ .hostname }}
+      port: {{ $.Values.proxy.gateway.tls.gateway.ports.https }}
+      protocol: TLS
+      tls:
+        mode: Passthrough
+    {{- end }}
+  {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: {{ printf "%s-tls" $proxyFullname }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations .Values.proxy.gateway.tls.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.tls.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.proxy.gateway.tls.gateway.create }}
+  parentRefs:
+    - name: {{ printf "%s-tls" $proxyFullname }}
+      namespace: {{ $.Release.Namespace }}
+  {{- else }}
+  parentRefs: {{ toYaml .Values.proxy.gateway.tls.parentRefs | nindent 4 }}
+  {{- end }}
+  hostnames:
+    {{- range $tunnel.listeners }}
+    - {{ .hostname }}
+    {{- end }}
+  rules:
+    - backendRefs:
+        - name: {{ include "ggbridge.proxy.serviceName" $ }}
+          port: {{ $.Values.proxy.service.ports.tls.port }}
+{{- end }}

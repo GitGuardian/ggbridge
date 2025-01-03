@@ -57,7 +57,7 @@ services:
 Here is an example of a Helm values file to deploy the ggbridge client:
 
 ```yaml
-subdomain: my-subdomain
+hostname: my-subdomain.ggbridge.gitguardian.com
 
 tls:
   enabled: true

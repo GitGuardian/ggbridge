@@ -1,26 +1,6 @@
 {{- if and (eq .Values.mode "server") .Values.server.gateway.enabled }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
-
-{{- if .Values.server.gateway.gateway.create }}
-  {{- if and (eq .Values.server.gateway.controller "traefik") .Values.tls.enabled }}
----
-apiVersion: traefik.io/v1alpha1
-kind: TLSOption
-metadata:
-  name: {{ $serverFullname }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "ggbridge.labels" . | nindent 4 }}
-    {{- include "ggbridge.server.labels" . | nindent 4 }}
-spec:
-  {{- if eq (lower .Values.tls.mode) "mutual" }}
-  clientAuth:
-    secretNames:
-      - {{ printf "%s-crt" $serverFullname }}
-    clientAuthType: RequireAndVerifyClientCert
-  {{- end }}
-  minVersion: VersionTLS12
-  {{- end }}
+  {{- if .Values.server.gateway.gateway.create }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -48,21 +28,30 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
+          - kind: Secret
+            group: ""
           {{- if .Values.tls.existingSecret }}
-          - name: {{ .Values.tls.existingSecret }}
+            name: {{ .Values.tls.existingSecret }}
           {{- else }}
-          - name: {{ printf "%s-crt" $serverFullname }}
+            name: {{ printf "%s-crt" $serverFullname }}
           {{- end }}
         {{- if (eq (lower .Values.tls.mode) "mutual") }}
         options:
-          clientCertificateRef: {{ printf "%s-crt" $serverFullname }}
+          clientCertificateRef:
+            kind: Secret
+            group: ""
+            {{- if .Values.tls.existingSecret }}
+            name: {{ .Values.tls.existingSecret }}
+            {{- else }}
+            name: {{ printf "%s-crt" $serverFullname }}
+            {{- end }}
         {{- end }}
       {{- else }}
       name: http
       port: {{ .Values.server.gateway.gateway.ports.http }}
       protocol: HTTP
       {{- end }}
-{{- end }}
+  {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
