@@ -342,14 +342,10 @@ server:
   gateway:
     # -- Enable server exposure using Kubernetes Gateway API
     enabled: false
-    # -- Specify the gateway controller
-    controller: ""
-    # -- Set the gateway ClassName
-    className: ""
     gateway:
       # -- Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute)
       create: true
-      # -- Set the  gatewayClassName
+      # -- Set the gatewayClassName
       className: ""
       # -- Specify Gateway ports number
       ports:
@@ -488,13 +484,10 @@ proxy:
       annotations: {}
 
   gateway:
-    tls:
-      # -- Enable tls tunnel exposure using Kubernetes Gateway API
+    # -- Configure the gateway resources for socks tunnel
+    socks:
+      # -- Enable soks tunnel exposure using Kubernetes Gateway API
       enabled: false
-      # -- Specify the gateway controller
-      controller: ""
-      # -- Set the gateway ClassName
-      className: ""
       gateway:
         # -- Specifies whether a Gateway resource should be created alongside the routing resource
         create: true
@@ -502,8 +495,23 @@ proxy:
         className: ""
         # -- Specify Gateway ports number
         ports:
-          http: 80
-          https: 443
+          socks: 1080
+      # -- Specify the existing gateway resources
+      parentRefs: []
+      # -- Set gateway annotations
+      annotations: {}
+    # -- Configure the gateway resources for tls tunnel
+    tls:
+      # -- Enable tls tunnel exposure using Kubernetes Gateway API
+      enabled: false
+      gateway:
+        # -- Specifies whether a Gateway resource should be created alongside the routing resource
+        create: true
+        # -- Set the gatewayClassName
+        className: ""
+        # -- Specify Gateway ports number
+        ports:
+          tls: 443
       # -- Specify the existing gateway resources
       parentRefs: []
       # -- Set gateway annotations
@@ -512,14 +520,10 @@ proxy:
     web:
       # -- Enable web tunnel exposure using Kubernetes Gateway API
       enabled: false
-      # -- Specify the gateway controller
-      controller: ""
-      # -- Set the gateway ClassName
-      className: ""
       gateway:
         # -- Specifies whether a Gateway resource should be created alongside the routing resource
         create: true
-        # -- Set the  gatewayClassName
+        # -- Set the gatewayClassName
         className: ""
         # -- Specify Gateway ports number
         ports:

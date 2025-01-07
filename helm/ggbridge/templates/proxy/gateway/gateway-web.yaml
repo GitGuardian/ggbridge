@@ -23,6 +23,8 @@ spec:
     - allowedRoutes:
         namespaces:
           from: Same
+        kinds:
+          - kind: HTTPRoute
       name: {{ .hostname | replace "." "-" | trunc 63 | trimSuffix "-" }}
       hostname: {{ .hostname }}
       port: {{ ternary $.Values.proxy.gateway.web.gateway.ports.https $.Values.proxy.gateway.web.gateway.ports.http $tunnel.tls.enabled }}
@@ -54,7 +56,7 @@ spec:
   {{- if .Values.proxy.gateway.web.gateway.create }}
   parentRefs:
     - name: {{ printf "%s-web" $proxyFullname }}
-      namespace: {{ $.Release.Namespace }}
+      namespace: {{ .Release.Namespace }}
   {{- else }}
   parentRefs: {{ toYaml .Values.proxy.gateway.web.parentRefs | nindent 4 }}
   {{- end }}
@@ -68,6 +70,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: {{ include "ggbridge.proxy.serviceName" $ }}
-          port: {{ $.Values.proxy.service.ports.web.port }}
+        - name: {{ include "ggbridge.proxy.serviceName" . }}
+          port: {{ .Values.proxy.service.ports.web.port }}
 {{- end }}

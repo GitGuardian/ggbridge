@@ -23,9 +23,11 @@ spec:
     - allowedRoutes:
         namespaces:
           from: Same
-      name: tls
+        kinds:
+          - kind: TLSRoute
+      name: {{ .hostname | replace "." "-" | trunc 63 | trimSuffix "-" }}
       hostname: {{ .hostname }}
-      port: {{ $.Values.proxy.gateway.tls.gateway.ports.https }}
+      port: {{ $.Values.proxy.gateway.tls.gateway.ports.tls }}
       protocol: TLS
       tls:
         mode: Passthrough
@@ -36,7 +38,7 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: {{ printf "%s-tls" $proxyFullname }}
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
@@ -48,7 +50,7 @@ spec:
   {{- if .Values.proxy.gateway.tls.gateway.create }}
   parentRefs:
     - name: {{ printf "%s-tls" $proxyFullname }}
-      namespace: {{ $.Release.Namespace }}
+      namespace: {{ .Release.Namespace }}
   {{- else }}
   parentRefs: {{ toYaml .Values.proxy.gateway.tls.parentRefs | nindent 4 }}
   {{- end }}
@@ -58,6 +60,6 @@ spec:
     {{- end }}
   rules:
     - backendRefs:
-        - name: {{ include "ggbridge.proxy.serviceName" $ }}
-          port: {{ $.Values.proxy.service.ports.tls.port }}
+        - name: {{ include "ggbridge.proxy.serviceName" . }}
+          port: {{ .Values.proxy.service.ports.tls.port }}
 {{- end }}
