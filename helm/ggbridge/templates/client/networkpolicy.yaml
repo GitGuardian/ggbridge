@@ -21,12 +21,9 @@ spec:
     - Ingress
   ingress:
     - ports:
-      {{- range $key, $value := $.Values.client.tunnels }}
-        {{- if $value.enabled }}
-          {{- $port := get $.Values.proxy.service.ports $key }}
-        - port: {{ $port.containerPort }}
+      {{- range $port, $value := .Values.proxy.service.ports }}
+        - port: {{ $value.containerPort }}
           protocol: TCP
-        {{- end }}
       {{- end }}
       {{- if not .Values.networkPolicy.allowExternal }}
       from:

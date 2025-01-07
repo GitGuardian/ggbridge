@@ -126,29 +126,29 @@ func buildClientCommand() []string {
 	if err != nil {
 		log.Fatalf("Invalid boolean for tlsVerifyCertificate:", err)
 	}
-	clientTunnelSocksEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_SOCKS_ENABLED", "false"))
+	tunnelSocksEnabled, err := strconv.ParseBool(getEnv("TUNNEL_SOCKS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for clientTunnelSocksEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelSocksEnabled:", err)
 	}
-	clientTunnelTlsEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_TLS_ENABLED", "false"))
+	tunnelTlsEnabled, err := strconv.ParseBool(getEnv("TUNNEL_TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for clientTunnelTlsEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelTlsEnabled:", err)
 	}
-	clientTunnelWebEnabled, err := strconv.ParseBool(getEnv("CLIENT_TUNNEL_WEB_ENABLED", "false"))
+	tunnelWebEnabled, err := strconv.ParseBool(getEnv("TUNNEL_WEB_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for clientTunnelWebEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelWebEnabled:", err)
 	}
-	serverTunnelSocksEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_SOCKS_ENABLED", "true"))
+	reverseTunnelSocksEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_SOCKS_ENABLED", "true"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for serverTunnelSocksEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelSocksEnabled:", err)
 	}
-	serverTunnelTlsEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_TLS_ENABLED", "false"))
+	reverseTunnelTlsEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for serverTunnelTlsEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelTlsEnabled:", err)
 	}
-	serverTunnelWebEnabled, err := strconv.ParseBool(getEnv("SERVER_TUNNEL_WEB_ENABLED", "false"))
+	reverseTunnelWebEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_WEB_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for serverTunnelWebEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelWebEnabled:", err)
 	}
 	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
 	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
@@ -206,32 +206,32 @@ func buildClientCommand() []string {
 	}
 
 	// Enables client to server proxy tunnel
-	if clientTunnelSocksEnabled {
+	if tunnelSocksEnabled {
 		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
 	}
 
 	// Enables client to server tcp tunnel
-	if clientTunnelTlsEnabled {
+	if tunnelTlsEnabled {
 		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
 	}
 
 	// Enables client to server web tunnel
-	if clientTunnelWebEnabled {
+	if tunnelWebEnabled {
 		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
 	}
 
 	// Enables server to client proxy tunnel
-	if serverTunnelSocksEnabled {
+	if reverseTunnelSocksEnabled {
 		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
 	}
 
 	// Enables server to client tcp tunnel
-	if serverTunnelTlsEnabled {
+	if reverseTunnelTlsEnabled {
 		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
 	}
 
 	// Enables server to client web tunnel
-	if serverTunnelWebEnabled {
+	if reverseTunnelWebEnabled {
 		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
 	}
 

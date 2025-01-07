@@ -65,7 +65,7 @@ spec:
             - name: web
               containerPort: {{ $.Values.proxy.service.ports.web.containerPort }}
               protocol: TCP
-            {{- range $key, $value := $.Values.server.tunnels }}
+            {{- range $key, $value := $.Values.client.reverseTunnels }}
               {{- if $value.enabled }}
                 {{- $port := get $.Values.proxy.service.ports $key }}
             - name: {{ $key }}

@@ -71,18 +71,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    {{- range $key, $value := $.Values.server.tunnels }}
-      {{- if $value.enabled }}
-        {{- $port := get $.Values.proxy.service.ports $key }}
-    - port: {{ $port.port }}
-      targetPort: {{ $key }}
-        {{- with $port.nodePort }}
-      nodePort: {{ . }}
-        {{- end }}
-      protocol: TCP
-      name: {{ $key }}
-      {{- end }}
-    {{- end }}
+    {{- include "ggbridge.proxy.service.ports" $ | nindent 4 }}
   selector:
     {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}

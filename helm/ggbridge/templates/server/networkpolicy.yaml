@@ -20,16 +20,13 @@ spec:
     - Ingress
   ingress:
     - ports:
-        - port: {{ $.Values.server.service.ports.ws.containerPort }}
+        - port: {{ .Values.server.service.ports.ws.containerPort }}
           protocol: TCP
     {{- if (eq (include "ggbridge.proxy.enabled" $) "true") }}
     - ports:
-        {{- range $key, $value := $.Values.server.tunnels }}
-          {{- if $value.enabled }}
-            {{- $port := get $.Values.proxy.service.ports $key }}
-        - port: {{ $port.containerPort }}
+        {{- range $port, $value := .Values.proxy.service.ports }}
+        - port: {{ $value.containerPort }}
           protocol: TCP
-          {{- end }}
         {{- end }}
       {{- if not .Values.networkPolicy.allowExternal }}
       from:

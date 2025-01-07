@@ -1,4 +1,4 @@
-{{- $tunnel :=  ternary .Values.server.tunnels.socks .Values.client.tunnels.socks (eq .Values.mode "server") -}}
+{{- $tunnel :=  ternary .Values.client.reverseTunnels.socks .Values.client.tunnels.socks (eq .Values.mode "server") -}}
 {{- $servicePort :=  .Values.proxy.service.ports.socks -}}
 {{- if and .Values.proxy.gateway.socks.enabled $tunnel.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}

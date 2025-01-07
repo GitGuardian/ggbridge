@@ -260,7 +260,7 @@ Returns true when proxy is enabled
 */}}
 {{- define "ggbridge.proxy.enabled" -}}
 {{- $result := "false" -}}
-{{- $tunnels := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
+{{- $tunnels := ternary .Values.client.reverseTunnels .Values.client.tunnels (eq .Values.mode "server") -}}
 {{- range $key, $value := $tunnels -}}
   {{- if $value.enabled -}}
     {{- $result = "true" -}}
@@ -274,19 +274,16 @@ Returns the list of proxy service ports
 {{ include "ggbridge.proxy.service.ports" $ }}
 */}}
 {{- define "ggbridge.proxy.service.ports" -}}
-{{- $tunnels := ternary .Values.server.tunnels .Values.client.tunnels (eq .Values.mode "server") -}}
-{{- range $key, $value := $tunnels -}}
-  {{- if $value.enabled -}}
-    {{- $port := get $.Values.proxy.service.ports $key -}}
-    {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
+{{- range $key, $value := .Values.proxy.service.ports -}}
+  {{- $port := get $.Values.proxy.service.ports $key -}}
+  {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
 - port: {{ $port.port }}
   targetPort: {{ $key }}
-  {{- with $port.nodePort }}
+    {{- with $port.nodePort }}
   nodePort: {{ . }}
-  {{- end }}
+    {{- end }}
   protocol: TCP
   name: {{ $key }}
-    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -496,7 +493,7 @@ Returns proxy WEB ingress annotations
 */}}
 {{- define "ggbridge.proxy.ingress.web.annotations" -}}
 {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-{{- $tunnel :=  ternary .Values.server.tunnels.web .Values.client.tunnels.web (eq .Values.mode "server") -}}
+{{- $tunnel :=  ternary .Values.client.reverseTunnels.web .Values.client.tunnels.web (eq .Values.mode "server") -}}
 {{- $annotations := dict -}}
 {{- if eq .Values.proxy.ingress.web.controller "traefik" -}}
   {{- if $tunnel.tls.enabled -}}

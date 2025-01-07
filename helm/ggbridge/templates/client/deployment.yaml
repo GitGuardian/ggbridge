@@ -130,18 +130,18 @@ spec:
             - name: LOG_LEVEL
               value: {{ . | quote }}
             {{- end }}
-            - name: CLIENT_TUNNEL_SOCKS_ENABLED
+            - name: TUNNEL_SOCKS_ENABLED
               value: {{ $.Values.client.tunnels.socks.enabled | quote }}
-            - name: CLIENT_TUNNEL_TLS_ENABLED
+            - name: TUNNEL_TLS_ENABLED
               value: {{ $.Values.client.tunnels.tls.enabled | quote }}
-            - name: CLIENT_TUNNEL_WEB_ENABLED
+            - name: TUNNEL_WEB_ENABLED
               value: {{ $.Values.client.tunnels.web.enabled | quote }}
-            - name: SERVER_TUNNEL_SOCKS_ENABLED
-              value: {{ $.Values.server.tunnels.socks.enabled | quote }}
-            - name: SERVER_TUNNEL_TLS_ENABLED
-              value: {{ $.Values.server.tunnels.tls.enabled | quote }}
-            - name: SERVER_TUNNEL_WEB_ENABLED
-              value: {{ $.Values.server.tunnels.web.enabled | quote }}
+            - name: REVERSE_TUNNEL_SOCKS_ENABLED
+              value: {{ $.Values.client.reverseTunnels.socks.enabled | quote }}
+            - name: REVERSE_TUNNEL_TLS_ENABLED
+              value: {{ $.Values.client.reverseTunnels.tls.enabled | quote }}
+            - name: REVERSE_TUNNEL_WEB_ENABLED
+              value: {{ $.Values.client.reverseTunnels.web.enabled | quote }}
             - name: TUNNEL_HEALTH_PORT
               value: {{ $.Values.proxy.service.ports.health.containerPort | quote }}
             - name: TUNNEL_HEALTH_REMOTE_PORT

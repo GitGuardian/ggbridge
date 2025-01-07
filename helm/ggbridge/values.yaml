@@ -280,24 +280,8 @@ client:
       ##        secretName: "internal-crt"
       listeners: []
 
-  readinessProbe:
-    # -- Enable Client Readiness Probe
-    enabled: true
-    exec:
-      command:
-        - ggbridge
-        - healthcheck
-        - -grace-period=60
-        - http://127.0.0.1:9081/healthz
-    initialDelaySeconds: 10
-    periodSeconds: 15
-    timeoutSeconds: 5
-    successThreshold: 1
-    failureThreshold: 1
-
-server:
   # -- Specify server to client tunnels
-  tunnels:
+  reverseTunnels:
     health:
       # -- Enable server to client health tunnel
       enabled: true
@@ -317,6 +301,22 @@ server:
         enabled: true
       listeners: []
 
+  readinessProbe:
+    # -- Enable Client Readiness Probe
+    enabled: true
+    exec:
+      command:
+        - ggbridge
+        - healthcheck
+        - -grace-period=60
+        - http://127.0.0.1:9081/healthz
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 1
+
+server:
   # -- Services parameters
   service:
     annotations: {}

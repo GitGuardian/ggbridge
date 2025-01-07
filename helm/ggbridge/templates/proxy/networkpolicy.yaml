@@ -27,7 +27,7 @@ spec:
         - port: 53
           protocol: TCP
     - ports:
-        {{- range $key, $value := .Values.server.tunnels }}
+        {{- range $key, $value := .Values.client.reverseTunnels }}
           {{- if $value.enabled }}
             {{- $port := get $.Values.proxy.service.ports $key }}
         - port: {{ $port.containerPort }}
@@ -43,12 +43,9 @@ spec:
     {{- end }}
   ingress:
     - ports:
-        {{- range $key, $value := .Values.server.tunnels }}
-          {{- if $value.enabled }}
-            {{- $port := get $.Values.proxy.service.ports $key }}
-        - port: {{ $port.containerPort }}
+        {{- range $port, $value := .Values.proxy.service.ports }}
+        - port: {{ $value.containerPort }}
           protocol: TCP
-          {{- end }}
         {{- end }}
       {{- if not .Values.proxy.networkPolicy.allowExternal }}
       from:

@@ -127,7 +127,7 @@ spec:
             - name: ws
               containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
               protocol: TCP
-            {{- range $key, $value := $.Values.server.tunnels }}
+            {{- range $key, $value := $.Values.client.reverseTunnels }}
               {{- if $value.enabled }}
                 {{- $port := get $.Values.proxy.service.ports $key }}
             - name: {{ $key }}
