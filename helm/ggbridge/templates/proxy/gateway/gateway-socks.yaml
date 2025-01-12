@@ -1,11 +1,36 @@
-{{- $tunnel :=  ternary .Values.client.reverseTunnels.socks .Values.client.tunnels.socks (eq .Values.mode "server") -}}
+{{- $gateway := .Values.proxy.tunnels.socks.gateway -}}
 {{- $servicePort :=  .Values.proxy.service.ports.socks -}}
-{{- if and .Values.proxy.gateway.socks.enabled $tunnel.enabled -}}
+{{- if $gateway.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-  {{- if .Values.proxy.gateway.socks.gateway.create }}
+  {{- if $gateway.gateway.create }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
+metadata:
+  name: {{ printf "%s-socks" $proxyFullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" . | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations $gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $gateway.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ $gateway.gateway.className | quote }}
+  listeners:
+    - allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: TCPRoute
+      name: socks
+      port: {{ $gateway.gateway.ports.socks }}
+      protocol: TCP
+  {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
 metadata:
   name: {{ printf "%s-socks" $proxyFullname }}
   namespace: {{ .Release.Namespace }}
@@ -17,41 +42,16 @@ metadata:
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ .Values.proxy.gateway.socks.gateway.className | quote }}
-  listeners:
-    - allowedRoutes:
-        namespaces:
-          from: Same
-        kinds:
-          - kind: TCPRoute
-      name: socks
-      port: {{ .Values.proxy.gateway.socks.gateway.ports.socks }}
-      protocol: TCP
-  {{- end }}
----
-apiVersion: gateway.networking.k8s.io/v1alpha2
-kind: TCPRoute
-metadata:
-  name: {{ printf "%s-socks" $proxyFullname }}
-  namespace: {{ $.Release.Namespace }}
-  labels:
-    {{- include "ggbridge.labels" . | nindent 4 }}
-    {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.gateway.socks.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.socks.annotations .Values.commonAnnotations ) "context" . ) }}
-  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if .Values.proxy.gateway.socks.gateway.create }}
+  {{- if $gateway.gateway.create }}
   parentRefs:
     - name: {{ printf "%s-socks" $proxyFullname }}
       namespace: {{ .Release.Namespace }}
       sectionName: socks
   {{- else }}
-  parentRefs: {{ toYaml .Values.proxy.gateway.socks.parentRefs | nindent 4 }}
+  parentRefs: {{ toYaml $gateway.parentRefs | nindent 4 }}
   {{- end }}
   rules:
     - backendRefs:
         - name: {{ include "ggbridge.proxy.serviceName" $ }}
-          port: {{ .Values.proxy.service.ports.socks.port }}
+          port: {{ $servicePort.port }}
 {{- end }}

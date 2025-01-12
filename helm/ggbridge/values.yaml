@@ -257,28 +257,9 @@ client:
     tls:
       # -- Enable client to server tls tunnel
       enabled: false
-      # -- Specify tls tunnel listeners for configuring ingress/gateway
-      listeners:
-        - hostname: api.gitguardian.com
-        - hostname: hook.gitguardian.com
     web:
       # -- Enable client to server web tunnel (for HTTP/HTTPS traffic)
       enabled: false
-      tls:
-        # -- Enable TLS traffic support for web tunnel
-        enabled: true
-      # -- Specify web tunnel listeners for configuring ingress/gateway
-      ## e.g:
-      ## listeners:
-      ##    - hostname: api.internal.com
-      ##      upstream: api.gitguardian.com
-      ##      tls:
-      ##        secretName: "internal-crt"
-      ##    - hostname: hook.internal.com
-      ##      upstream: hook.gitguardian.com
-      ##      tls:
-      ##        secretName: "internal-crt"
-      listeners: []
 
   # -- Specify server to client tunnels
   reverseTunnels:
@@ -291,15 +272,9 @@ client:
     tls:
       # -- Enable server to client tls tunnel
       enabled: false
-      # -- Specify tls tunnel listeners for configuring ingress/gateway
-      listeners: []
     web:
       # -- Enable server to client web tunnel (for HTTP/HTTPS traffic)
       enabled: false
-      tls:
-        # -- Enable TLS traffic support for web tunnel
-        enabled: true
-      listeners: []
 
   readinessProbe:
     # -- Enable Client Readiness Probe
@@ -397,23 +372,7 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
-  # -- Specify proxy Readiness Probe parameters
-  readinessProbe:
-    enabled: true
-    exec:
-      command:
-        - ggbridge
-        - healthcheck
-        - -pid-file=/var/run/nginx.pid
-        - -grace-period=60
-        - http://127.0.0.1:9081/healthz
-    initialDelaySeconds: 10
-    periodSeconds: 15
-    timeoutSeconds: 5
-    successThreshold: 1
-    failureThreshold: 1
-
-   # -- Proxy service parameters
+  # -- Proxy service parameters
   service:
     # --- Override the default service name
     name: ""
@@ -447,6 +406,133 @@ proxy:
         # -- Defines whether the web port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
 
+  tunnels:
+    socks:
+      gateway:
+        # -- Enable socks tunnel exposure using Kubernetes Gateway API
+        enabled: false
+        gateway:
+          # -- Specifies whether a Gateway resource should be created alongside the routing resource
+          create: true
+          # -- Set the gatewayClassName
+          className: ""
+          # -- Specify Gateway ports number
+          ports:
+            socks: 1080
+        # -- Specify the existing gateway resources
+        parentRefs: []
+        # -- Set gateway annotations
+        annotations: {}
+
+    tls:
+      ingress:
+        # -- Enable tls tunnel exposure using Kubernetes Ingress API
+        enabled: false
+        # -- Specify the ingress controller
+        controller: ""
+        # -- Set the ingress ClassName
+        className: ""
+        # -- Set ingress annotations
+        annotations: {}
+        # -- Specify tls tunnel listeners
+        listeners:
+          - hostname: api.gitguardian.com
+          - hostname: hook.gitguardian.com
+
+      gateway:
+        # -- Enable tls tunnel exposure using Kubernetes Gateway API
+        enabled: false
+        gateway:
+          # -- Specifies whether a Gateway resource should be created alongside the routing resource
+          create: true
+          # -- Set the gatewayClassName
+          className: ""
+          # -- Specify Gateway ports number
+          ports:
+            tls: 443
+          # -- Specify tls tunnel listeners
+          listeners:
+            - hostname: api.gitguardian.com
+            - hostname: hook.gitguardian.com
+        # -- Specify the existing gateway resources
+        parentRefs: []
+        # -- Set gateway annotations
+        annotations: {}
+
+    web:
+      ingress:
+        # -- Enable web tunnel exposure using Kubernetes Ingress API
+        enabled: false
+        # -- Specify the ingress controller
+        controller: ""
+        # -- Set the ingress ClassName
+        className: ""
+        # -- Set ingress annotations
+        annotations: {}
+        tls:
+          # -- Enable TLS traffic
+          enabled: true
+        # -- Specify web tunnel listeners
+        ## e.g:
+        ## listeners:
+        ##    - hostname: api.internal.com
+        ##      backend: api.gitguardian.com
+        ##      tls:
+        ##        secretName: "internal-crt"
+        ##    - hostname: hook.internal.com
+        ##      backend: hook.gitguardian.com
+        ##      tls:
+        ##        secretName: "internal-crt"
+        listeners: []
+
+      gateway:
+        # -- Enable web tunnel exposure using Kubernetes Gateway API
+        enabled: false
+        gateway:
+          # -- Specifies whether a Gateway resource should be created alongside the routing resource
+          create: true
+          # -- Set the gatewayClassName
+          className: ""
+          # -- Specify Gateway ports number
+          ports:
+            http: 80
+            https: 443
+          tls:
+            # -- Enable TLS traffic
+            enabled: true
+          # -- Specify web tunnel listeners
+          ## e.g:
+          ## listeners:
+          ##    - hostname: api.internal.com
+          ##      backend: api.gitguardian.com
+          ##      tls:
+          ##        secretName: "internal-crt"
+          ##    - hostname: hook.internal.com
+          ##      backend: hook.gitguardian.com
+          ##      tls:
+          ##        secretName: "internal-crt"
+          listeners: []
+        # -- Specify the existing gateway resources
+        parentRefs: []
+        # -- Set gateway annotations
+        annotations: {}
+
+  # -- Specify proxy Readiness Probe parameters
+  readinessProbe:
+    enabled: true
+    exec:
+      command:
+        - ggbridge
+        - healthcheck
+        - -pid-file=/var/run/nginx.pid
+        - -grace-period=60
+        - http://127.0.0.1:9081/healthz
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 1
+
   # -- Network Policy parameters
   networkPolicy:
     # -- Specifies whether a NetworkPolicy should be created
@@ -461,78 +547,6 @@ proxy:
     ingressNSMatchLabels: {}
     # -- Pod labels to match to allow traffic to the proxy server from other namespaces
     ingressNSPodMatchLabels: {}
-
-  ingress:
-    tls:
-      # -- Enable tls tunnel exposure using Kubernetes Ingress API
-      enabled: false
-      # -- Specify the ingress controller
-      controller: ""
-      # -- Set the ingress ClassName
-      className: ""
-      # -- Set ingress annotations
-      annotations: {}
-    # -- Configure the ingress resources for web tunnel
-    web:
-      # -- Enable web tunnel exposure using Kubernetes Ingress API
-      enabled: false
-      # -- Specify the ingress controller
-      controller: ""
-      # -- Set the ingress ClassName
-      className: ""
-      # -- Set ingress annotations
-      annotations: {}
-
-  gateway:
-    # -- Configure the gateway resources for socks tunnel
-    socks:
-      # -- Enable soks tunnel exposure using Kubernetes Gateway API
-      enabled: false
-      gateway:
-        # -- Specifies whether a Gateway resource should be created alongside the routing resource
-        create: true
-        # -- Set the  gatewayClassName
-        className: ""
-        # -- Specify Gateway ports number
-        ports:
-          socks: 1080
-      # -- Specify the existing gateway resources
-      parentRefs: []
-      # -- Set gateway annotations
-      annotations: {}
-    # -- Configure the gateway resources for tls tunnel
-    tls:
-      # -- Enable tls tunnel exposure using Kubernetes Gateway API
-      enabled: false
-      gateway:
-        # -- Specifies whether a Gateway resource should be created alongside the routing resource
-        create: true
-        # -- Set the gatewayClassName
-        className: ""
-        # -- Specify Gateway ports number
-        ports:
-          tls: 443
-      # -- Specify the existing gateway resources
-      parentRefs: []
-      # -- Set gateway annotations
-      annotations: {}
-    # -- Configure the gateway resources for web tunnel
-    web:
-      # -- Enable web tunnel exposure using Kubernetes Gateway API
-      enabled: false
-      gateway:
-        # -- Specifies whether a Gateway resource should be created alongside the routing resource
-        create: true
-        # -- Set the gatewayClassName
-        className: ""
-        # -- Specify Gateway ports number
-        ports:
-          http: 80
-          https: 443
-      # -- Specify the existing gateway resources
-      parentRefs: []
-      # -- Set gateway annotations
-      annotations: {}
 
   # -- Node labels for pod assignment
   nodeSelector: {}

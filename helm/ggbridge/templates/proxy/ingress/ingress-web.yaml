@@ -1,8 +1,8 @@
-{{- $tunnel :=  ternary .Values.client.reverseTunnels.web .Values.client.tunnels.web (eq .Values.mode "server") -}}
+{{- $ingress := .Values.proxy.tunnels.web.ingress -}}
 {{- $servicePort :=  .Values.proxy.service.ports.web -}}
-{{- if and .Values.proxy.ingress.web.enabled $tunnel.enabled -}}
+{{- if $ingress.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-  {{- if and (eq .Values.proxy.ingress.tls.controller "traefik") $tunnel.tls.enabled }}
+  {{- if and (eq $ingress.controller "traefik") $ingress.tls.enabled }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -21,11 +21,11 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  annotations: {{ include "ggbridge.proxy.ingress.web.annotations" . | nindent 4 }}
+  annotations: {{ include "ggbridge.proxy.tunnels.web.ingress.annotations" . | nindent 4 }}
 spec:
-  ingressClassName: {{ .Values.proxy.ingress.web.className | quote }}
+  ingressClassName: {{ $ingress.className | quote }}
   rules:
-    {{- range $tunnel.listeners }}
+    {{- range $ingress.listeners }}
     - host: {{ .hostname }}
       http:
         paths:
@@ -37,9 +37,9 @@ spec:
                 port:
                   number: {{ $servicePort.port }}
     {{- end }}
-  {{- if $tunnel.tls.enabled }}
+  {{- if $ingress.tls.enabled }}
   tls:
-    {{- range $tunnel.listeners }}
+    {{- range $ingress.listeners }}
     - hosts:
       - {{ .hostname }}
       secretName: {{ .tls.secretName }}

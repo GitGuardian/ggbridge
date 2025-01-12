@@ -1,8 +1,8 @@
-{{- $tunnel :=  ternary .Values.client.reverseTunnels.tls .Values.client.tunnels.tls (eq .Values.mode "server") -}}
+{{- $ingress := .Values.proxy.tunnels.tls.ingress -}}
 {{- $servicePort :=  .Values.proxy.service.ports.tls -}}
-{{- if and .Values.proxy.ingress.tls.enabled $tunnel.enabled -}}
+{{- if $ingress.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-  {{- if (eq .Values.proxy.ingress.tls.controller "traefik") }}
+  {{- if (eq $ingress.controller "traefik") }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
@@ -12,14 +12,14 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.ingress.tls.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.tls.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations $ingress.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $ingress.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
   routes:
-    {{- range $tunnel.listeners }}
-    - match: {{ printf "HostSNI(`%s`)" .hostname }}
+    {{- range $ingress.hostnames }}
+    - match: {{ printf "HostSNI(`%s`)" . }}
       services:
         - name: {{ include "ggbridge.proxy.serviceName" $ }}
           port: {{ $servicePort.port }}
@@ -36,12 +36,12 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  annotations: {{ include "ggbridge.proxy.ingress.tls.annotations" . | nindent 4 }}
+  annotations: {{ include "ggbridge.proxy.tunnels.tls.ingress.annotations" . | nindent 4 }}
 spec:
-  ingressClassName: {{ .Values.proxy.ingress.tls.className | quote }}
+  ingressClassName: {{ $ingress.className | quote }}
   rules:
-    {{- range $tunnel.listeners }}
-    - host: {{ .hostname }}
+    {{- range $ingress.listeners }}
+    - host: {{ .hosntame }}
       http:
         paths:
           - path: /

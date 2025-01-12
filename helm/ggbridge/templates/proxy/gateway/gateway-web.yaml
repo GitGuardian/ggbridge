@@ -1,8 +1,8 @@
-{{- $tunnel :=  ternary .Values.client.reverseTunnels.web .Values.client.tunnels.web (eq .Values.mode "server") -}}
+{{- $gateway := .Values.proxy.tunnels.web.gateway -}}
 {{- $servicePort :=  .Values.proxy.service.ports.web -}}
-{{- if and .Values.proxy.gateway.web.enabled $tunnel.enabled -}}
+{{- if $gateway.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-  {{- if .Values.proxy.gateway.web.gateway.create }}
+  {{- if $gateway.gateway.create }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -12,14 +12,14 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.gateway.web.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.web.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations $gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $gateway.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ .Values.proxy.gateway.web.gateway.className | quote }}
+  gatewayClassName: {{ $gateway.gateway.className | quote }}
   listeners:
-    {{- range $tunnel.listeners }}
+    {{- range $gateway.gateway.listeners }}
     - allowedRoutes:
         namespaces:
           from: Same
@@ -27,9 +27,9 @@ spec:
           - kind: HTTPRoute
       name: {{ .hostname | replace "." "-" | trunc 63 | trimSuffix "-" }}
       hostname: {{ .hostname }}
-      port: {{ ternary $.Values.proxy.gateway.web.gateway.ports.https $.Values.proxy.gateway.web.gateway.ports.http $tunnel.tls.enabled }}
-      protocol: {{ ternary "HTTPS" "HTTP" $tunnel.tls.enabled }}
-      {{- if $tunnel.tls.enabled }}
+      port: {{ ternary $gateway.gateway.ports.https $gateway.gateway.ports.http $gateway.gateway.tls.enabled }}
+      protocol: {{ ternary "HTTPS" "HTTP" $gateway.gateway.tls.enabled }}
+      {{- if $gateway.gateway.tls.enabled }}
       tls:
         mode: Terminate
         certificateRefs:
@@ -48,22 +48,24 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.gateway.web.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.web.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations $gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $gateway.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.proxy.gateway.web.gateway.create }}
+  {{- if $gateway.gateway.create }}
   parentRefs:
     - name: {{ printf "%s-web" $proxyFullname }}
       namespace: {{ .Release.Namespace }}
   {{- else }}
-  parentRefs: {{ toYaml .Values.proxy.gateway.web.parentRefs | nindent 4 }}
+  parentRefs: {{ toYaml $gateway.parentRefs | nindent 4 }}
   {{- end }}
+  {{- if $gateway.gateway.listeners }}
   hostnames:
-    {{- range $tunnel.listeners }}
+    {{- range $gateway.gateway.listeners }}
     - {{ .hostname }}
     {{- end }}
+  {{- end }}
   rules:
     - matches:
         - path:
@@ -71,5 +73,5 @@ spec:
             value: /
       backendRefs:
         - name: {{ include "ggbridge.proxy.serviceName" . }}
-          port: {{ .Values.proxy.service.ports.web.port }}
+          port: {{ $servicePort.port }}
 {{- end }}

@@ -474,37 +474,37 @@ Returns server ingress annotations
 
 {{/*
 Returns proxy TLS ingress annotations
-{{ include "ggbridge.proxy.tls.ingress.annotations" $ }}
+{{ include "ggbridge.proxy.tunnels.tls.ingress.annotations" $ }}
 */}}
-{{- define "ggbridge.proxy.ingress.tls.annotations" -}}
+{{- define "ggbridge.proxy.tunnels.tls.ingress.annotations" -}}
 {{- $annotations := dict -}}
-{{- if eq .Values.proxy.ingress.tls.controller "nginx" -}}
+{{- if eq .Values.proxy.tunnels.tls.ingress.controller "nginx" -}}
   {{- $_ := set $annotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTPS" -}}
   {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-passthrough" "true" -}}
   {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
 {{- end -}}
-{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.tls.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.tunnels.tls.ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
 {{- end -}}
 
 {{/*
-Returns proxy WEB ingress annotations
-{{ include "ggbridge.proxy.web.ingress.annotations" $ }}
+Returns proxy web tunnel ingress annotations
+{{ include "ggbridge.proxy.tunnels.web.ingress.annotations" $ }}
 */}}
-{{- define "ggbridge.proxy.ingress.web.annotations" -}}
+{{- define "ggbridge.proxy.tunnels.web.ingress.annotations" -}}
 {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-{{- $tunnel :=  ternary .Values.client.reverseTunnels.web .Values.client.tunnels.web (eq .Values.mode "server") -}}
+{{- $ingress := .Values.proxy.tunnels.web.ingress -}}
 {{- $annotations := dict -}}
-{{- if eq .Values.proxy.ingress.web.controller "traefik" -}}
-  {{- if $tunnel.tls.enabled -}}
+{{- if eq $ingress.controller "traefik" -}}
+  {{- if $ingress.tls.enabled -}}
     {{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.middlewares" (printf "%s-%s-web@kubernetescrd" .Release.Namespace $proxyFullname ) -}}
   {{- end }}
-{{- else if eq .Values.proxy.ingress.web.controller "nginx" -}}
-  {{- if $tunnel.tls.enabled -}}
+{{- else if eq $ingress.controller "nginx" -}}
+  {{- if $ingress.tls.enabled -}}
     {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
   {{- end }}
 {{- end -}}
-{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.ingress.web.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
+{{- $annotations = include "ggbridge.tplvalues.merge" ( dict "values" ( list $ingress.annotations $annotations .Values.commonAnnotations ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) }}
 {{- end -}}
 
