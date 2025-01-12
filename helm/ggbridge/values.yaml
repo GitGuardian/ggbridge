@@ -201,8 +201,13 @@ tls:
 # -- Specify hosts whitelist (Only available for web and tls tunnel)
 ## e.g:
 ## whitelist:
-##   - hook.gitguardian.com
-whitelist: []
+##   hosts:
+##     - hook.gitguardian.com
+##   cidr:
+##     - 10.85.0.0/16
+whitelist:
+  hosts: []
+  cidr: []
 
 # -- Number of deployments
 deploymentCount: 3

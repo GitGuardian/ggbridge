@@ -1,0 +1,116 @@
+# Doc: https://github.com/erebe/wstunnel/blob/main/restrictions.yaml
+restrictions:
+  - name: "health"
+    description: "Health restriction rules"
+    match:
+      - !Any
+    allow:
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.health.remoteContainerPort }}
+        host: ^localhost$
+        cidr:
+          - 127.0.0.1/32
+          - ::1/128
+      - !ReverseTunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.health.containerPort }}
+        host: ^.*$
+        cidr:
+          - 0.0.0.0/0
+          - ::/0
+
+  - name: "socks"
+    description: "Socks restriction rules"
+    match:
+      - !Any
+    allow:
+      - !ReverseTunnel
+        protocol:
+          - Socks5
+        port:
+          - {{ .Values.proxy.service.ports.socks.containerPort }}
+        cidr:
+          - 0.0.0.0/0
+          - ::/0
+
+  - name: "tls"
+    description: "Tls restriction rules"
+    match:
+      - !Any
+    allow:
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.tls.remoteContainerPort }}
+        host: ^localhost$
+        cidr:
+          - 127.0.0.1/32
+          - ::1/128
+      - !ReverseTunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.tls.containerPort }}
+        host: ^localhost$
+        cidr:
+          - 127.0.0.1/32
+          - ::1/128
+
+  - name: "web"
+    description: "web restriction rules"
+    match:
+      - !Any
+    allow:
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.web.remoteContainerPort }}
+        host: ^localhost$
+        cidr:
+          - 127.0.0.1/32
+          - ::1/128
+      - !ReverseTunnel
+        protocol:
+          - Tcp
+        port:
+          - {{ .Values.proxy.service.ports.web.containerPort }}
+        host: ^localhost$
+        cidr:
+          - 127.0.0.1/32
+          - ::1/128
+
+  {{- with .Values.whitelist.cidr }}
+  - name: "cidr whitelist"
+    description: "cidr whitelist"
+    match:
+      - !Any
+    allow:
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - 443
+        cidr: {{ toYaml .  | nindent 10 }}
+  {{- end }}
+
+  {{- range $host := .Values.whitelist.hosts }}
+  - name: {{ $host | quote}}
+    description: "{{ $host }} whitelist"
+    match:
+      - !Any
+    allow:
+      - !Tunnel
+        protocol:
+          - Tcp
+        port:
+          - 443
+        host: {{ printf "^%s$" $host }}
+        cidr: []
+  {{- end }}

@@ -246,11 +246,7 @@ func buildServerCommand() []string {
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
 	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	dnsResolver := os.Getenv("DNS_RESOLVER")
-	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
-	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
-	tunnelSocksPort := getEnv("TUNNEL_SOCKS_PORT", strconv.Itoa(DefaultTunnelSocksPort))
-	tunnelTlsPort := getEnv("TUNNEL_TLS_PORT", strconv.Itoa(DefaultTunnelTlsPort))
-	tunnelTlsRemotePort := getEnv("TUNNEL_TLS_REMOTE_PORT", strconv.Itoa(DefaultTunnelTlsRemotePort))
+	restrictConfig := os.Getenv("RESTRICT_CONFIG")
 	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
 	if err != nil {
 		log.Fatalf("Invalid boolean for tlsEnabled:", err)
@@ -276,16 +272,16 @@ func buildServerCommand() []string {
 		"server",
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
-		"--restrict-to", fmt.Sprintf("127.0.0.1:%s", tunnelHealthRemotePort),
-		"--restrict-to", fmt.Sprintf("127.0.0.1:%s", tunnelTlsRemotePort),
-		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelHealthPort),
-		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelSocksPort),
-		"--restrict-to", fmt.Sprintf("0.0.0.0:%s", tunnelTlsPort),
 	}
 
 	// Server will only accept connection from if this specific path prefix is used during websocket upgrade.
 	if serverPathPrefix != "" {
 		cmd = append(cmd, "--restrict-http-upgrade-path-prefix", serverPathPrefix)
+	}
+
+	// Load restriction rules from config file
+	if restrictConfig != "" {
+		cmd = append(cmd, "--restrict-config", restrictConfig)
 	}
 
 	// Add SSL flags if enabled

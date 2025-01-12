@@ -116,6 +116,8 @@ spec:
               value: {{ $.Values.proxy.service.ports.web.internalPort | quote }}
             - name: TUNNEL_WEB_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
+            - name: RESTRICT_CONFIG
+              value: /config/restrictions.yaml
             {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
             - name: SSL_CERT_FILE
               value: /ca-certs/ca-bundle.crt
@@ -140,6 +142,10 @@ spec:
               mountPath: /var/run
             - name: ca-certs
               mountPath: /ca-certs
+              readOnly: true
+            - name: config
+              mountPath: /config/restrictions.yaml
+              subPath: restrictions.yaml
               readOnly: true
             {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
             - name: tls-secret

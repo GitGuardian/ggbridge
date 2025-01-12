@@ -15,4 +15,6 @@ metadata:
 data:
   nginx.conf: |-
     {{ tpl (.Files.Get "files/nginx.conf") . | nindent 4 }}
+  restrictions.yaml: |-
+    {{ tpl (.Files.Get "files/restrictions.yaml") . | nindent 4 }}
 {{- end }}
