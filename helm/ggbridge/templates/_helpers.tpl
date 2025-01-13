@@ -228,11 +228,15 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{- end -}}
 
 {{/*
-Returns hostname
+Returns hostname.
+Hostname can be specified in 3 ways (sorted by precedence):
+  - .Values.hostname
+  - .Values.subdomain + .Values.domain
+  - .Release.Name + .Values.domain
 {{ include "ggbridge.hostname" $ }}
 */}}
 {{- define "ggbridge.hostname" -}}
-{{ default (ternary "" (printf "%s.%s" .Values.subdomain .Values.domain) (empty .Values.subdomain)) .Values.hostname }}
+{{ ternary (printf "%s.%s" (default .Release.Name .Values.subdomain) .Values.domain) .Values.hostname (empty .Values.hostname) }}
 {{- end }}
 
 {{/*
@@ -240,7 +244,7 @@ Returns subdomain
 {{ include "ggbridge.subdomain" $ }}
 */}}
 {{- define "ggbridge.subdomain" -}}
-{{ default (split "." .Values.hostname)._0 .Values.subdomain }}
+{{ (split "." (include "ggbridge.hostname" .))._0 }}
 {{- end }}
 
 {{/*
