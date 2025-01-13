@@ -37,8 +37,8 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  {{- if or .Values.commonAnnotations .Values.proxy.gateway.socks.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.proxy.gateway.socks.annotations .Values.commonAnnotations ) "context" . ) }}
+  {{- if or .Values.commonAnnotations $gateway.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list .$gateway.annotations .Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
