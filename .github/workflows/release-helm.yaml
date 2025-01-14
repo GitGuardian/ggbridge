@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 env:
-  DAGGER_VERSION: "0.15.1"
+  DAGGER_VERSION: "0.15.2"
   GH_DOCKER_REPOSITORY: ${{ vars.GH_DOCKER_REPOSITORY }}
   GH_HELM_REPOSITORY: ${{ vars.GH_HELM_REPOSITORY }}
 
@@ -34,7 +34,7 @@ jobs:
           echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Lint
-        uses: dagger/dagger-for-github@v7.0.3
+        uses: dagger/dagger-for-github@v7.0.4
         with:
           version: ${{ env.DAGGER_VERSION }}
           engine-stop: false
@@ -46,7 +46,7 @@ jobs:
               --strict \
 
       - name: Publish Helm chart
-        uses: dagger/dagger-for-github@v7.0.3
+        uses: dagger/dagger-for-github@v7.0.4
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:

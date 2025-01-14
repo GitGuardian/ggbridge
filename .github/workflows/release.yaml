@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 env:
-  DAGGER_VERSION: "0.15.1"
+  DAGGER_VERSION: "0.15.2"
   DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
   DOCKER_REPOSITORY: ${{ vars.DOCKER_REPOSITORY }}
   DOCKER_REGISTRY_USERNAME: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -54,7 +54,7 @@ jobs:
           fi
 
       - name: Publish Docker image to GitHub
-        uses: dagger/dagger-for-github@v7.0.3
+        uses: dagger/dagger-for-github@v7.0.4
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -81,7 +81,7 @@ jobs:
               --private-key=env:COSIGN_PRIVATE_KEY \
 
       - name: Copy Docker image to Docker Hub
-        uses: dagger/dagger-for-github@v7.0.3
+        uses: dagger/dagger-for-github@v7.0.4
         env:
           DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +107,7 @@ jobs:
               --tag=${{ env.DOCKER_LATEST_TAG }} \
 
       - name: Scan Docker image
-        uses: dagger/dagger-for-github@v7.0.3
+        uses: dagger/dagger-for-github@v7.0.4
         env:
           GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
