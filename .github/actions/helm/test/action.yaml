@@ -1,0 +1,15 @@
+name: Test Helm chart
+description: 'Test Helm chart'
+
+runs:
+  using: composite
+  steps:
+    - name: Lint Helm chart
+      uses: dagger/dagger-for-github@v7
+      with:
+        module: github.com/opopops/daggerverse/helm@v1.2.2
+        verb: call
+        args: |
+          lint \
+            --path=helm/ggbridge \
+            --strict \

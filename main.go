@@ -191,8 +191,8 @@ func buildClientCommand() []string {
 
 	// Add SSL flags if enabled
 	if tlsEnabled {
-		cmd = append(cmd, "--tls-certificate", "/certs/client.crt")
-		cmd = append(cmd, "--tls-private-key", "/certs/client.key")
+		cmd = append(cmd, "--tls-certificate", "/etc/ggbridge/tls/client.crt")
+		cmd = append(cmd, "--tls-private-key", "/etc/ggbridge/tls/client.key")
 	}
 
 	// Verify TLS Certificate
@@ -286,9 +286,9 @@ func buildServerCommand() []string {
 
 	// Add SSL flags if enabled
 	if tlsEnabled {
-		cmd = append(cmd, "--tls-client-ca-certs", "/certs/ca.crt")
-		cmd = append(cmd, "--tls-certificate", "/certs/server.crt")
-		cmd = append(cmd, "--tls-private-key", "/certs/server.key")
+		cmd = append(cmd, "--tls-client-ca-certs", "/etc/ggbridge/tls/ca.crt")
+		cmd = append(cmd, "--tls-certificate", "/etc/ggbridge/tls/server.crt")
+		cmd = append(cmd, "--tls-private-key", "/etc/ggbridge/tls/server.key")
 	}
 
 	// Add DNS resolver flag if set
@@ -311,7 +311,7 @@ func runCommand(name string, args []string) {
 
 // runNginx starts the embedded NGINX process
 func runNginx() {
-	runCommand("nginx", []string{"-c", "/etc/nginx/nginx.conf", "-e", "/dev/stderr"})
+	runCommand("nginx", []string{"-c", "/etc/ggbridge/nginx.conf", "-e", "/dev/stderr"})
 }
 
 // runClient handles the client subcommand logic

@@ -1,0 +1,55 @@
+name: Tag latest
+description: 'Add latest tag'
+
+inputs:
+  version:
+    description: 'Version to tag as latest'
+    required: true
+  dockerhub-username:
+    description: 'Username for Docker Hub authentication'
+    required: true
+  dockerhub-password:
+    description: 'Password for Docker Hub authentication'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Add latest tags on GitHub
+      uses: dagger/dagger-for-github@v7
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/crane@v1.2.2
+        verb: call
+        args: |
+          with-registry-auth \
+            --registry=ghcr.io \
+            --username=${{ github.actor }} \
+            --secret=env:GH_TOKEN \
+          with-tag \
+            --image=ghcr.io/gitguardian/ggbridge:${{ inputs.version }} \
+            --tag=latest \
+          tag \
+            --image=ghcr.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
+            --tag=latest-shell \
+
+    - name: Add latest tags on Docker Hub
+      uses: dagger/dagger-for-github@v7
+      env:
+        DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
+      with:
+        module: github.com/opopops/daggerverse/crane@v1.2.2
+        verb: call
+        args: |
+          with-registry-auth \
+            --registry=docker.io \
+            --username=${{ inputs.dockerhub-username }} \
+            --secret=env:DOCKER_HUB_PASSWORD \
+          with-tag \
+            --image=docker.io/gitguardian/ggbridge:${{ inputs.version }} \
+            --tag=latest \
+          tag \
+            --image=docker.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
+            --tag=latest-shell \

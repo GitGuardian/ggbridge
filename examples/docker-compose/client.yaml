@@ -13,6 +13,6 @@ services:
       TLS_ENABLED: "true"
       LOG_LEVEL: INFO
     volumes:
-      - ./certs/client.crt:/certs/client.crt:ro
-      - ./certs/client.key:/certs/client.key:ro
+      - ./certs/client.crt:/etc/ggbridge/tls/client.crt:ro
+      - ./certs/client.key:/etc/ggbridge/tls/client.key:ro
     restart: on-failure

@@ -64,17 +64,17 @@ spec:
           args:
             - |
               set -x
-              cat $SSL_CERT_FILE > /ca-certs/ca-bundle.crt
+              cat $SSL_CERT_FILE > /certs/ca-bundle.crt
               if [ -s /ca-bundle/ca-bundle.crt ]; then
-                cat /ca-bundle/ca-bundle.crt  >> /ca-certs/ca-bundle.crt
+                cat /ca-bundle/ca-bundle.crt  >> /certs/ca-bundle.crt
               fi
-              if [ -s /certs/ca.crt ]; then
-                cat /certs/ca.crt  >> /ca-certs/ca-bundle.crt
+              if [ -s /etc/ggbridge/tls/ca.crt ]; then
+                cat /etc/ggbridge/tls/ca.crt  >> /certs/ca-bundle.crt
               fi
-              chmod 0444 /ca-certs/ca-bundle.crt
+              chmod 0444 /certs/ca-bundle.crt
           volumeMounts:
             - name: ca-certs
-              mountPath: /ca-certs
+              mountPath: /certs
             {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
             - name: ca-bundle
               mountPath: /ca-bundle
@@ -82,7 +82,7 @@ spec:
             {{- end }}
             {{- if $.Values.tls.enabled }}
             - name: tls-secret
-              mountPath: /certs
+              mountPath: /etc/ggbridge/tls
               readOnly: true
             {{- end }}
       {{- end }}
@@ -158,7 +158,7 @@ spec:
               value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
             {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) }}
             - name: SSL_CERT_FILE
-              value: /ca-certs/ca-bundle.crt
+              value: /certs/ca-bundle.crt
             {{- end }}
             {{- if $.Values.extraEnv }}
             {{- include "ggbridge.tplvalues.render" (dict "value" $.Values.extraEnv "context" $) | nindent 12 }}
@@ -171,11 +171,11 @@ spec:
             - name: run
               mountPath: /var/run
             - name: ca-certs
-              mountPath: /ca-certs
+              mountPath: /certs
               readOnly: true
             {{- if $.Values.tls.enabled }}
             - name: tls-secret
-              mountPath: /certs
+              mountPath: /etc/ggbridge/tls
               readOnly: true
             {{- end }}
           resources:
@@ -192,11 +192,11 @@ spec:
           {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
           env:
             - name: SSL_CERT_FILE
-              value: /ca-certs/ca-bundle.crt
+              value: /certs/ca-bundle.crt
           {{- end }}
           volumeMounts:
             - name: ca-certs
-              mountPath: /ca-certs
+              mountPath: /certs
               readOnly: true
             - name: nginx-cache
               mountPath: /var/cache/nginx

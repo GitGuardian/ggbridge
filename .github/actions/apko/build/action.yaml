@@ -1,0 +1,66 @@
+name: Build Docker image
+description: 'Build an image using APKO'
+
+inputs:
+  arch:
+    description: 'The architecture to build for'
+    required: false
+    default: ''
+  key:
+    description: 'Extra key to include in the keyring'
+    required: false
+    default: ''
+  repository:
+    description: 'Extra repository to include'
+    required: false
+    default: ''
+
+outputs:
+  output-dir:
+    description: 'Output dir'
+    value: ${{ steps.output.outputs.output-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create outputs
+      id: output
+      shell: bash
+      run: |
+        echo "output-dir=$(mktemp -d -p ${{ runner.temp }} -t apko.XXXXXX)" >> $GITHUB_OUTPUT
+
+    - name: Build prod image
+      uses: dagger/dagger-for-github@v7
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/apko@v1.5.1
+        verb: call
+        args: |
+          build \
+            --context=${{ github.workspace }} \
+            --config=apko/prod.yaml \
+            --tag=local/prod \
+            --arch=${{ inputs.arch }} \
+            --keyring-append=${{ inputs.key }} \
+            --repository-append=${{ inputs.repository }} \
+          oci-dir \
+          export \
+            --path=${{ steps.output.outputs.output-dir }}/prod \
+
+    - name: Build shell image
+      uses: dagger/dagger-for-github@v7
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/apko@v1.5.1
+        verb: call
+        args: |
+          build \
+            --context=${{ github.workspace }} \
+            --config=apko/shell.yaml \
+            --tag=local/shell \
+            --arch=${{ inputs.arch }} \
+            --keyring-append=${{ inputs.key }} \
+            --repository-append=${{ inputs.repository }} \
+          oci-dir \
+          export \
+            --path=${{ steps.output.outputs.output-dir }}/shell \
