@@ -44,13 +44,43 @@ jobs:
         id: apk
         uses: ./.github/actions/melange/build
 
-      - name: Publish Docker images
-        id: docker
+      - name: Publish prod image
+        id: publish-prod
         uses: ./.github/actions/apko/publish
         with:
-          version: 'unstable'
+          config: 'apko/prod.yaml'
+          tag: 'gitguardian/ggbridge:unstable'
           repository: ${{ steps.apk.outputs.output-dir }}
           key: ${{ steps.apk.outputs.public-key }}
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Sign prod image
+        id: sign-prod
+        uses: ./.github/actions/cosign/sign
+        with:
+          image: 'gitguardian/ggbridge@${{ steps.publish-prod.outputs.digest }}'
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      - name: Publish shell images
+        id: publish-shell
+        uses: ./.github/actions/apko/publish
+        with:
+          config: 'apko/shell.yaml'
+          tag: 'gitguardian/ggbridge:unstable-shell'
+          repository: ${{ steps.apk.outputs.output-dir }}
+          key: ${{ steps.apk.outputs.public-key }}
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Sign shell image
+        id: sign-shell
+        uses: ./.github/actions/cosign/sign
+        with:
+          image: 'gitguardian/ggbridge@${{ steps.publish-shell.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -76,6 +106,9 @@ jobs:
       - name: Get GitHub vars
         id: github
         uses: ./.github/actions/github
+
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test
 
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish
