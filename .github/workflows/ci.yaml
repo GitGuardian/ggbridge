@@ -1,23 +1,18 @@
 name: CI
 
 on:
-  push:
-    branches-ignore:
-      - 'main'
-    tags-ignore:
-      - '*'
-    paths-ignore:
-      - 'demo/**'
-      - 'docs/**'
-      - 'examples/**'
-      - 'LICENSE'
-      - 'README.md'
   pull_request:
     types:
       - opened
       - reopened
       - synchronize
       - ready_for_review
+    paths-ignore:
+      - 'demo/**'
+      - 'docs/**'
+      - 'examples/**'
+      - 'LICENSE'
+      - 'README.md'
   workflow_dispatch:
     inputs:
       runner:
@@ -26,68 +21,58 @@ on:
         default: "ubuntu-latest"
 
 permissions:
-  contents: read
-  packages: write
+  actions: read
   attestations: write
+  contents: read
   id-token: write
+  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
-
-env:
-  DAGGER_VERSION: "0.15.2"
-  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}
-  DOCKER_REPOSITORY: ${{ vars.DOCKER_REPOSITORY }}
-  DOCKER_REGISTRY_USERNAME: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-  DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-  GH_DOCKER_REPOSITORY: ${{ vars.GH_DOCKER_REPOSITORY }}
-  GH_HELM_REPOSITORY: ${{ vars.GH_HELM_REPOSITORY }}
 
 jobs:
   docker:
     name: Build and Scan Docker image
     runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
 
-    strategy:
-      matrix:
-        target: ["shell", "prod"]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and Scan Docker image
-        uses: dagger/dagger-for-github@v7.0.4
-        env:
-          GH_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
+      - name: Build APK packages
+        id: apk
+        uses: ./.github/actions/melange/build
         with:
-          version: ${{ env.DAGGER_VERSION }}
-          module: github.com/opopops/daggerverse/docker@v1.2.1
-          verb: call
-          args: |
-            build \
-              --context=. \
-              --target=${{ matrix.target }} \
-              --platform=linux/amd64,linux/arm64 \
-            scan \
-              --fail-on=critical \
+          arch: ${{ steps.github.outputs.arch }}
+
+      - name: Build Docker images
+        id: docker
+        uses: ./.github/actions/apko/build
+        with:
+          repository: ${{ steps.apk.outputs.output-dir }}
+          key: ${{ steps.apk.outputs.public-key }}
+          arch: ${{ steps.github.outputs.arch }}
+
+      - name: Scan vulnerabilities
+        id: scan
+        uses: ./.github/actions/scan-directory
+        with:
+          # Scan prod variant
+          source: ${{ steps.docker.outputs.output-dir }}/prod
+          fail-on: high
 
   helm:
-    name: Lint Helm Chart
+    name: Test Helm chart
     runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Lint
-        uses: dagger/dagger-for-github@v7.0.4
-        with:
-          version: ${{ env.DAGGER_VERSION }}
-          module: github.com/opopops/daggerverse/helm@v1.2.1
-          verb: call
-          args: |
-            lint \
-              --path=helm/ggbridge \
-              --strict \
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test

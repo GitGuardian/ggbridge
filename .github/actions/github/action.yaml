@@ -1,0 +1,57 @@
+name: Get GitHub vars
+description: 'Get GitHub fromatted vars'
+
+outputs:
+  arch:
+    description: 'The runner architecture'
+    value: ${{ steps.arch.outputs.arch }}
+  sha:
+    description: 'The Git SHA'
+    value: ${{ steps.sha.outputs.sha }}
+  short-sha:
+    description: 'The Git short SHA'
+    value: ${{ steps.sha.outputs.short-sha }}
+  version:
+    description: 'The formatted version'
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: arch
+      run: |
+        ARCH=$(echo "$RUNNER_ARCH" | tr '[:upper:]' '[:lower:]') # Convert to lowercase
+        case "$ARCH" in
+          x64|amd64)
+            FORMATTED_ARCH="amd64"
+            ;;
+          arm|arm64)
+            FORMATTED_ARCH="arm64"
+            ;;
+          *)
+            echo "Unsupported architecture: $ARCH"
+            exit 1
+            ;;
+        esac
+        echo "ARCH: $FORMATTED_ARCH"
+        echo "arch=$FORMATTED_ARCH" >> $GITHUB_OUTPUT
+
+    - shell: bash
+      id: sha
+      run: |
+        SHA=${{ github.event.pull_request.head.sha || github.sha }}
+        SHORT_SHA=$(echo $SHA | cut -c1-7)
+        echo "SHA: $SHA"
+        echo "SHORT_SHA: $SHORT_SHA"
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+    - shell: bash
+      id: version
+      run: |
+        # Extract the tag, remove "v" prefix if it exists
+        RAW_VERSION=${GITHUB_REF##*/}
+        VERSION=${RAW_VERSION#v}
+        echo "VERSION: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT

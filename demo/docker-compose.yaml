@@ -33,7 +33,7 @@ services:
     environment:
       CURL_CA_BUNDLE: "/certs/ca.crt"
     volumes:
-      - ./certs:/certs
+      - ./certs:/certs:ro
       - ./files/gitguardian/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - name: gitguardian
@@ -64,8 +64,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       CURL_CA_BUNDLE: "/certs/ca.crt"
     volumes:
-      - ./certs:/certs
-      - ./files/server/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/ggbridge/tls:ro
+      - ./files/server/nginx.conf:/etc/ggbridge/nginx.conf:ro
     networks:
       gitguardian:
         aliases:
@@ -93,7 +93,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       CLIENT_TUNNEL_TLS_ENABLED: "true"
     volumes:
-       - ./certs:/certs
+       - ./certs:/etc/ggbridge/tls:ro
     networks:
       client:
         aliases:
@@ -120,7 +120,7 @@ services:
     environment:
       CURL_CA_BUNDLE: "/certs/ca.crt"
     volumes:
-      - ./certs:/certs
+      - ./certs:/certs:ro
       - ./files/vcs/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       client:
@@ -137,7 +137,7 @@ services:
     environment:
       CURL_CA_BUNDLE: "/certs/ca.crt"
     volumes:
-      - ./certs:/certs
+      - ./certs:/certs:ro
     networks:
       - client
     extra_hosts:

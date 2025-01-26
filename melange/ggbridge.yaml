@@ -1,0 +1,35 @@
+package:
+  name: ggbridge
+  version: "1.0.0"
+  epoch: 0
+  description: Connect your private VCS with GitGuardian
+  target-architecture:
+    - aarch64
+    - x86_64
+  copyright:
+    - license: BSD-3-Clause
+  dependencies:
+    runtime:
+      - nginx
+      - nginx-mod-stream
+      - wstunnel
+environment:
+  contents:
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    repositories:
+      - https://packages.wolfi.dev/os
+  environment:
+    CGO_ENABLED: "0"
+pipeline:
+  - uses: go/build
+    with:
+      packages: .
+      ldflags: |
+        -X main.version=${{package.version}}
+      output: ggbridge
+      tags: gitguardian
+  - runs: |
+      install -dm755 "${{targets.destdir}}"/etc/ggbridge
+      install -m644 docker/files/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
+  - uses: strip

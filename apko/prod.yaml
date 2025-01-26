@@ -1,0 +1,66 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+  packages:
+    - ca-certificates-bundle
+    - ggbridge@local
+    - wolfi-baselayout
+
+entrypoint:
+  type: service-bundle
+  services:
+    ggbridge: /usr/bin/ggbridge client"
+
+stop-signal: SIGQUIT
+
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+  run-as: nonroot
+
+paths:
+  - path: /run/nginx
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
+  - path: /var/lib/nginx
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
+  - path: /var/lib/nginx/html
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
+  - path: /var/lib/nginx/logs
+    type: directory
+    permissions: 0o755
+    uid: 65532
+    gid: 0
+  - path: /var/lib/nginx/tmp
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
+  - path: /var/run
+    type: directory
+    permissions: 0o777
+    uid: 65532
+    gid: 0
+
+archs:
+  - aarch64
+  - x86_64
+
+annotations:
+  image-author: 'GitGuardian SRE Team <sre@gitguardian.com>'
+  image-description: 'Connect your on-prem VCS with the GitGuardian Platform'

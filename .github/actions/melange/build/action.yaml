@@ -1,0 +1,51 @@
+name: Build APK packages
+description: 'Build an APK package using Melange'
+
+inputs:
+  arch:
+    description: 'The architecture to build for'
+    required: false
+    default: ''
+
+outputs:
+  output-dir:
+    description: 'Packages dir'
+    value: ${{ steps.output.outputs.output-dir }}
+  signing-key:
+    description: 'Signing key'
+    value: ${{ steps.output.outputs.signing-key }}
+  public-key:
+    description: 'Public key'
+    value: ${{ steps.output.outputs.public-key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create outputs
+      id: output
+      shell: bash
+      run: |
+        TEMP_DIR="${{ runner.temp }}/packages"
+        mkdir -p "$TEMP_DIR"
+        echo "output-dir=$TEMP_DIR" >> $GITHUB_OUTPUT
+        echo "signing-key=${TEMP_DIR}/melange.rsa" >> $GITHUB_OUTPUT
+        echo "public-key=${TEMP_DIR}/melange.rsa.pub" >> $GITHUB_OUTPUT
+
+    - uses: docker/setup-qemu-action@v3
+
+    - name: Build APK packages
+      uses: dagger/dagger-for-github@v7
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/melange@v1.3.4
+        verb: call
+        args: |
+          with-build \
+            --config=${{ github.workspace }}/melange/wstunnel.yaml \
+            --arch=${{ inputs.arch }} \
+          build \
+            --config=${{ github.workspace }}/melange/ggbridge.yaml \
+            --source-dir=${{ github.workspace }} \
+            --arch=${{ inputs.arch }} \
+          export \
+            --path=${{ steps.output.outputs.output-dir }} \

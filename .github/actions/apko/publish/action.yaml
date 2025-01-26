@@ -1,0 +1,114 @@
+name: Publish Docker image
+description: 'Publish a Docker image using APKO'
+
+inputs:
+  version:
+    description: 'The Application version'
+    required: true
+  arch:
+    description: 'The architecture to build for'
+    required: false
+    default: ''
+  key:
+    description: 'Extra key to include in the keyring'
+    required: false
+    default: ''
+  repository:
+    description: 'Extra repository to include'
+    required: false
+    default: ''
+  dockerhub-username:
+    description: 'Username for Docker Hub authentication'
+    required: true
+  dockerhub-password:
+    description: 'Password for Docker Hub authentication'
+    required: true
+  cosign-password:
+    description: 'CoSign password to decrypt the private key'
+    required: true
+  cosign-private-key:
+    description: 'CoSign private key for image signing'
+    required: true
+
+outputs:
+  digest:
+    description: 'Prod image digest'
+    value: ${{ steps.prod.outputs.output }}
+
+runs:
+  using: composite
+  steps:
+    - name: Publish prod image
+      id: prod
+      uses: dagger/dagger-for-github@v7
+      env:
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
+        GH_TOKEN: ${{ github.token }}
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/apko@v1.5.1
+        verb: call
+        args: |
+          with-registry-auth \
+            --registry=ghcr.io \
+            --username=${{ github.actor }} \
+            --secret=env:GH_TOKEN \
+          with-registry-auth \
+            --registry=docker.io \
+            --username=${{ inputs.dockerhub-username }} \
+            --secret=env:DOCKER_HUB_PASSWORD \
+          publish \
+            --context=${{ github.workspace }} \
+            --config=apko/prod.yaml \
+            --tag=ghcr.io/gitguardian/ggbridge:${{ inputs.version }} \
+            --arch=${{ inputs.arch }} \
+            --keyring-append=${{ inputs.key }} \
+            --repository-append=${{ inputs.repository }} \
+          with-sign \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \
+          with-copy \
+            --target=docker.io/gitguardian/ggbridge:${{ inputs.version }} \
+          with-sign \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \
+          digest \
+
+    - name: Publish shell image
+      uses: dagger/dagger-for-github@v7
+      env:
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
+        GH_TOKEN: ${{ github.token }}
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/apko@v1.5.1
+        verb: call
+        args: |
+          with-registry-auth \
+            --registry=ghcr.io \
+            --username=${{ github.actor }} \
+            --secret=env:GH_TOKEN \
+          with-registry-auth \
+            --registry=docker.io \
+            --username=${{ inputs.dockerhub-username }} \
+            --secret=env:DOCKER_HUB_PASSWORD \
+          publish \
+            --context=${{ github.workspace }} \
+            --config=apko/prod.yaml \
+            --tag=ghcr.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
+            --arch=${{ inputs.arch }} \
+            --keyring-append=${{ inputs.key }} \
+            --repository-append=${{ inputs.repository }} \
+          with-sign \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \
+          with-copy \
+            --target=docker.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
+          with-sign \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \
+          digest \

@@ -1,0 +1,10 @@
+include: prod.yaml
+
+contents:
+  packages:
+    - bash
+    - bind-tools
+    - busybox
+    - curl
+    - net-tools
+    - openssl

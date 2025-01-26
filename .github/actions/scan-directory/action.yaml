@@ -1,0 +1,54 @@
+name: Scan directory
+description: 'Scan Directory'
+
+inputs:
+  source:
+    description: 'The source to scan'
+    required: true
+  source-type:
+    description: 'The source type (oci-dir)'
+    required: false
+    default: 'oci-dir'
+  fail-on:
+    description: 'The severity level to fail on'
+    required: false
+    default: 'high'
+  output-format:
+    description: 'Scan report format'
+    required: false
+    default: 'table'
+
+outputs:
+  report:
+    description: 'Scan report file'
+    value: ${{ steps.output.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create Output file
+      id: output
+      shell: bash
+      run: |
+        echo "report=$(mktemp -p ${{ runner.temp }} -t scan.XXXXXX)" >> $GITHUB_OUTPUT
+
+    - name: Scan ${{ inputs.source-type }}
+      uses: dagger/dagger-for-github@v7
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/grype@v1.4.0
+        verb: call
+        args: |
+          scan-directory \
+            --source=${{ inputs.source }} \
+            --source-type=${{ inputs.source-type }} \
+            --fail-on=${{ inputs.fail-on }} \
+            --output-format=${{ inputs.output-format }} \
+          export \
+            --path=${{ steps.output.outputs.report }} \
+
+    - name: Print report
+      id: print
+      shell: bash
+      run: |
+        cat ${{ steps.output.outputs.report }}

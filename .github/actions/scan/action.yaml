@@ -1,0 +1,45 @@
+name: Scan Docker image
+description: 'Scan Docker image'
+
+inputs:
+  source:
+    description: 'The source to scan'
+    required: true
+  fail-on:
+    description: 'The severity level to fail on'
+    required: false
+    default: 'high'
+
+outputs:
+  report:
+    description: 'Scan report file'
+    value: ${{ steps.output.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create Output file
+      id: output
+      shell: bash
+      run: |
+        echo "report=$(mktemp -p ${{ runner.temp }} -t scan.XXXXXX)" >> $GITHUB_OUTPUT
+
+    - name: Scan
+      uses: dagger/dagger-for-github@v7
+      with:
+        engine-stop: false
+        module: github.com/opopops/daggerverse/grype@v1.4.0
+        verb: call
+        args: |
+          scan \
+            --source=${{ inputs.source }} \
+            --fail-on=${{ inputs.fail-on }} \
+            --output-format=sarif \
+          export \
+            --path=${{ steps.output.outputs.report }} \
+
+    # TODO: Uncomment this when enabling public visibility
+    # - name: Upload scan report
+    #   uses: github/codeql-action/upload-sarif@v3
+    #   with:
+    #     sarif_file: ${{ steps.output.outputs.report }}
