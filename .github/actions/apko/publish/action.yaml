@@ -42,7 +42,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         engine-stop: false
-        module: github.com/opopops/daggerverse/apko@v1.5.2
+        module: github.com/opopops/daggerverse/apko@v1.5.4
         verb: call
         args: |
           with-registry-auth \

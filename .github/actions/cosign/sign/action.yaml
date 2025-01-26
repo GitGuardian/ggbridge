@@ -41,10 +41,10 @@ runs:
             --username=${{ inputs.dockerhub-username }} \
             --secret=env:DOCKER_HUB_PASSWORD \
           with-sign \
-            --image=ghcr.io/${{ inputs.image }} \
+            --image='ghcr.io/${{ inputs.image }}' \
             --password=env:COSIGN_PASSWORD \
             --private-key=env:COSIGN_PRIVATE_KEY \
           sign \
-            --image=docker.io/${{ inputs.image }} \
+            --image='docker.io/${{ inputs.image }}' \
             --password=env:COSIGN_PASSWORD \
             --private-key=env:COSIGN_PRIVATE_KEY \

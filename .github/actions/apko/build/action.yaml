@@ -38,7 +38,7 @@ runs:
     - name: Build image
       uses: dagger/dagger-for-github@v7
       with:
-        module: github.com/opopops/daggerverse/apko@v1.5.2
+        module: github.com/opopops/daggerverse/apko@v1.5.4
         verb: call
         args: |
           build \
