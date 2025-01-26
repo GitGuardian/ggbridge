@@ -1,9 +1,12 @@
-name: Publish Docker image
-description: 'Publish a Docker image using APKO'
+name: Publish Docker images
+description: 'Publish Docker images using APKO'
 
 inputs:
-  version:
-    description: 'The Application version'
+  config:
+    description: 'The APKO config file'
+    required: true
+  tag:
+    description: 'The image tag'
     required: true
   arch:
     description: 'The architecture to build for'
@@ -23,69 +26,45 @@ inputs:
   dockerhub-password:
     description: 'Password for Docker Hub authentication'
     required: true
-  cosign-password:
-    description: 'CoSign password to decrypt the private key'
-    required: true
-  cosign-private-key:
-    description: 'CoSign private key for image signing'
-    required: true
 
 outputs:
   digest:
-    description: 'Prod image digest'
-    value: ${{ steps.prod.outputs.output }}
+    description: 'Image digest'
+    value: ${{ steps.publish.outputs.output }}
 
 runs:
   using: composite
   steps:
-    - name: Publish prod image
-      id: prod
+    - name: Publish image
+      id: publish
       uses: dagger/dagger-for-github@v7
       env:
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}
       with:
         engine-stop: false
-        module: github.com/opopops/daggerverse/apko@v1.5.1
+        module: github.com/opopops/daggerverse/apko@v1.5.2
         verb: call
         args: |
           with-registry-auth \
             --address=ghcr.io \
             --username=${{ github.actor }} \
             --secret=env:GH_TOKEN \
-          with-registry-auth \
-            --address=docker.io \
-            --username=${{ inputs.dockerhub-username }} \
-            --secret=env:DOCKER_HUB_PASSWORD \
           publish \
             --context=${{ github.workspace }} \
-            --config=apko/prod.yaml \
-            --tag=ghcr.io/gitguardian/ggbridge:${{ inputs.version }} \
+            --config=${{ inputs.config }} \
+            --tag=ghcr.io/${{ inputs.tag }} \
             --arch=${{ inputs.arch }} \
             --keyring-append=${{ inputs.key }} \
             --repository-append=${{ inputs.repository }} \
-          with-sign \
-            --password=env:COSIGN_PASSWORD \
-            --private-key=env:COSIGN_PRIVATE_KEY \
-          with-copy \
-            --target=docker.io/gitguardian/ggbridge:${{ inputs.version }} \
-          with-sign \
-            --password=env:COSIGN_PASSWORD \
-            --private-key=env:COSIGN_PRIVATE_KEY \
           digest \
 
-    - name: Publish shell image
+    - name: Copy image to Docker Hub
       uses: dagger/dagger-for-github@v7
       env:
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}
       with:
-        engine-stop: false
-        module: github.com/opopops/daggerverse/apko@v1.5.1
+        module: github.com/opopops/daggerverse/crane@v1.2.2
         verb: call
         args: |
           with-registry-auth \
@@ -96,19 +75,6 @@ runs:
             --address=docker.io \
             --username=${{ inputs.dockerhub-username }} \
             --secret=env:DOCKER_HUB_PASSWORD \
-          publish \
-            --context=${{ github.workspace }} \
-            --config=apko/prod.yaml \
-            --tag=ghcr.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
-            --arch=${{ inputs.arch }} \
-            --keyring-append=${{ inputs.key }} \
-            --repository-append=${{ inputs.repository }} \
-          with-sign \
-            --password=env:COSIGN_PASSWORD \
-            --private-key=env:COSIGN_PRIVATE_KEY \
-          with-copy \
-            --target=docker.io/gitguardian/ggbridge:${{ inputs.version }}-shell \
-          with-sign \
-            --password=env:COSIGN_PASSWORD \
-            --private-key=env:COSIGN_PRIVATE_KEY \
-          digest \
+          copy \
+            --source=ghcr.io/${{ inputs.tag }} \
+            --target=docker.io/${{ inputs.tag }} \

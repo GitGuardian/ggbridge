@@ -50,10 +50,22 @@ jobs:
         with:
           arch: ${{ steps.github.outputs.arch }}
 
-      - name: Build Docker images
-        id: docker
+      - name: Build prod image
+        id: build-prod
         uses: ./.github/actions/apko/build
         with:
+          config: 'apko/prod.yaml'
+          tag: 'local/prod'
+          repository: ${{ steps.apk.outputs.output-dir }}
+          key: ${{ steps.apk.outputs.public-key }}
+          arch: ${{ steps.github.outputs.arch }}
+
+      - name: Build shell image
+        id: build-shell
+        uses: ./.github/actions/apko/build
+        with:
+          config: 'apko/shell.yaml'
+          tag: 'local/shell'
           repository: ${{ steps.apk.outputs.output-dir }}
           key: ${{ steps.apk.outputs.public-key }}
           arch: ${{ steps.github.outputs.arch }}
@@ -62,8 +74,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan-directory
         with:
-          # Scan prod variant
-          source: ${{ steps.docker.outputs.output-dir }}/prod
+          source: ${{ steps.build-prod.outputs.output-dir }}
           fail-on: high
 
   helm:

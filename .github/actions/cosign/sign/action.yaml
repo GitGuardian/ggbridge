@@ -1,0 +1,50 @@
+name: Sign Docker image
+description: 'Sign a Docker image using Cosign'
+
+inputs:
+  image:
+    description: 'The image digest URI'
+    required: true
+  dockerhub-username:
+    description: 'Username for Docker Hub authentication'
+    required: true
+  dockerhub-password:
+    description: 'Password for Docker Hub authentication'
+    required: true
+  cosign-password:
+    description: 'CoSign password to decrypt the private key'
+    required: true
+  cosign-private-key:
+    description: 'CoSign private key for image signing'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Sign image
+      uses: dagger/dagger-for-github@v7
+      env:
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
+        GH_TOKEN: ${{ github.token }}
+      with:
+        module: github.com/opopops/daggerverse/cosign@v1.3.0
+        verb: call
+        args: |
+          with-registry-auth \
+            --address=ghcr.io \
+            --username=${{ github.actor }} \
+            --secret=env:GH_TOKEN \
+          with-registry-auth \
+            --address=docker.io \
+            --username=${{ inputs.dockerhub-username }} \
+            --secret=env:DOCKER_HUB_PASSWORD \
+          with-sign \
+            --image=ghcr.io/${{ inputs.image }} \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \
+          sign \
+            --image=docker.io/${{ inputs.image }} \
+            --password=env:COSIGN_PASSWORD \
+            --private-key=env:COSIGN_PRIVATE_KEY \

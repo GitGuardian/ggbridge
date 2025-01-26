@@ -32,25 +32,63 @@ jobs:
         with:
           arch: ${{ steps.github.outputs.arch }}
 
-      - name: Publish Docker image
-        id: docker
+      - name: Publish prod image
+        id: publish-prod
         uses: ./.github/actions/apko/publish
         with:
-          version: ${{ steps.github.outputs.version }}
+          config: 'apko/prod.yaml'
+          tag: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}'
           repository: ${{ steps.apk.outputs.output-dir }}
           key: ${{ steps.apk.outputs.public-key }}
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Tag shell prod image as latest
+        uses: ./.github/actions/crane/tag
+        with:
+          image: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}'
+          tag: latest
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Sign prod image
+        id: sign-prod
+        uses: ./.github/actions/cosign/sign
+        with:
+          image: 'gitguardian/ggbridge@${{ steps.publish-prod.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
-      - name: Add latest tags
-        id: tag
-        uses: ./.github/actions/crane/tag-latest
+      - name: Publish shell images
+        id: publish-shell
+        uses: ./.github/actions/apko/publish
         with:
-          version: ${{ steps.github.outputs.version }}
+          config: 'apko/shell.yaml'
+          tag: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}-shell'
+          repository: ${{ steps.apk.outputs.output-dir }}
+          key: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Tag shell shell image as latest
+        uses: ./.github/actions/crane/tag
+        with:
+          image: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}-shell'
+          tag: latest-shell
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Sign shell image
+        id: sign-shell
+        uses: ./.github/actions/cosign/sign
+        with:
+          image: 'gitguardian/ggbridge@${{ steps.publish-shell.outputs.digest }}'
+          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
       - name: Scan vulnerabilities
         id: scan
@@ -72,6 +110,9 @@ jobs:
       - name: Get GitHub vars
         id: github
         uses: ./.github/actions/github
+
+      - name: Test Helm chart
+        uses: ./.github/actions/helm/test
 
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish

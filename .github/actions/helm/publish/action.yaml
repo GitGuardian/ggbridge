@@ -12,17 +12,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Lint Helm chart
-      uses: dagger/dagger-for-github@v7
-      with:
-        engine-stop: false
-        module: github.com/opopops/daggerverse/helm@v1.2.2
-        verb: call
-        args: |
-          lint \
-            --path=helm/ggbridge \
-            --strict \
-
     - name: Publish Helm chart
       uses: dagger/dagger-for-github@v7
       env:
