@@ -96,17 +96,12 @@ spec:
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: ["ggbridge"]
           args: ["client"]
-          {{- if $.Values.client.tunnels }}
           ports:
-            {{- range $key, $value := $.Values.client.tunnels }}
-              {{- if $value.enabled }}
-                {{- $port := get $.Values.proxy.service.ports $key }}
+            {{- range $key, $value := $.Values.proxy.service.ports }}
             - name: {{ $key }}
-              containerPort: {{ $port.containerPort }}
+              containerPort: {{ $value.containerPort }}
               protocol: TCP
-              {{- end }}
             {{- end }}
-          {{- end }}
           env:
             - name: SERVER_ADDRESS
               value: {{ include "ggbridge.hostname" $ | quote }}

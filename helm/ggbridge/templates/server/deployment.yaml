@@ -129,13 +129,10 @@ spec:
             - name: ws
               containerPort: {{ $.Values.server.service.ports.ws.containerPort }}
               protocol: TCP
-            {{- range $key, $value := $.Values.client.reverseTunnels }}
-              {{- if $value.enabled }}
-                {{- $port := get $.Values.proxy.service.ports $key }}
+            {{- range $key, $value := $.Values.proxy.service.ports }}
             - name: {{ $key }}
-              containerPort: {{ $port.containerPort }}
+              containerPort: {{ $value.containerPort }}
               protocol: TCP
-              {{- end }}
             {{- end }}
           volumeMounts:
             - name: run
