@@ -1,7 +1,7 @@
 {{- if (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- $ports := include "ggbridge.proxy.service.ports" . | fromYaml -}}
   {{- if $ports -}}
-    {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
 ---
 apiVersion: v1
 kind: Service
@@ -22,12 +22,53 @@ spec:
   selector:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
     {{- if and (eq .Values.mode "server") (gt (.Values.proxy.replicaCount | int) 0) }}
-    {{- include "ggbridge.proxy.selectorLabels" . | nindent 4 }}
+      {{- include "ggbridge.proxy.selectorLabels" . | nindent 4 }}
     {{- else }}
       {{- if eq .Values.mode "server" }}
         {{- include "ggbridge.server.selectorLabels" . | nindent 4 }}
       {{- else }}
         {{- include "ggbridge.client.selectorLabels" . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- range $tunnel, $tunnel_config := .Values.proxy.tunnels }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s" $proxyFullname $tunnel }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
+  {{- if or $.Values.commonAnnotations $tunnel_config.service.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $tunnel_config.service.annotations $.Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $tunnel_config.service.type }}
+  ports:
+    {{- range $key, $value := $tunnel_config.service.ports }}
+      {{- $port := get $tunnel_config.service.ports $key -}}
+      {{- if or (eq $tunnel_config.service.type "ClusterIP") $port.exposed }}
+    - port: {{ $port.port }}
+      targetPort: {{ $key }}
+        {{- with $port.nodePort }}
+      nodePort: {{ . }}
+        {{- end }}
+      protocol: TCP
+      name: {{ $key }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
+    {{- if and (eq $.Values.mode "server") (gt ($.Values.proxy.replicaCount | int) 0) }}
+      {{- include "ggbridge.proxy.selectorLabels" $ | nindent 4 }}
+    {{- else }}
+      {{- if eq $.Values.mode "server" }}
+        {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
+      {{- else }}
+        {{- include "ggbridge.client.selectorLabels" $ | nindent 4 }}
       {{- end }}
     {{- end }}
   {{- end }}

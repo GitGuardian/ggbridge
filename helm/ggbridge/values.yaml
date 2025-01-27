@@ -413,6 +413,23 @@ proxy:
 
   tunnels:
     socks:
+      service:
+        annotations:
+          service.kubernetes.io/topology-mode: "Auto"
+        # -- Kubernetes Service type
+        type: ClusterIP
+        ports:
+          health:
+            port: 8081
+            containerPort: 9081
+            remoteContainerPort: 8081
+            # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
+            exposed: false
+          socks:
+            port: 1080
+            containerPort: 9180
+            # -- Defines whether the socks port is exposed if service.type is LoadBalancer or NodePort
+            exposed: true
       gateway:
         # -- Enable socks tunnel exposure using Kubernetes Gateway API
         enabled: false
@@ -430,6 +447,24 @@ proxy:
         annotations: {}
 
     tls:
+      service:
+        annotations:
+          service.kubernetes.io/topology-mode: "Auto"
+        # -- Kubernetes Service type
+        type: ClusterIP
+        ports:
+          health:
+            port: 8081
+            containerPort: 9081
+            remoteContainerPort: 8081
+            # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
+            exposed: false
+          tls:
+            port: 443
+            containerPort: 9443
+            remoteContainerPort: 8443
+            # -- Defines whether the tls port is exposed if service.type is LoadBalancer or NodePort
+            exposed: true
       ingress:
         # -- Enable tls tunnel exposure using Kubernetes Ingress API
         enabled: false
@@ -465,6 +500,25 @@ proxy:
         annotations: {}
 
     web:
+      service:
+        annotations:
+          service.kubernetes.io/topology-mode: "Auto"
+        # -- Kubernetes Service type
+        type: ClusterIP
+        ports:
+          health:
+            port: 8081
+            containerPort: 9081
+            remoteContainerPort: 8081
+            # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
+            exposed: false
+          web:
+            port: 80
+            containerPort: 9080
+            internalPort: 8080
+            remoteContainerPort: 8443
+            # -- Defines whether the web port is exposed if service.type is LoadBalancer or NodePort
+            exposed: true
       ingress:
         # -- Enable web tunnel exposure using Kubernetes Ingress API
         enabled: false
