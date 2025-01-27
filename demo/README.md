@@ -67,7 +67,7 @@ We cannot reach the VCS from GitGuardian because they are on two separate networ
 
 ```shell
 docker compose exec gitguardian \
-  curl --proxy socks5h://proxy.gitguardian.internal:9080 https://vcs.client.internal
+  curl --proxy socks5h://proxy.gitguardian.internal:9180 https://vcs.client.internal
 ```
 
 Et voilà! The request is now routed through the **ggbirdge** proxy and the internal VCS DNS name is resolved by the proxy. You should have the following JSON response for the VCS server:
