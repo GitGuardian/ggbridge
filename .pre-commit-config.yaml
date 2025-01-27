@@ -9,6 +9,6 @@ repos:
     rev: v0.1.25
     hooks:
       - id: gofmt
-      - id: golint
+      - id: golangci-lint
       - id: helmlint
         files: ^helm/ggbridge/
