@@ -29,11 +29,11 @@ runs:
         verb: call
         args: |
           with-registry-auth \
-            --registry=ghcr.io \
+            --address=ghcr.io \
             --username=${{ github.actor }} \
             --secret=env:GH_TOKEN \
           with-registry-auth \
-            --registry=docker.io \
+            --address=docker.io \
             --username=${{ inputs.dockerhub-username }} \
             --secret=env:DOCKER_HUB_PASSWORD \
           with-tag \

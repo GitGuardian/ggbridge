@@ -29,8 +29,6 @@ jobs:
       - name: Build APK packages
         id: apk
         uses: ./.github/actions/melange/build
-        with:
-          arch: ${{ steps.github.outputs.arch }}
 
       - name: Publish prod image
         id: publish-prod
