@@ -13,6 +13,10 @@ inputs:
     description: 'Whether to upload the scan report on GitHub or not'
     required: false
     default: 'false'
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
 
 outputs:
   report:
@@ -31,7 +35,7 @@ runs:
     - name: Scan
       uses: dagger/dagger-for-github@v7
       with:
-        engine-stop: false
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/grype@v1.4.0
         verb: call
         args: |

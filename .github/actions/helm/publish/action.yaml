@@ -2,12 +2,19 @@ name: Publish Helm chart
 description: 'Publish Helm chart'
 
 inputs:
+  registry:
+    description: 'The Helm registry'
+    required: true
   version:
     description: 'The Helm chart version'
     required: true
   app-version:
     description: 'The Helm chart App version'
     required: true
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -17,6 +24,7 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       with:
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/helm@v1.2.2
         verb: call
         args: |
@@ -24,6 +32,6 @@ runs:
             --path=helm/ggbridge \
             --version="${{ inputs.version }}" \
             --app-version="${{ inputs.app-version }}" \
-            --registry=ghcr.io/gitguardian/ggbridge/helm \
+            --registry=${{ inputs.registry }} \
             --username=${{ github.actor }} \
             --password=env:GH_TOKEN \

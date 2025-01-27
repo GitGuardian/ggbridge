@@ -17,6 +17,10 @@ inputs:
   cosign-private-key:
     description: 'CoSign private key for image signing'
     required: true
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -29,6 +33,7 @@ runs:
         DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}
       with:
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/cosign@v1.3.0
         verb: call
         args: |

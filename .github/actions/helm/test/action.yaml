@@ -1,12 +1,19 @@
 name: Test Helm chart
 description: 'Test Helm chart'
 
+inputs:
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
+
 runs:
   using: composite
   steps:
     - name: Lint Helm chart
       uses: dagger/dagger-for-github@v7
       with:
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/helm@v1.2.2
         verb: call
         args: |

@@ -43,6 +43,8 @@ jobs:
       - name: Build APK packages
         id: apk
         uses: ./.github/actions/melange/build
+        with:
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish prod image
         id: publish-prod
@@ -50,10 +52,11 @@ jobs:
         with:
           config: 'apko/prod.yaml'
           tag: 'gitguardian/ggbridge:unstable'
-          repository: ${{ steps.apk.outputs.output-dir }}
-          key: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ steps.apk.outputs.output-dir }}
+          keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Sign prod image
         id: sign-prod
@@ -64,6 +67,7 @@ jobs:
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish shell images
         id: publish-shell
@@ -71,10 +75,11 @@ jobs:
         with:
           config: 'apko/shell.yaml'
           tag: 'gitguardian/ggbridge:unstable-shell'
-          repository: ${{ steps.apk.outputs.output-dir }}
-          key: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ steps.apk.outputs.output-dir }}
+          keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Sign shell image
         id: sign-shell
@@ -85,6 +90,7 @@ jobs:
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan
@@ -92,6 +98,7 @@ jobs:
         with:
           source: 'ghcr.io/gitguardian/ggbridge:unstable'
           fail-on: high
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
   helm:
     if: github.ref == 'refs/heads/main'
@@ -109,9 +116,13 @@ jobs:
 
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
+        with:
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish
         with:
+          registry: ghcr.io/gitguardian/ggbridge/helm
           version: '0.0.0'
           app-version: 'unstable'
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

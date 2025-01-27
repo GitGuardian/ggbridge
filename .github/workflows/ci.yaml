@@ -49,6 +49,7 @@ jobs:
         uses: ./.github/actions/melange/build
         with:
           arch: ${{ steps.github.outputs.arch }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Build prod image
         id: build-prod
@@ -56,9 +57,10 @@ jobs:
         with:
           config: 'apko/prod.yaml'
           tag: 'local/prod'
-          repository: ${{ steps.apk.outputs.output-dir }}
-          key: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ steps.apk.outputs.output-dir }}
+          keyring-append: ${{ steps.apk.outputs.public-key }}
           arch: ${{ steps.github.outputs.arch }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Build shell image
         id: build-shell
@@ -66,9 +68,10 @@ jobs:
         with:
           config: 'apko/shell.yaml'
           tag: 'local/shell'
-          repository: ${{ steps.apk.outputs.output-dir }}
-          key: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ steps.apk.outputs.output-dir }}
+          keyring-append: ${{ steps.apk.outputs.public-key }}
           arch: ${{ steps.github.outputs.arch }}
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan
@@ -76,6 +79,7 @@ jobs:
         with:
           source: ${{ steps.build-prod.outputs.output-dir }}
           fail-on: high
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
   helm:
     name: Test Helm chart

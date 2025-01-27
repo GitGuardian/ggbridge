@@ -12,11 +12,11 @@ inputs:
     description: 'The architecture to build for'
     required: false
     default: ''
-  key:
+  keyring-append:
     description: 'Extra key to include in the keyring'
     required: false
     default: ''
-  repository:
+  repository-append:
     description: 'Extra repository to include'
     required: false
     default: ''
@@ -26,6 +26,10 @@ inputs:
   dockerhub-password:
     description: 'Password for Docker Hub authentication'
     required: true
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
 
 outputs:
   digest:
@@ -42,6 +46,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         engine-stop: false
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/apko@v1.5.4
         verb: call
         args: |
@@ -54,8 +59,8 @@ runs:
             --config=${{ inputs.config }} \
             --tag=ghcr.io/${{ inputs.tag }} \
             --arch=${{ inputs.arch }} \
-            --keyring-append=${{ inputs.key }} \
-            --repository-append=${{ inputs.repository }} \
+            --keyring-append=${{ inputs.keyring-append }} \
+            --repository-append=${{ inputs.repository-append }} \
           digest \
 
     - name: Copy image to Docker Hub

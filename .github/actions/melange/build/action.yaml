@@ -6,6 +6,10 @@ inputs:
     description: 'The architecture to build for'
     required: false
     default: ''
+  cloud-token:
+    description: 'The Dagger cloud token'
+    required: false
+    default: ''
 
 outputs:
   output-dir:
@@ -36,7 +40,7 @@ runs:
     - name: Build APK packages
       uses: dagger/dagger-for-github@v7
       with:
-        engine-stop: false
+        cloud-token: ${{ inputs.cloud-token }}
         module: github.com/opopops/daggerverse/melange@v1.3.4
         verb: call
         args: |
