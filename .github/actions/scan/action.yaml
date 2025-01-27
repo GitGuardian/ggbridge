@@ -9,6 +9,10 @@ inputs:
     description: 'The severity level to fail on'
     required: false
     default: 'high'
+  upload:
+    description: 'Whether to upload the scan report on GitHub or not'
+    required: false
+    default: 'false'
 
 outputs:
   report:
@@ -38,8 +42,8 @@ runs:
           export \
             --path=${{ steps.output.outputs.report }} \
 
-    # TODO: Uncomment this when enabling public visibility
-    # - name: Upload scan report
-    #   uses: github/codeql-action/upload-sarif@v3
-    #   with:
-    #     sarif_file: ${{ steps.output.outputs.report }}
+    - if: ${{ inputs.upload == 'true' }}
+      name: Upload scan report
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.output.outputs.report }}
