@@ -12,3 +12,9 @@ repos:
       - id: golangci-lint
       - id: helmlint
         files: ^helm/ggbridge/
+  - repo: https://github.com/norwoodj/helm-docs
+    rev:  v1.14.2
+    hooks:
+      - id: helm-docs
+        args:
+          - --chart-search-root=helm/ggbridge

@@ -105,11 +105,12 @@ containerSecurityContext:
 ##
 extraEnv: []
 
-# -- Set container requests and limits
 resources:
+  # -- Set container requests
   requests:
     cpu: 100m
     memory: 128Mi
+  # -- Set container limits
   limits: {}
 
 # -- Node labels for pod assignment
@@ -143,10 +144,12 @@ proxyProtocol:
   # -- When true, enables proxy protocol v2 for tcp tunnels
   enabled: false
 
-# -- Specify CA certificates to inject
 caBundle:
+  # -- Specify CA certificates to inject (PEM format)
   certs: ""
+  # -- Specify the secret containing the CA certificate to inject
   existingSecret: ""
+  # -- Specify secret key under the CA certificated is stored
   existingSecretKey: ca.crt
 
 tls:
@@ -165,7 +168,6 @@ tls:
     namespace: cert-manager
     # -- cert-manager service account name
     serviceAccount: cert-manager
-    # -- Create cert-manager RBAC resources
     rbac:
       create: true
       # -- Grants cert-manager permissions to the sepcfied subjects (Deprecated)
@@ -175,7 +177,6 @@ tls:
       ##     name: gim
       ##     namespace: gim
       subjects: []
-    # -- Cert-Manager issuer
     issuer:
       # -- Set Issuer to use
       name: ""
@@ -183,6 +184,7 @@ tls:
       kind: Issuer
       # -- Set Issuer spec (if specified, it will manage the issuer)
       spec: {}
+  # -- Specify TLS secret containing the certificate
   existingSecret: ""
   existingSecretKeys:
     # -- Existing secret key storing the Certificate Authority
@@ -225,7 +227,6 @@ annotations: {}
 # -- Set server labels
 labels: {}
 
-# -- Pod Disruption Budget parameters
 pdb:
   # -- Enable/disable a Pod Disruption Budget creation
   create: true
@@ -234,7 +235,6 @@ pdb:
   # -- Max number of pods that can be unavailable after the eviction
   maxUnavailable: ""
 
-# -- Network Policy parameters
 networkPolicy:
   # -- Specifies whether a NetworkPolicy should be created
   enabled: true
@@ -251,7 +251,6 @@ client:
   # -- Pool of open connection to the server, in order to speed up the connection process
   connectionMinIdle: 0
 
-  # -- Specify client to server tunnels
   tunnels:
     health:
       # -- Enable client to server health tunnel
@@ -266,7 +265,6 @@ client:
       # -- Enable client to server web tunnel (for HTTP/HTTPS traffic)
       enabled: false
 
-  # -- Specify server to client tunnels
   reverseTunnels:
     health:
       # -- Enable server to client health tunnel
@@ -297,17 +295,18 @@ client:
     failureThreshold: 1
 
 server:
-  # -- Services parameters
   service:
+    # -- Specify server serivce annottions
     annotations: {}
     # -- Kubernetes Service type
     type: ClusterIP
     ports:
       ws:
+        # -- Set the server websocket service port
         port: 9000
+        # -- Set the server websocket container port
         containerPort: 9000
 
-  # -- Configure the ingress resources for proxy
   ingress:
     # -- Enable exposure using Kubernetes Ingress API
     enabled: false
@@ -318,7 +317,6 @@ server:
     # -- Set ingress annotations
     annotations: {}
 
-  # -- Configure the gateway resources that allows you to connect to the server
   gateway:
     # -- Enable server exposure using Kubernetes Gateway API
     enabled: false
@@ -336,7 +334,6 @@ server:
     # -- Set gateway annotations
     annotations: {}
 
-  # -- Configure the istio resources that allows you to connect to the server
   istio:
     # -- Enable server exposure using Istio ingress
     enabled: false
@@ -377,33 +374,37 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
-  # -- Proxy service parameters
   service:
-    # --- Override the default service name
+    # --- Set the proxy service name
     name: ""
+    # -- Set proxy service annotations
     annotations:
       service.kubernetes.io/topology-mode: "Auto"
     # -- Kubernetes Service type
     type: ClusterIP
     ports:
       health:
+        # -- Specify the health service port number
         port: 8081
         containerPort: 9081
         remoteContainerPort: 8081
         # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
         exposed: false
       socks:
+        # -- Specify the socks service port number
         port: 1080
         containerPort: 9180
         # -- Defines whether the socks port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
       tls:
+        # -- Specify the tls service port number
         port: 443
         containerPort: 9443
         remoteContainerPort: 8443
         # -- Defines whether the tls port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
       web:
+        # -- Specify the web service port number
         port: 80
         containerPort: 9080
         internalPort: 8080
@@ -414,16 +415,19 @@ proxy:
   tunnels:
     socks:
       service:
+        # -- Specify socks service annotations
         annotations:
           service.kubernetes.io/topology-mode: "Auto"
         # -- Kubernetes Service type
         type: ClusterIP
         ports:
           health:
+            # -- Specify the health port number
             port: 8081
             # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
             exposed: false
           socks:
+            # -- Specify the socks port number
             port: 1080
             # -- Defines whether the socks port is exposed if service.type is LoadBalancer or NodePort
             exposed: true
@@ -445,16 +449,19 @@ proxy:
 
     tls:
       service:
+        # -- Specify tls service annotations
         annotations:
           service.kubernetes.io/topology-mode: "Auto"
         # -- Kubernetes Service type
         type: ClusterIP
         ports:
           health:
+            # -- Specify the health port number
             port: 8081
             # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
             exposed: false
           tls:
+            # -- Specify the tls port number
             port: 443
             # -- Defines whether the tls port is exposed if service.type is LoadBalancer or NodePort
             exposed: true
@@ -494,16 +501,19 @@ proxy:
 
     web:
       service:
+        # -- Specify web service annotations
         annotations:
           service.kubernetes.io/topology-mode: "Auto"
         # -- Kubernetes Service type
         type: ClusterIP
         ports:
           health:
+            # -- Specify the health port number
             port: 8081
             # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
             exposed: false
           web:
+            # -- Specify the web port number
             port: 80
             # -- Defines whether the web port is exposed if service.type is LoadBalancer or NodePort
             exposed: true
@@ -564,8 +574,8 @@ proxy:
         # -- Set gateway annotations
         annotations: {}
 
-  # -- Specify proxy Readiness Probe parameters
   readinessProbe:
+    # -- Whether to enable readiness probe for proxy
     enabled: true
     exec:
       command:
@@ -580,7 +590,6 @@ proxy:
     successThreshold: 1
     failureThreshold: 1
 
-  # -- Network Policy parameters
   networkPolicy:
     # -- Specifies whether a NetworkPolicy should be created
     enabled: true
@@ -604,9 +613,10 @@ proxy:
   # -- Topology spread constraints for pod assignment
   topologySpreadConstraints: []
 
-  # -- Set proxy container requests and limits
   resources:
+    # -- Set proxy container requests
     requests:
       cpu: 50m
       memory: 64Mi
+    # -- Set proxy container limits
     limits: {}

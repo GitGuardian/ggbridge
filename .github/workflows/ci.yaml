@@ -11,6 +11,7 @@ on:
       - 'demo/**'
       - 'docs/**'
       - 'examples/**'
+      - 'helm/ggbridge/README.md'
       - 'LICENSE'
       - 'README.md'
   workflow_dispatch:
