@@ -1,0 +1,14 @@
+default_stages: [pre-commit]
+repos:
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.35.0
+    hooks:
+      - id: ggshield
+        language_version: python3
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.25
+    hooks:
+      - id: gofmt
+      - id: golint
+      - id: helmlint
+        files: ^helm/ggbridge/
