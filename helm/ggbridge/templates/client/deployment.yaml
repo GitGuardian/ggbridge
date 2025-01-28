@@ -51,7 +51,7 @@ spec:
       securityContext:
         {{- toYaml (omit $.Values.podSecurityContext "enabled") | nindent 8 }}
       {{- end }}
-      {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) }}
+      {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.tls.verifyCert) }}
       initContainers:
         - name: ca
           {{- if $.Values.containerSecurityContext.enabled }}
@@ -151,7 +151,7 @@ spec:
               value: {{ $.Values.proxy.service.ports.web.internalPort | quote }}
             - name: TUNNEL_WEB_REMOTE_PORT
               value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
-            {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.client.tlsVerifyCert) }}
+            {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.tls.verifyCert) }}
             - name: SSL_CERT_FILE
               value: /certs/ca-bundle.crt
             {{- end }}
