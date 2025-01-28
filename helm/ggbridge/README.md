@@ -38,7 +38,7 @@ A Helm chart for installing ggbridge
 | containerSecurityContext.enabled | bool | `true` | Enable Container security Context in deployments |
 | deploymentCount | int | `3` | Number of deployments |
 | dnsResolver | string | `""` | Dns resolver to use to lookup ips of domain name |
-| domain | string | `"gitguardian.com"` | Domain |
+| domain | string | `"ggbridge.gitguardian.com"` | Domain |
 | extraEnv | list | `[]` | Array with extra environment variables # e.g: # extraEnv: #   - name: FOO #     value: "bar" # |
 | fullnameOverride | string | `""` | Override the default fully qualified app name |
 | hostname | string | `""` | Hostname |

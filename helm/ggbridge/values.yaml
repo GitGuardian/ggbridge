@@ -128,7 +128,7 @@ terminationGracePeriodSeconds: 300
 mode: client
 
 # -- Domain
-domain: gitguardian.com
+domain: ggbridge.gitguardian.com
 # -- Subdomain
 subdomain: ""
 # -- Hostname
