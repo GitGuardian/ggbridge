@@ -20,7 +20,7 @@ const (
 	DefaultHealthcheckUrl         = "http://127.0.0.1:9081/healthz"
 	DefaultLogLevel               = "INFO"
 	DefaultPIDFile                = "/var/run/ggbridge.pid"
-	DefaultPingFrequency          = 10
+	DefaultPingFrequency          = 30
 	DefaultTunnelSocksPort        = 9180
 	DefaultTunnelHealthPort       = 9081
 	DefaultTunnelHealthRemotePort = 8081
