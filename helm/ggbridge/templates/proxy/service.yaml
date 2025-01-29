@@ -32,6 +32,8 @@ spec:
     {{- end }}
   {{- end }}
   {{- range $tunnel, $tunnel_config := .Values.proxy.tunnels }}
+    {{- $clientTunnel := get $.Values.client.tunnels $tunnel -}}
+    {{- if or (eq $.Values.mode "server") $clientTunnel.enabled }}
 ---
 apiVersion: v1
 kind: Service
@@ -70,6 +72,7 @@ spec:
       {{- else }}
         {{- include "ggbridge.client.selectorLabels" $ | nindent 4 }}
       {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}

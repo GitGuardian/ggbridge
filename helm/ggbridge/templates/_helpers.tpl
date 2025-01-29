@@ -279,8 +279,10 @@ Returns the list of proxy service ports
 */}}
 {{- define "ggbridge.proxy.service.ports" -}}
 {{- range $key, $value := .Values.proxy.service.ports -}}
-  {{- $port := get $.Values.proxy.service.ports $key -}}
-  {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
+  {{- $clientTunnel := get $.Values.client.tunnels $key -}}
+  {{- if or (eq $.Values.mode "server") $clientTunnel.enabled }}
+    {{- $port := get $.Values.proxy.service.ports $key -}}
+    {{- if or (eq $.Values.proxy.service.type "ClusterIP") $port.exposed }}
 - port: {{ $port.port }}
   targetPort: {{ $key }}
     {{- with $port.nodePort }}
@@ -288,6 +290,7 @@ Returns the list of proxy service ports
     {{- end }}
   protocol: TCP
   name: {{ $key }}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- end -}}
