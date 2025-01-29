@@ -1,0 +1,47 @@
+name: Daily scan
+
+on:
+  schedule:
+    - cron: '0 0 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  attestations: write
+  id-token: write
+  security-events: write
+  actions: read
+
+jobs:
+  scan:
+    name: Scan image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch tags
+        shell: bash
+        run: git fetch --tags origin
+
+      - name: Get previous tag
+        id: previous-tag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+
+      - name: Format version
+        id: version
+        shell: bash
+        run: |
+          TAG=${{ steps.previous-tag.outputs.tag }}
+          VERSION=${TAG#v}
+          echo "VERSION: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Scan vulnerabilities
+        id: scan
+        uses: ./.github/actions/scan
+        with:
+          source: 'ghcr.io/gitguardian/ggbridge:${{ steps.version.outputs.version }}'
+          fail-on: high
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
