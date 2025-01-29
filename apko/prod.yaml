@@ -62,5 +62,10 @@ archs:
   - x86_64
 
 annotations:
-  image-author: 'GitGuardian SRE Team <sre@gitguardian.com>'
-  image-description: 'Connect your on-prem VCS with the GitGuardian Platform'
+  org.opencontainers.image.title: 'GGBridge'
+  org.opencontainers.image.description: 'Connect your on-prem VCS with the GitGuardian Platform'
+  org.opencontainers.image.vendor: 'GitGuardian'
+  org.opencontainers.image.licenses: 'MIT'
+  org.opencontainers.image.authors: 'GitGuardian SRE Team <sre@gitguardian.com>'
+  org.opencontainers.image.source	: 'https://github.com/GitGuardian/ggbridge'
+  org.opencontainers.image.documentation: 'https://github.com/GitGuardian/ggbridge/blob/main/README.md'
