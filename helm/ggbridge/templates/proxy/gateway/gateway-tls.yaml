@@ -1,5 +1,4 @@
 {{- $gateway := .Values.proxy.tunnels.tls.gateway -}}
-{{- $servicePort :=  .Values.proxy.service.ports.tls -}}
 {{- if $gateway.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- if $gateway.gateway.create }}
@@ -62,6 +61,6 @@ spec:
   {{- end }}
   rules:
     - backendRefs:
-        - name: {{ include "ggbridge.proxy.serviceName" . }}
-          port: {{ $servicePort.port }}
+        - name: {{ printf "%s-tls" $proxyFullname }}
+          port: {{ .Values.proxy.tunnels.tls.service.ports.tls.port }}
 {{- end }}

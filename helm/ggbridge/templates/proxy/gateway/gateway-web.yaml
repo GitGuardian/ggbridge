@@ -1,5 +1,4 @@
 {{- $gateway := .Values.proxy.tunnels.web.gateway -}}
-{{- $servicePort :=  .Values.proxy.service.ports.web -}}
 {{- if $gateway.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- if $gateway.gateway.create }}
@@ -72,6 +71,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: {{ include "ggbridge.proxy.serviceName" . }}
-          port: {{ $servicePort.port }}
+        - name: {{ printf "%s-web" $proxyFullname }}
+          port: {{ .Values.proxy.tunnels.web.service.ports.web.port }}
 {{- end }}

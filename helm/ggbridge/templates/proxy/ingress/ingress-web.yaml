@@ -1,5 +1,4 @@
 {{- $ingress := .Values.proxy.tunnels.web.ingress -}}
-{{- $servicePort :=  .Values.proxy.service.ports.web -}}
 {{- if $ingress.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- if and (eq $ingress.controller "traefik") $ingress.tls.enabled }}
@@ -33,9 +32,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "ggbridge.proxy.serviceName" $ }}
+                name: {{ printf "%s-web" $proxyFullname }}
                 port:
-                  number: {{ $servicePort.port }}
+                  number: {{ .Values.proxy.tunnels.web.service.ports.web.port }}
     {{- end }}
   {{- if $ingress.tls.enabled }}
   tls:

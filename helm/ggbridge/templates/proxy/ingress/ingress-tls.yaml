@@ -1,5 +1,4 @@
 {{- $ingress := .Values.proxy.tunnels.tls.ingress -}}
-{{- $servicePort :=  .Values.proxy.service.ports.tls -}}
 {{- if $ingress.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- if (eq $ingress.controller "traefik") }}
@@ -21,8 +20,8 @@ spec:
     {{- range $ingress.hostnames }}
     - match: {{ printf "HostSNI(`%s`)" . }}
       services:
-        - name: {{ include "ggbridge.proxy.serviceName" $ }}
-          port: {{ $servicePort.port }}
+        - name: {{ printf "%s-tls" $proxyFullname }}
+          port: {{ .Values.proxy.tunnels.tls.service.ports.tls.port }}
     {{- end }}
   tls:
     passthrough: true
@@ -48,9 +47,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "ggbridge.proxy.serviceName" $ }}
+                name: {{ printf "%s-tls" $proxyFullname }}
                 port:
-                  number: {{ $servicePort.port }}
+                  number: {{ .Values.proxy.tunnels.tls.service.ports.tls.port }}
     {{- end }}
   {{- end }}
 {{- end }}

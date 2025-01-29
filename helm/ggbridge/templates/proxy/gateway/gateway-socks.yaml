@@ -1,5 +1,4 @@
 {{- $gateway := .Values.proxy.tunnels.socks.gateway -}}
-{{- $servicePort :=  .Values.proxy.service.ports.socks -}}
 {{- if $gateway.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- if $gateway.gateway.create }}
@@ -52,6 +51,6 @@ spec:
   {{- end }}
   rules:
     - backendRefs:
-        - name: {{ include "ggbridge.proxy.serviceName" $ }}
-          port: {{ $servicePort.port }}
+        - name: {{ printf "%s-socks" $proxyFullname }}
+          port: {{ .Values.proxy.tunnels.socks.service.ports.socks.port }}
 {{- end }}
