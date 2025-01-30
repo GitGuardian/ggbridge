@@ -2,6 +2,9 @@ name: Get GitHub vars
 description: 'Get GitHub fromatted vars'
 
 outputs:
+  repository:
+    description: 'The GitHub repository'
+    value: ${{ steps.repository.outputs.repository }}
   arch:
     description: 'The runner architecture'
     value: ${{ steps.arch.outputs.arch }}
@@ -18,6 +21,12 @@ outputs:
 runs:
   using: composite
   steps:
+    - shell: bash
+      id: repository
+      run: |
+        REPOSITORY=${GITHUB_REPOSITORY@L}
+        echo "repository=$REPOSITORY" >> $GITHUB_OUTPUT
+
     - shell: bash
       id: arch
       run: |

@@ -38,10 +38,14 @@ jobs:
           echo "VERSION: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Get GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
       - name: Scan vulnerabilities
         id: scan
         uses: ./.github/actions/scan
         with:
-          source: 'ghcr.io/gitguardian/ggbridge:${{ steps.version.outputs.version }}'
+          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.version.outputs.version }}'
           fail-on: high
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

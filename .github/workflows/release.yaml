@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/apko/publish
         with:
           config: 'apko/prod.yaml'
-          tag: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}'
+          tag: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -47,7 +47,7 @@ jobs:
       - name: Tag shell prod image as latest
         uses: ./.github/actions/crane/tag
         with:
-          image: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}'
+          image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
           tag: latest
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
@@ -57,7 +57,7 @@ jobs:
         id: sign-prod
         uses: ./.github/actions/cosign/sign
         with:
-          image: 'gitguardian/ggbridge@${{ steps.publish-prod.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-prod.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -69,7 +69,7 @@ jobs:
         uses: ./.github/actions/apko/publish
         with:
           config: 'apko/shell.yaml'
-          tag: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}-shell'
+          tag: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}-shell'
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -79,7 +79,7 @@ jobs:
       - name: Tag shell shell image as latest
         uses: ./.github/actions/crane/tag
         with:
-          image: 'gitguardian/ggbridge:${{ steps.github.outputs.version }}-shell'
+          image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}-shell'
           tag: latest-shell
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
@@ -89,7 +89,7 @@ jobs:
         id: sign-shell
         uses: ./.github/actions/cosign/sign
         with:
-          image: 'gitguardian/ggbridge@${{ steps.publish-shell.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-shell.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -100,7 +100,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan
         with:
-          source: 'ghcr.io/gitguardian/ggbridge:${{ steps.github.outputs.version }}'
+          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
           fail-on: high
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
@@ -126,7 +126,7 @@ jobs:
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish
         with:
-          registry: ghcr.io/gitguardian/ggbridge/helm
+          registry: ghcr.io/${{ steps.github.outputs.repository }}/helm
           version: ${{ steps.github.outputs.version }}
           app-version: ${{ steps.github.outputs.version }}
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

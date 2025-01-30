@@ -41,6 +41,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
       - name: Build APK packages
         id: apk
         uses: ./.github/actions/melange/build
@@ -52,7 +56,7 @@ jobs:
         uses: ./.github/actions/apko/publish
         with:
           config: 'apko/prod.yaml'
-          tag: 'gitguardian/ggbridge:unstable'
+          tag: '${{ steps.github.outputs.repository }}:unstable'
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -63,7 +67,7 @@ jobs:
         id: sign-prod
         uses: ./.github/actions/cosign/sign
         with:
-          image: 'gitguardian/ggbridge@${{ steps.publish-prod.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-prod.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -75,7 +79,7 @@ jobs:
         uses: ./.github/actions/apko/publish
         with:
           config: 'apko/shell.yaml'
-          tag: 'gitguardian/ggbridge:unstable-shell'
+          tag: '${{ steps.github.outputs.repository }}:unstable-shell'
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
@@ -86,7 +90,7 @@ jobs:
         id: sign-shell
         uses: ./.github/actions/cosign/sign
         with:
-          image: 'gitguardian/ggbridge@${{ steps.publish-shell.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-shell.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -97,7 +101,7 @@ jobs:
         id: scan
         uses: ./.github/actions/scan
         with:
-          source: 'ghcr.io/gitguardian/ggbridge:unstable'
+          source: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable'
           fail-on: high
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
@@ -123,7 +127,7 @@ jobs:
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish
         with:
-          registry: ghcr.io/gitguardian/ggbridge/helm
+          registry: ghcr.io/${{ steps.github.outputs.repository }}/helm
           version: '0.0.0'
           app-version: 'unstable'
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
