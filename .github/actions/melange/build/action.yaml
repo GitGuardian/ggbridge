@@ -41,7 +41,7 @@ runs:
       uses: dagger/dagger-for-github@v7
       with:
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/melange@v1.3.4
+        module: github.com/opopops/daggerverse/melange@v1.3.5
         verb: call
         args: |
           with-build \

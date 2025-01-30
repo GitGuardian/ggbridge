@@ -25,7 +25,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/helm@v1.2.2
+        module: github.com/opopops/daggerverse/helm@v1.2.3
         verb: call
         args: |
           package-push \

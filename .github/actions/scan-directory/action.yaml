@@ -41,7 +41,7 @@ runs:
       with:
         engine-stop: false
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/grype@v1.4.0
+        module: github.com/opopops/daggerverse/grype@v1.4.1
         verb: call
         args: |
           scan-directory \

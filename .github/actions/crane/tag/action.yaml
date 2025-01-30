@@ -30,7 +30,7 @@ runs:
       with:
         engine-stop: false
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/crane@v1.2.2
+        module: github.com/opopops/daggerverse/crane@v1.2.3
         verb: call
         args: |
           with-registry-auth \

@@ -14,7 +14,7 @@ runs:
       uses: dagger/dagger-for-github@v7
       with:
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/helm@v1.2.2
+        module: github.com/opopops/daggerverse/helm@v1.2.3
         verb: call
         args: |
           lint \

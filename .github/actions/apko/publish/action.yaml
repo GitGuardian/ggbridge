@@ -47,7 +47,7 @@ runs:
       with:
         engine-stop: false
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.5.4
+        module: github.com/opopops/daggerverse/apko@v1.5.5
         verb: call
         args: |
           with-registry-auth \

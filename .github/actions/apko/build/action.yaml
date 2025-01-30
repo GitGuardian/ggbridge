@@ -43,7 +43,7 @@ runs:
       uses: dagger/dagger-for-github@v7
       with:
         cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.5.4
+        module: github.com/opopops/daggerverse/apko@v1.5.5
         verb: call
         args: |
           build \
