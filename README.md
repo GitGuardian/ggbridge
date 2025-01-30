@@ -20,7 +20,7 @@ Once the tunnel is established, a proxy server is deployed on the GitGuardian si
 ## Install and configure
 
 **ggbridge** is distributed as a Distroless Docker image based on Wolfi OS, ensuring minimal dependencies and enhanced security.
-Additionaly, a **debug** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
+Additionaly, a **shell** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
 
 The project offers two deployment methods:
 
@@ -29,35 +29,40 @@ The project offers two deployment methods:
 
 ### Docker deployment
 
-Here is an example of a client deployment using Docker Compose with mTLS enabled:
+Deploy the GGBridge client via Docker Compose by performing the following actions:
+
+- Create `docker-compose.yml` file
 
 ```yaml
 name: ggbridge
 
 services:
   client:
-    image: gitguardian/ggbridge:unstable-debug
-    entrypoint:
-      - ggbridge
-    command:
-      - client
+    image: gitguardian/ggbridge:latest
     environment:
-      SERVER_ADDRESS: subdomain.domain.com
-      TLS_ENABLED: "true"
-      LOG_LEVEL: INFO
+      SERVER_ADDRESS: <my-subdomain>.ggbridge.gitguardian.com
+      TLS_ENABLED: 'true'
     volumes:
-      - ./certs/client.key:/certs/ca.crt:ro
-      - ./certs/client.crt:/certs/client.crt:ro
-      - ./certs/client.key:/certs/client.key:ro
+      - ./tls/ca.crt:/etc/ggbridge/tls/ca.crt:ro
+      - ./tls/client.crt:/etc/ggbridge/tls/client.crt:ro
+      - ./tls/client.key:/etc/ggbridge/tls/client.key:ro
     restart: on-failure
+```
+
+- Run `docker-compose`
+
+```shell
+docker compose up
 ```
 
 ### Helm deployment
 
-Here is an example of a Helm values file to deploy the ggbridge client:
+Deploy the GGBridge client via the Helm chart by performing the following actions.
+
+- Create `values.yaml` file
 
 ```yaml
-hostname: my-subdomain.ggbridge.gitguardian.com
+hostname: <my-subdomain>.ggbridge.gitguardian.com
 
 tls:
   enabled: true

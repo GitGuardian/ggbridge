@@ -3,9 +3,7 @@ name: ggbridge
 services:
 
   server:
-    image: gitguardian/ggbridge:unstable-debug
-    entrypoint:
-      - ggbridge
+    image: gitguardian/ggbridge
     command:
       - server
     environment:

@@ -3,13 +3,9 @@ name: ggbridge
 services:
 
   client:
-    image: gitguardian/ggbridge:unstable-debug
-    entrypoint:
-      - ggbridge
-    command:
-      - client
+    image: gitguardian/ggbridge
     environment:
-      SERVER_ADDRESS: tenant.domain.com
+      SERVER_ADDRESS: <subdomain>.ggbridge.gitguardian.com
       TLS_ENABLED: "true"
       LOG_LEVEL: INFO
     volumes:
