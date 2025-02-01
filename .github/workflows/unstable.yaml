@@ -30,6 +30,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  DAGGER_VERSION: '0.15.3'
+
 jobs:
   docker:
     if: github.ref == 'refs/heads/main'
@@ -49,7 +52,8 @@ jobs:
         id: apk
         uses: ./.github/actions/melange/build
         with:
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish prod image
         id: publish-prod
@@ -61,7 +65,8 @@ jobs:
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Sign prod image
         id: sign-prod
@@ -72,7 +77,8 @@ jobs:
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish shell images
         id: publish-shell
@@ -84,7 +90,8 @@ jobs:
           keyring-append: ${{ steps.apk.outputs.public-key }}
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Sign shell image
         id: sign-shell
@@ -95,7 +102,8 @@ jobs:
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan
@@ -103,7 +111,8 @@ jobs:
         with:
           source: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable'
           fail-on: high
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
   helm:
     if: github.ref == 'refs/heads/main'
@@ -122,7 +131,8 @@ jobs:
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
         with:
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Publish Helm chart
         uses: ./.github/actions/helm/publish
@@ -130,4 +140,5 @@ jobs:
           registry: ghcr.io/${{ steps.github.outputs.repository }}/helm
           version: '0.0.0'
           app-version: 'unstable'
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

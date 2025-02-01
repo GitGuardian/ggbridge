@@ -6,7 +6,11 @@ inputs:
     description: 'The architecture to build for'
     required: false
     default: ''
-  cloud-token:
+  dagger-version:
+    description: 'The Dagger Engine version'
+    required: false
+    default: 'latest'
+  dagger-cloud-token:
     description: 'The Dagger cloud token'
     required: false
     default: ''
@@ -40,7 +44,8 @@ runs:
     - name: Build APK packages
       uses: dagger/dagger-for-github@v7
       with:
-        cloud-token: ${{ inputs.cloud-token }}
+        version: ${{ inputs.dagger-version }}
+        cloud-token: ${{ inputs.dagger-cloud-token }}
         module: github.com/opopops/daggerverse/melange@v1.3.5
         verb: call
         args: |

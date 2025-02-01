@@ -17,7 +17,11 @@ inputs:
   cosign-private-key:
     description: 'CoSign private key for image signing'
     required: true
-  cloud-token:
+  dagger-version:
+    description: 'The Dagger Engine version'
+    required: false
+    default: 'latest'
+  dagger-cloud-token:
     description: 'The Dagger cloud token'
     required: false
     default: ''
@@ -33,7 +37,8 @@ runs:
         DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}
       with:
-        cloud-token: ${{ inputs.cloud-token }}
+        version: ${{ inputs.dagger-version }}
+        cloud-token: ${{ inputs.dagger-cloud-token }}
         module: github.com/opopops/daggerverse/cosign@v1.3.1
         verb: call
         args: |
