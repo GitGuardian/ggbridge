@@ -43,6 +43,8 @@ runs:
 
     - name: Build APK packages
       uses: dagger/dagger-for-github@v7
+      env:
+        _EXPERIMENTAL_DAGGER_CACHE_CONFIG: 'type=gha,mode=max'
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
