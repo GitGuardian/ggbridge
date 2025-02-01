@@ -12,6 +12,9 @@ permissions:
   security-events: write
   actions: read
 
+env:
+  DAGGER_VERSION: '0.15.3'
+
 jobs:
   scan:
     name: Scan image
@@ -48,4 +51,5 @@ jobs:
         with:
           source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.version.outputs.version }}'
           fail-on: high
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

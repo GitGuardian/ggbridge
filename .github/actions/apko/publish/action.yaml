@@ -26,7 +26,11 @@ inputs:
   dockerhub-password:
     description: 'Password for Docker Hub authentication'
     required: true
-  cloud-token:
+  dagger-version:
+    description: 'The Dagger Engine version'
+    required: false
+    default: 'latest'
+  dagger-cloud-token:
     description: 'The Dagger cloud token'
     required: false
     default: ''
@@ -46,8 +50,9 @@ runs:
         GH_TOKEN: ${{ github.token }}
       with:
         engine-stop: false
-        cloud-token: ${{ inputs.cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.5.4
+        version: ${{ inputs.dagger-version }}
+        cloud-token: ${{ inputs.dagger-cloud-token }}
+        module: github.com/opopops/daggerverse/apko@v1.5.5
         verb: call
         args: |
           with-registry-auth \
@@ -69,6 +74,7 @@ runs:
         DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}
       with:
+        version: ${{ inputs.dagger-version }}
         module: github.com/opopops/daggerverse/crane@v1.2.2
         verb: call
         args: |

@@ -1,4 +1,4 @@
-include: prod.yaml
+include: apko/prod.yaml
 
 contents:
   packages:

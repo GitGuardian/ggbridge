@@ -32,6 +32,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  DAGGER_VERSION: '0.15.3'
+
 jobs:
   docker:
     name: Build and Scan Docker image
@@ -50,7 +53,8 @@ jobs:
         uses: ./.github/actions/melange/build
         with:
           arch: ${{ steps.github.outputs.arch }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Build prod image
         id: build-prod
@@ -61,7 +65,8 @@ jobs:
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           arch: ${{ steps.github.outputs.arch }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Build shell image
         id: build-shell
@@ -72,7 +77,8 @@ jobs:
           repository-append: ${{ steps.apk.outputs.output-dir }}
           keyring-append: ${{ steps.apk.outputs.public-key }}
           arch: ${{ steps.github.outputs.arch }}
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan
@@ -80,7 +86,8 @@ jobs:
         with:
           source: ${{ steps.build-prod.outputs.output-dir }}
           fail-on: high
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
   helm:
     name: Test Helm chart
@@ -92,3 +99,6 @@ jobs:
 
       - name: Test Helm chart
         uses: ./.github/actions/helm/test
+        with:
+          dagger-version: ${{ env.DAGGER_VERSION }}
+          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
