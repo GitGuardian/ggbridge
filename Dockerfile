@@ -62,7 +62,10 @@ COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 FROM ${REGISTRY}/chainguard/nginx:latest-dev AS nginx
 
 LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
+LABEL org.opencontainers.image.title="GGBridge"
 LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/GitGuardian/ggbridge"
 
 USER 0
 
@@ -97,7 +100,10 @@ CMD ["client"]
 FROM ${REGISTRY}/chainguard/nginx:latest AS prod
 
 LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
+LABEL org.opencontainers.image.title="GGBridge"
 LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/GitGuardian/ggbridge"
 
 COPY --chown=0:0 --chmod=0444 docker/files/nginx/nginx.conf /etc/ggbridge/nginx.conf
 COPY --link --from=nginx --chmod=755 /usr/lib/nginx/modules /usr/lib/nginx/modules
