@@ -31,5 +31,6 @@ pipeline:
       tags: gitguardian
   - runs: |
       install -dm755 "${{targets.destdir}}"/etc/ggbridge
+      install -dm755 "${{targets.destdir}}"/etc/ggbridge/tls
       install -m644 docker/files/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
   - uses: strip

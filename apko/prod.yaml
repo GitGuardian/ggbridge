@@ -9,9 +9,9 @@ contents:
     - wolfi-baselayout
 
 entrypoint:
-  type: service-bundle
-  services:
-    ggbridge: /usr/bin/ggbridge client"
+  command: /usr/bin/ggbridge
+
+cmd: client
 
 stop-signal: SIGQUIT
 
