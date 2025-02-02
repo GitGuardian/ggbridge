@@ -13,6 +13,7 @@ on:
       - 'helm/ggbridge/README.md'
       - 'LICENSE'
       - 'README.md'
+      - 'SECURITY.md'
   workflow_dispatch:
     inputs:
       runner:
