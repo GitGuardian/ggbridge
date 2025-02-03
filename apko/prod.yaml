@@ -25,10 +25,12 @@ accounts:
       gid: 65532
   run-as: nonroot
 
+work-dir: /home/nonroot
+
 paths:
   - path: /run/nginx
     type: directory
-    permissions: 0o775
+    permissions: 0o777
     uid: 65532
     gid: 0
   - path: /var/lib/nginx
@@ -43,7 +45,7 @@ paths:
     gid: 0
   - path: /var/lib/nginx/logs
     type: directory
-    permissions: 0o755
+    permissions: 0o775
     uid: 65532
     gid: 0
   - path: /var/lib/nginx/tmp
