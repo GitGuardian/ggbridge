@@ -295,6 +295,9 @@ client:
     failureThreshold: 1
 
 server:
+  # -- Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server
+  idleTimeout: 30
+
   service:
     # -- Specify server serivce annottions
     annotations: {}

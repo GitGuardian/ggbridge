@@ -21,9 +21,10 @@ const (
 	DefaultLogLevel               = "INFO"
 	DefaultPIDFile                = "/var/run/ggbridge.pid"
 	DefaultPingFrequency          = 30
-	DefaultTunnelSocksPort        = 9180
+	DefaultServerIdleTimeout      = 30
 	DefaultTunnelHealthPort       = 9081
 	DefaultTunnelHealthRemotePort = 8081
+	DefaultTunnelSocksPort        = 9180
 	DefaultTunnelTlsPort          = 9443
 	DefaultTunnelTlsRemotePort    = 8443
 	DefaultTunnelWebPort          = 8090
@@ -70,7 +71,7 @@ func performHealthCheck(healthCheckUrl string, proxyUrl string) (string, error) 
 		// Parse the proxy URL
 		proxyUrl, err := url.Parse(proxyUrl)
 		if err != nil {
-			log.Fatalf("Invalid proxy address", err)
+			log.Fatalf("Invalid proxy address: %s", err)
 		}
 		// Create a SOCKS5 dialer
 		dialer, err := proxy.SOCKS5("tcp", proxyUrl.Host, nil, proxy.Direct)
@@ -120,35 +121,35 @@ func buildClientCommand() []string {
 	dnsResolver := os.Getenv("DNS_RESOLVER")
 	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tlsEnabled:", err)
+		log.Fatalf("Invalid boolean for tlsEnabled: %s", err)
 	}
 	tlsVerifyCertificate, err := strconv.ParseBool(getEnv("TLS_VERIFY_CERTIFICATE", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tlsVerifyCertificate:", err)
+		log.Fatalf("Invalid boolean for tlsVerifyCertificate: %s", err)
 	}
 	tunnelSocksEnabled, err := strconv.ParseBool(getEnv("TUNNEL_SOCKS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tunnelSocksEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelSocksEnabled: %s", err)
 	}
 	tunnelTlsEnabled, err := strconv.ParseBool(getEnv("TUNNEL_TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tunnelTlsEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelTlsEnabled: %s", err)
 	}
 	tunnelWebEnabled, err := strconv.ParseBool(getEnv("TUNNEL_WEB_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tunnelWebEnabled:", err)
+		log.Fatalf("Invalid boolean for tunnelWebEnabled: %s", err)
 	}
 	reverseTunnelSocksEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_SOCKS_ENABLED", "true"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for reverseTunnelSocksEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelSocksEnabled: %s", err)
 	}
 	reverseTunnelTlsEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for reverseTunnelTlsEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelTlsEnabled: %s", err)
 	}
 	reverseTunnelWebEnabled, err := strconv.ParseBool(getEnv("REVERSE_TUNNEL_WEB_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for reverseTunnelWebEnabled:", err)
+		log.Fatalf("Invalid boolean for reverseTunnelWebEnabled: %s", err)
 	}
 	tunnelHealthPort := getEnv("TUNNEL_HEALTH_PORT", strconv.Itoa(DefaultTunnelHealthPort))
 	tunnelHealthRemotePort := getEnv("TUNNEL_HEALTH_REMOTE_PORT", strconv.Itoa(DefaultTunnelHealthRemotePort))
@@ -244,12 +245,13 @@ func buildServerCommand() []string {
 	serverListen := getEnv("SERVER_LISTEN", "0.0.0.0")
 	serverPort := os.Getenv("SERVER_PORT")
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
+	serverIdleTimeout := getEnv("SERVER_IDLE_TIMEOUT", strconv.Itoa(DefaultServerIdleTimeout))
 	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	dnsResolver := os.Getenv("DNS_RESOLVER")
 	restrictConfig := os.Getenv("RESTRICT_CONFIG")
 	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
 	if err != nil {
-		log.Fatalf("Invalid boolean for tlsEnabled:", err)
+		log.Fatalf("Invalid boolean for tlsEnabled: %s", err)
 	}
 
 	if serverListen == "" {
@@ -271,6 +273,7 @@ func buildServerCommand() []string {
 		"--log-lvl", getEnv("LOG_LEVEL", DefaultLogLevel),
 		"server",
 		serverUrl,
+		"--remote-to-local-server-idle-timeout-sec", serverIdleTimeout,
 		"--websocket-ping-frequency-sec", pingFrequency,
 	}
 

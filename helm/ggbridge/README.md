@@ -172,6 +172,7 @@ A Helm chart for installing ggbridge
 | server.gateway.gateway.create | bool | `true` | Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute) |
 | server.gateway.gateway.ports | object | `{"http":80,"https":443}` | Specify Gateway ports number |
 | server.gateway.parentRefs | list | `[]` | Specify the existing gateway resources |
+| server.idleTimeout | int | `30` | Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server |
 | server.ingress.annotations | object | `{}` | Set ingress annotations |
 | server.ingress.className | string | `""` | Set the ingress ClassName |
 | server.ingress.controller | string | `""` | Specify the ingress controller |

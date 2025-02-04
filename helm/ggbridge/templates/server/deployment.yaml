@@ -91,7 +91,9 @@ spec:
             - name: SERVER_LISTEN
               value: "0.0.0.0"
             - name: SERVER_PORT
-              value: {{$.Values.server.service.ports.ws.containerPort | quote }}
+              value: {{ $.Values.server.service.ports.ws.containerPort | quote }}
+            - name: SERVER_IDLE_TIMEOUT
+              value: {{ $.Values.server.idleTimeout | quote }}
             {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
             - name: TLS_ENABLED
               value: "true"
