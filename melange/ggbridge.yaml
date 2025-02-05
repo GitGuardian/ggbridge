@@ -30,7 +30,12 @@ pipeline:
       output: ggbridge
       tags: gitguardian
   - runs: |
+      install -dm755 "${{targets.destdir}}"/opt/ggbridge
       install -dm755 "${{targets.destdir}}"/etc/ggbridge
+      install -dm755 "${{targets.destdir}}"/etc/ggbridge/ssl
+      install -dm775 "${{targets.destdir}}"/etc/ggbridge/ssl/certs
+      install -dm775 "${{targets.destdir}}"/etc/ggbridge/ssl/private
       install -dm755 "${{targets.destdir}}"/etc/ggbridge/tls
-      install -m644 docker/files/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
+      install -m755 docker/scripts/run.sh "${{targets.destdir}}"/opt/ggbridge/run.sh
+      install -m644 docker/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
   - uses: strip

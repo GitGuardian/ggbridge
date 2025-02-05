@@ -6,24 +6,38 @@ ARG REGISTRY="cgr.dev"
 FROM --platform=$BUILDPLATFORM ${REGISTRY}/chainguard/wolfi-base:latest AS base
 
 LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
+LABEL org.opencontainers.image.title="GGBridge"
+LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/GitGuardian/ggbridge"
 
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT
 
+ENV GGBRIDGE_SSL_CERT_DIR="/etc/ggbridge/ssl/certs"
+ENV GGBRIDGE_SSL_CERT_FILE="${GGBRIDGE_SSL_CERT_DIR}/ca-bundle.crt"
+ENV GGBRIDGE_SSL_PRIVATE_CERT_DIR="/etc/ggbridge/ssl/private"
+ENV GGBRIDGE_PRIVATE_SSL_CERT_FILE="${GGBRIDGE_SSL_PRIVATE_CERT_DIR}/ca-bundle.crt"
+
 RUN apk add --no-cache \
-  curl
+  bash \
+  busybox \
+  nginx \
+  nginx-mod-stream
 
+RUN mkdir -p $GGBRIDGE_SSL_CERT_DIR && \
+  chown 65532:0 $GGBRIDGE_SSL_CERT_DIR && \
+  chmod 775 $GGBRIDGE_SSL_CERT_DIR && \
+  mkdir -p $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
+  chown 65532:0 $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
+  chmod 775 $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
+  mkdir -p /opt/ggbridge && \
+  chown 0:0 /opt/ggbridge && \
+  chmod 775 /opt/ggbridge
 
-### WSTunnel
-FROM base AS wstunnel
-
-ARG WSTUNNEL_VERSION="10.1.9"
-ENV WSTUNNEL_VERSION=$WSTUNNEL_VERSION
-RUN curl -fsSL https://github.com/erebe/wstunnel/releases/download/v${WSTUNNEL_VERSION}/wstunnel_${WSTUNNEL_VERSION}_${TARGETOS}_${TARGETARCH}.tar.gz | \
-  tar xvzf - -C /usr/bin wstunnel && \
-  chmod 755 /usr/bin/wstunnel
-USER 65532
+COPY --chown=0:0 --chmod=0755 docker/scripts/run.sh /opt/ggbridge/run.sh
+COPY --chown=0:0 --chmod=0644 docker/nginx/nginx.conf /etc/ggbridge/nginx.conf
 
 
 ### Builder
@@ -31,8 +45,21 @@ FROM base AS builder
 
 RUN apk add --no-cache \
   bash \
+  build-base \
+  curl \
   git \
   go
+
+
+### WSTunnel
+FROM builder AS wstunnel
+
+ARG WSTUNNEL_VERSION="10.1.9"
+ENV WSTUNNEL_VERSION=$WSTUNNEL_VERSION
+RUN curl -fsSL https://github.com/erebe/wstunnel/releases/download/v${WSTUNNEL_VERSION}/wstunnel_${WSTUNNEL_VERSION}_${TARGETOS}_${TARGETARCH}.tar.gz | \
+  tar xvzf - -C /usr/bin wstunnel && \
+  chmod 755 /usr/bin/wstunnel
+USER 65532
 
 
 ### Build
@@ -48,69 +75,42 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 FROM builder AS dev
 
 RUN apk add --no-cache \
-  nano \
-  nginx \
-  nginx-mod-stream \
+  bind-tools \
   openssl \
+  net-tools \
   vim
 
-COPY --chown=0:0 --chmod=0444 docker/files/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --chown=0:0 --chmod=0444 docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
-
-
-### NGINX
-FROM ${REGISTRY}/chainguard/nginx:latest-dev AS nginx
-
-LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
-LABEL org.opencontainers.image.title="GGBridge"
-LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.source="https://github.com/GitGuardian/ggbridge"
-
-USER 0
-
-RUN apk add --no-cache \
-  nginx-mod-stream
-
-USER 65532
 
 
 ### Shell
-FROM nginx AS shell
+FROM base AS shell
 
 USER 0
 
 RUN apk add --no-cache \
-  bash \
+  bind-tools \
   curl \
+  net-tools \
   openssl
 
-COPY --chown=0:0 --chmod=0444 docker/files/nginx/nginx.conf /etc/ggbridge/nginx.conf
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 COPY --link --from=build --chmod=755 /build/ggbridge /usr/bin/ggbridge
 
-
 USER 65532
 
-ENTRYPOINT ["/usr/bin/ggbridge"]
+STOPSIGNAL SIGQUIT
+
+ENTRYPOINT ["/opt/ggbridge/run.sh"]
 CMD ["client"]
 
 
 ### Prod
-FROM ${REGISTRY}/chainguard/nginx:latest AS prod
+FROM base AS prod
 
-LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
-LABEL org.opencontainers.image.title="GGBridge"
-LABEL org.opencontainers.image.description="Connect your on-prem VCS with the GitGuardian Platform"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.source="https://github.com/GitGuardian/ggbridge"
-
-COPY --chown=0:0 --chmod=0444 docker/files/nginx/nginx.conf /etc/ggbridge/nginx.conf
-COPY --link --from=nginx --chmod=755 /usr/lib/nginx/modules /usr/lib/nginx/modules
-COPY --link --from=nginx --chmod=755 /etc/nginx/modules /etc/nginx/modules
-COPY --link --from=nginx --chmod=755 /etc/nginx/stream.d /etc/nginx/stream.d
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 COPY --link --from=build --chmod=755 /build/ggbridge /usr/bin/ggbridge
 
-ENTRYPOINT ["/usr/bin/ggbridge"]
+ENTRYPOINT ["/opt/ggbridge/run.sh"]
 CMD ["client"]

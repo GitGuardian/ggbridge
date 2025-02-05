@@ -70,7 +70,7 @@ docker compose exec gitguardian \
   curl --proxy socks5h://proxy.gitguardian.internal:9180 https://vcs.client.internal
 ```
 
-Et voilà! The request is now routed through the **ggbirdge** proxy and the internal VCS DNS name is resolved by the proxy. You should have the following JSON response for the VCS server:
+Et voilà! The request is now routed through the **ggbridge** proxy and the internal VCS DNS name is resolved by the proxy. You should have the following JSON response for the VCS server:
 
 ```json
 {"message": "Welcome to the VCS server", "code": 200}

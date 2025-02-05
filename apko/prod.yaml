@@ -8,6 +8,12 @@ contents:
     - ggbridge@local
     - wolfi-baselayout
 
+environment:
+  GGBRIDGE_SSL_CERT_DIR: /etc/ggbridge/ssl/certs
+  GGBRIDGE_SSL_CERT_FILE: /etc/ggbridge/ssl/certs/ca-bundle.crt
+  GGBRIDGE_SSL_PRIVATE_CERT_DIR: /etc/ggbridge/ssl/private
+  GGBRIDGE_SSL_PRIVATE_CERT_FILE: /etc/ggbridge/ssl/private/ca-bundle.crt
+
 entrypoint:
   command: /usr/bin/ggbridge
 
@@ -28,6 +34,16 @@ accounts:
 work-dir: /home/nonroot
 
 paths:
+  - path: /etc/ggbridge/ssl/certs
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
+  - path: /etc/ggbridge/ssl/private
+    type: directory
+    permissions: 0o775
+    uid: 65532
+    gid: 0
   - path: /run/nginx
     type: directory
     permissions: 0o777

@@ -7,6 +7,7 @@ services:
     command:
       - server
     environment:
+      SERVER_ADDRESS: <hostname>
       TLS_ENABLED: "true"
       LOG_LEVEL: INFO
     volumes:
@@ -14,3 +15,5 @@ services:
       - ./certs/server.crt:/etc/ggbridge/tls/server.crt:ro
       - ./certs/server.key:/etc/ggbridge/tls/server.key:ro
     restart: on-failure
+    extra_hosts:
+      kube-dns.kube-system.svc.cluster.local: "127.0.0.11"

@@ -8,3 +8,8 @@ contents:
     - curl
     - net-tools
     - openssl
+
+entrypoint:
+  command: /opt/ggbridge/run.sh
+
+cmd: client

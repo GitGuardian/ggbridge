@@ -56,7 +56,6 @@ services:
   # ggbridge server
   server:
     image: ${GGBRIDGE_IMAGE}
-    entrypoint: ggbridge
     command: server
     environment:
       SERVER_LISTEN: "0.0.0.0"
@@ -83,7 +82,6 @@ services:
   # ggbridge client
   client:
     image: ${GGBRIDGE_IMAGE}
-    entrypoint: ggbridge
     command: client
     deploy:
       replicas: 1

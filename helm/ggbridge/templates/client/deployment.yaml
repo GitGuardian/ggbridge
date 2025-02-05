@@ -64,20 +64,23 @@ spec:
           args:
             - |
               set -x
-              cat $SSL_CERT_FILE > /certs/ca-bundle.crt
-              if [ -s /ca-bundle/ca-bundle.crt ]; then
-                cat /ca-bundle/ca-bundle.crt  >> /certs/ca-bundle.crt
+              cat $SSL_CERT_FILE >/etc/ggbridge/ssl/certs/ca-bundle.crt
+
+              # Add private CA certificates bundle
+              if [[ -s /etc/ggbridge/ssl/private/ca-bundle.crt ]]; then
+                cat /etc/ggbridge/ssl/private/ca-bundle.crt >>/etc/ggbridge/ssl/certs/ca-bundle.crt
               fi
-              if [ -s /etc/ggbridge/tls/ca.crt ]; then
-                cat /etc/ggbridge/tls/ca.crt  >> /certs/ca-bundle.crt
+
+              # Add mTLS CA certificate
+              if [[ -s /etc/ggbridge/tls/ca.crt ]]; then
+                cat /etc/ggbridge/tls/ca.crt >>/etc/ggbridge/ssl/certs/ca-bundle.crt
               fi
-              chmod 0444 /certs/ca-bundle.crt
           volumeMounts:
-            - name: ca-certs
-              mountPath: /certs
+            - name: ssl-certs
+              mountPath: /etc/ggbridge/ssl/certs
             {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
-            - name: ca-bundle
-              mountPath: /ca-bundle
+            - name: ssl-private
+              mountPath: /etc/ggbridge/ssl/private
               readOnly: true
             {{- end }}
             {{- if $.Values.tls.enabled }}
@@ -153,7 +156,7 @@ spec:
               value: {{ $.Values.proxy.service.ports.web.remoteContainerPort | quote }}
             {{- if or (or $.Values.caBundle.certs $.Values.caBundle.existingSecret) (and $.Values.tls.enabled $.Values.tls.verifyCert) }}
             - name: SSL_CERT_FILE
-              value: /certs/ca-bundle.crt
+              value: /etc/ggbridge/ssl/certs/ca-bundle.crt
             {{- end }}
             {{- if $.Values.extraEnv }}
             {{- include "ggbridge.tplvalues.render" (dict "value" $.Values.extraEnv "context" $) | nindent 12 }}
@@ -165,8 +168,8 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /var/run
-            - name: ca-certs
-              mountPath: /certs
+            - name: ssl-certs
+              mountPath: /etc/ggbridge/ssl/certs
               readOnly: true
             {{- if $.Values.tls.enabled }}
             - name: tls-secret
@@ -187,11 +190,11 @@ spec:
           {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
           env:
             - name: SSL_CERT_FILE
-              value: /certs/ca-bundle.crt
+              value: /etc/ggbridge/ssl/certs/ca-bundle.crt
           {{- end }}
           volumeMounts:
-            - name: ca-certs
-              mountPath: /certs
+            - name: ssl-certs
+              mountPath: /etc/ggbridge/ssl/certs
               readOnly: true
             - name: nginx-cache
               mountPath: /var/cache/nginx
@@ -217,10 +220,10 @@ spec:
           configMap:
             name: {{ $clientFullname }}
             defaultMode: 420
-        - name: ca-certs
+        - name: ssl-certs
           emptyDir: {}
         {{- if or $.Values.caBundle.certs $.Values.caBundle.existingSecret }}
-        - name: ca-bundle
+        - name: ssl-private
           secret:
             {{- if $.Values.caBundle.certs }}
             secretName: {{ printf "%s-ca-bundle" $fullname }}
