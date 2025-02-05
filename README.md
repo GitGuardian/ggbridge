@@ -38,7 +38,7 @@ name: ggbridge
 
 services:
   client:
-    image: gitguardian/ggbridge:latest
+    image: gitguardian/ggbridge:latest-shell
     environment:
       SERVER_ADDRESS: <my-subdomain>.ggbridge.gitguardian.com
       TLS_ENABLED: 'true'
