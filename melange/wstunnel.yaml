@@ -21,13 +21,13 @@ pipeline:
     uses: fetch
     with:
       uri: https://github.com/erebe/wstunnel/releases/download/v${{package.version}}/wstunnel_${{package.version}}_linux_arm64.tar.gz
-      expected-sha256: 0b54196dbafb52aa92de0238cf432401c91c2f3d20d3f6cdbb08183b90b8dfc0
+      expected-sha256: 77e256ccef8ab02d21752207fbdb8f27587cf53eafa98f7e878db8979a8a130f
       strip-components: 0
   - if: ${{build.arch}} == 'x86_64'
     uses: fetch
     with:
       uri: https://github.com/erebe/wstunnel/releases/download/v${{package.version}}/wstunnel_${{package.version}}_linux_amd64.tar.gz
-      expected-sha256: fde19528f3252545c2d6231cd39aae69df0d9dd1bbd7279a06d8583fd228a5d9
+      expected-sha256: d4c6178e7e7756a49386ba6f419345da4b8b53996390100cfafb2323fc853fbb
       strip-components: 0
   - runs: |
       install -dm755 "${{targets.destdir}}"/usr/bin
