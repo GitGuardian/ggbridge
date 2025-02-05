@@ -5,8 +5,12 @@ inputs:
   source:
     description: 'The source to scan'
     required: true
-  fail-on:
-    description: 'The severity level to fail on'
+  fail-build:
+    description: "Set to false to avoid failing based on severity-cutoff. Default is to fail when severity-cutoff is reached (or surpassed)"
+    required: false
+    default: 'true'
+  severity-cutoff:
+    description: 'Optionally specify the minimum vulnerability severity to trigger an "error" level ACS result.  Valid choices are "negligible", "low", "medium", "high" and "critical".  Any vulnerability with a severity less than this value will lead to a "warning" result.  Default is "high".'
     required: false
     default: 'high'
   upload:
@@ -41,12 +45,13 @@ runs:
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/grype@v1.4.1
+        module: github.com/opopops/daggerverse/grype@v1.5.0
         verb: call
         args: |
           scan \
             --source=${{ inputs.source }} \
-            --fail-on=${{ inputs.fail-on }} \
+            --fail=${{ inputs.fail-build }} \
+            --severity-cutoff=${{ inputs.severity-cutoff }} \
             --output-format=sarif \
           export \
             --path=${{ steps.output.outputs.report }} \

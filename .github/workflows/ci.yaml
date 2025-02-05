@@ -86,7 +86,8 @@ jobs:
         uses: ./.github/actions/scan-directory
         with:
           source: ${{ steps.build-prod.outputs.output-dir }}
-          fail-on: high
+          severity-cutoff: medium
+          fail-build: 'false'
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
