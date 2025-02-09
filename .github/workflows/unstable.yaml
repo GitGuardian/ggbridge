@@ -111,7 +111,7 @@ jobs:
         uses: ./.github/actions/scan
         with:
           source: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable'
-          fail-on: high
+          severity-cutoff: high
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
