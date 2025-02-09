@@ -236,7 +236,7 @@ Hostname can be specified in 3 ways (sorted by precedence):
 {{ include "ggbridge.hostname" $ }}
 */}}
 {{- define "ggbridge.hostname" -}}
-{{ ternary (printf "%s.%s" (default .Release.Name .Values.subdomain) .Values.domain) .Values.hostname (empty .Values.hostname) }}
+{{ ternary (printf "%s.%s" (default (include "ggbridge.fullname" .) .Values.subdomain) .Values.domain) .Values.hostname (empty .Values.hostname) }}
 {{- end }}
 
 {{/*
