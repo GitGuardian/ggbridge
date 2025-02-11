@@ -24,10 +24,6 @@ spec:
   usages:
     - client auth
   issuerRef:
-    {{- if .Values.tls.certManager.issuer.spec }}
-    name: {{ printf "%s-ca" $fullname }}
-    {{- else }}
-    name: {{ .Values.tls.certManager.issuer.name }}
-    {{- end }}
+    name: {{ default (printf "%s-issuer" $fullname) .Values.tls.certManager.issuer.name }}
     kind: {{ .Values.tls.certManager.issuer.kind }}
 {{- end }}

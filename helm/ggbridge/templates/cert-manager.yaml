@@ -42,7 +42,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ printf "%s-ca" $fullname }}
+  name: {{ printf "%s-issuer" $fullname }}
   namespace: {{ $namespace }}
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
@@ -57,7 +57,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ printf "%s-ca" $fullname }}
+  name: {{ printf "%s-issuer" $fullname }}
   namespace: {{ $namespace }}
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
