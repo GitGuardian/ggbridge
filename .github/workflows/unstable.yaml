@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DAGGER_VERSION: '0.15.3'
+  DAGGER_VERSION: '0.15.4'
 
 jobs:
   docker:
