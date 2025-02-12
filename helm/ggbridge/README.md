@@ -54,6 +54,7 @@ A Helm chart for installing ggbridge
 | nameOverride | string | `""` | Override the default chart name |
 | networkPolicy.allowExternal | bool | `true` | When true, server will accept connections from any source |
 | networkPolicy.enabled | bool | `true` | Specifies whether a NetworkPolicy should be created |
+| networkPolicy.extraEgress | list | `[]` | Add egress rules to the NetworkPolicy. By default, allow all egress traffic. e.g: extraEgress:   - to:       - ipBlock:           cidr: 0.0.0.0/0 |
 | networkPolicy.extraIngress | list | `[]` | Add extra ingress rules to the NetworkPolicy |
 | networkPolicy.ingressNSMatchLabels | object | `{}` | Labels to match to allow traffic to the proxy server from other namespaces |
 | networkPolicy.ingressNSPodMatchLabels | object | `{}` | Pod labels to match to allow traffic to the proxy server from other namespaces |
