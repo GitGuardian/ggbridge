@@ -199,7 +199,7 @@ spec:
             {{- else }}
             secretName: {{ $.Values.caBundle.existingSecret }}
             items:
-              - key: {{ default "ca.crt" $.Values.tls.existingSecretKeys.caCrt }}
+              - key: {{ default "ca.crt" $.Values.caBundle.existingSecretKey }}
                 path: ca-bundle.crt
             {{- end }}
         {{- end }}
