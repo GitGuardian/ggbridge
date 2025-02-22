@@ -39,7 +39,7 @@ runs:
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/cosign@v1.3.1
+        module: github.com/opopops/daggerverse/cosign@v1.4.1
         verb: call
         args: |
           with-registry-auth \
