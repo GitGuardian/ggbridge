@@ -3,16 +3,17 @@ package:
   version: "1.0.0"
   epoch: 0
   description: Connect your private VCS with GitGuardian
-  target-architecture:
-    - aarch64
-    - x86_64
+  url: https://github.com/GitGuardian/ggbridge
   copyright:
-    - license: BSD-3-Clause
+    - license: MIT
   dependencies:
     runtime:
       - nginx
       - nginx-mod-stream
       - wstunnel
+  target-architecture:
+    - aarch64
+    - x86_64
 environment:
   contents:
     keyring:

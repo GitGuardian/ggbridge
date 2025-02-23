@@ -3,11 +3,12 @@ package:
   version: "10.1.9"
   epoch: 0
   description: Wstunnel uses the websocket protocol which is compatible with http in order to bypass firewalls and proxies
+  url: https://github.com/erebe/wstunnel
+  copyright:
+    - license: BSD-3-Clause
   target-architecture:
     - aarch64
     - x86_64
-  copyright:
-    - license: BSD-3-Clause
 environment:
   contents:
     keyring:

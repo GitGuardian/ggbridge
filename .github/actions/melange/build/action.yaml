@@ -1,11 +1,23 @@
 name: Build APK packages
-description: 'Build an APK package using Melange'
+description: 'Build APK packages using Melange'
 
 inputs:
+  version:
+    description: 'The version of the GGBridge package'
+    required: false
+    default: '1.0.0'
   arch:
     description: 'The architecture to build for'
     required: false
     default: ''
+  signing-key:
+    description: 'The melange signing key'
+    required: false
+    default: ${{ runner.temp }}/packages/melange.rsa
+  output-dir:
+    description: 'Output dir'
+    required: false
+    default: ${{ runner.temp }}/packages
   dagger-version:
     description: 'The Dagger Engine version'
     required: false
@@ -16,9 +28,6 @@ inputs:
     default: ''
 
 outputs:
-  output-dir:
-    description: 'Packages dir'
-    value: ${{ steps.output.outputs.output-dir }}
   signing-key:
     description: 'Signing key'
     value: ${{ steps.output.outputs.signing-key }}
@@ -33,18 +42,29 @@ runs:
       id: output
       shell: bash
       run: |
-        TEMP_DIR="${{ runner.temp }}/packages"
-        mkdir -p "$TEMP_DIR"
-        echo "output-dir=$TEMP_DIR" >> $GITHUB_OUTPUT
-        echo "signing-key=${TEMP_DIR}/melange.rsa" >> $GITHUB_OUTPUT
-        echo "public-key=${TEMP_DIR}/melange.rsa.pub" >> $GITHUB_OUTPUT
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        mkdir -p "$OUTPUT_DIR"
 
     - uses: docker/setup-qemu-action@v3
 
-    - name: Build APK packages
+    - if: ${{ inputs.version != '' }}
+      name: Bump Version
       uses: dagger/dagger-for-github@v7
-      env:
-        _EXPERIMENTAL_DAGGER_CACHE_CONFIG: 'type=gha,mode=max'
+      with:
+        version: ${{ inputs.dagger-version }}
+        cloud-token: ${{ inputs.dagger-cloud-token }}
+        module: github.com/opopops/daggerverse/melange@v1.3.5
+        engine-stop: 'false'
+        verb: call
+        args: |
+          bump \
+            --config=${{ github.workspace }}/melange/ggbridge.yaml \
+            --version=${{ inputs.version }} \
+          export \
+            --path=${{ github.workspace }}/melange/ggbridge.yaml \
+
+    - name: Build packages
+      uses: dagger/dagger-for-github@v7
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
@@ -54,9 +74,11 @@ runs:
           with-build \
             --config=${{ github.workspace }}/melange/wstunnel.yaml \
             --arch=${{ inputs.arch }} \
+            --signing-key=${{ inputs.signing-key }} \
           build \
             --config=${{ github.workspace }}/melange/ggbridge.yaml \
             --source-dir=${{ github.workspace }} \
             --arch=${{ inputs.arch }} \
+            --signing-key=${{ inputs.signing-key }} \
           export \
-            --path=${{ steps.output.outputs.output-dir }} \
+            --path=${{ inputs.output-dir }} \

@@ -49,11 +49,24 @@ jobs:
         id: github
         uses: ./.github/actions/github
 
-      - name: Build APK packages
+      - name: Write Melange Keys
+        id: melange-signing-key
+        shell: bash
+        env:
+          PUBLIC_KEY_BASE64: ${{ vars.MELANGE_PUBLIC_KEY_BASE64 }}
+          SIGNING_KEY_BASE64: ${{ secrets.MELANGE_SIGNING_KEY_BASE64 }}
+        run: |
+          mkdir -p ${{ runner.temp }}/packages
+          echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa.pub
+          echo -n "$SIGNING_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa
+
+      - name: Build packages
         id: apk
         uses: ./.github/actions/melange/build
         with:
           arch: ${{ steps.github.outputs.arch }}
+          signing-key: ${{ runner.temp }}/packages/melange.rsa
+          output-dir: ${{ runner.temp }}/packages
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
@@ -63,8 +76,8 @@ jobs:
         with:
           config: 'apko/prod.yaml'
           tag: 'local/prod'
-          repository-append: ${{ steps.apk.outputs.output-dir }}
-          keyring-append: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ runner.temp }}/packages
+          keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
           arch: ${{ steps.github.outputs.arch }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
@@ -75,8 +88,8 @@ jobs:
         with:
           config: 'apko/shell.yaml'
           tag: 'local/shell'
-          repository-append: ${{ steps.apk.outputs.output-dir }}
-          keyring-append: ${{ steps.apk.outputs.public-key }}
+          repository-append: ${{ runner.temp }}/packages
+          keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
           arch: ${{ steps.github.outputs.arch }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

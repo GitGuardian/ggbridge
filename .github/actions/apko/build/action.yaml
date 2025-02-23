@@ -50,7 +50,7 @@ runs:
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.5.10
+        module: github.com/opopops/daggerverse/apko@v1.6.2
         verb: call
         args: |
           build \
@@ -60,6 +60,6 @@ runs:
             --arch=${{ inputs.arch }} \
             --keyring-append=${{ inputs.keyring-append }} \
             --repository-append=${{ inputs.repository-append }} \
-          oci-dir \
+          build-dir \
           export \
             --path=${{ steps.output.outputs.output-dir }} \

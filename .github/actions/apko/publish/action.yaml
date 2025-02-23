@@ -53,7 +53,7 @@ runs:
         engine-stop: false
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.5.10
+        module: github.com/opopops/daggerverse/apko@v1.6.2
         verb: call
         args: |
           with-registry-auth \

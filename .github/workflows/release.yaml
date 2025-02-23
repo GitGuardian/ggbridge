@@ -15,90 +15,119 @@ env:
   DAGGER_VERSION: '0.16.1'
 
 jobs:
-  docker:
-    if: startsWith(github.event.ref, 'refs/tags/v')
-
-    name: Publish Docker images
-    runs-on: ubuntu-latest
-
+  build-packages:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+    name: Build packages for ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get GitHub vars
+      - name: Set GitHub vars
         id: github
         uses: ./.github/actions/github
 
-      - name: Build APK packages
+      - name: Write Melange Signing Key
+        id: melange-signing-key
+        shell: bash
+        env:
+          SIGNING_KEY_BASE64: ${{ secrets.MELANGE_SIGNING_KEY_BASE64 }}
+        run: |
+          mkdir -p ${{ runner.temp }}/packages
+          echo -n "$SIGNING_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa
+
+      - name: Build packages
         id: apk
         uses: ./.github/actions/melange/build
         with:
+          version: ${{ steps.github.outputs.version }}
+          arch: ${{ steps.github.outputs.arch }}
+          signing-key: ${{ runner.temp }}/packages/melange.rsa
+          output-dir: ${{ runner.temp }}/packages
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Publish prod image
-        id: publish-prod
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ steps.github.outputs.arch }}
+          path: ${{ runner.temp }}/packages/${{ steps.github.outputs.arch }}/
+          retention-days: 1
+
+  publish-images:
+    strategy:
+      matrix:
+        include:
+          - variant: 'prod'
+            tag-suffix: ''
+          - variant: 'shell'
+            tag-suffix: '-shell'
+    name: Publish ${{ matrix.variant }} image
+    needs: [build-packages]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
+      - name: Write Melange Public Key
+        id: melange-public-key
+        shell: bash
+        env:
+          PUBLIC_KEY_BASE64: ${{ vars.MELANGE_PUBLIC_KEY_BASE64 }}
+        run: |
+          mkdir -p ${{ runner.temp }}/packages
+          echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa.pub
+
+      - name: Download aarch64 packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-aarch64
+          path: ${{ runner.temp }}/packages/aarch64
+
+      - name: Download x86_64 packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-x86_64
+          path: ${{ runner.temp }}/packages/x86_64
+
+      - name: Publish image
+        id: publish
         uses: ./.github/actions/apko/publish
         with:
-          config: 'apko/prod.yaml'
-          tag: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
-          repository-append: ${{ steps.apk.outputs.output-dir }}
-          keyring-append: ${{ steps.apk.outputs.public-key }}
+          config: 'apko/${{ matrix.variant }}.yaml'
+          tag: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
+          repository-append: ${{ runner.temp }}/packages
+          keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Tag shell prod image as latest
+      - name: Tag image as latest
         uses: ./.github/actions/crane/tag
         with:
-          image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
+          image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
           tag: latest
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Sign prod image
-        id: sign-prod
+      - name: Sign image
+        id: sign
         uses: ./.github/actions/cosign/sign
         with:
-          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-prod.outputs.digest }}'
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - name: Publish shell images
-        id: publish-shell
-        uses: ./.github/actions/apko/publish
-        with:
-          config: 'apko/shell.yaml'
-          tag: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}-shell'
-          repository-append: ${{ steps.apk.outputs.output-dir }}
-          keyring-append: ${{ steps.apk.outputs.public-key }}
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - name: Tag shell shell image as latest
-        uses: ./.github/actions/crane/tag
-        with:
-          image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}-shell'
-          tag: latest-shell
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - name: Sign shell image
-        id: sign-shell
-        uses: ./.github/actions/cosign/sign
-        with:
-          image: '${{ steps.github.outputs.repository }}@${{ steps.publish-shell.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}@${{ steps.publish.outputs.digest }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -110,22 +139,19 @@ jobs:
         id: scan
         uses: ./.github/actions/scan
         with:
-          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}'
+          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
           severity-cutoff: high
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-  helm:
-    if: startsWith(github.event.ref, 'refs/tags/v')
-
+  publish-helm-chart:
     name: Publish Helm Chart
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get GitHub vars
+      - name: Set GitHub vars
         id: github
         uses: ./.github/actions/github
 

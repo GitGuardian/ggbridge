@@ -33,10 +33,10 @@ runs:
         ARCH=$(echo "$RUNNER_ARCH" | tr '[:upper:]' '[:lower:]') # Convert to lowercase
         case "$ARCH" in
           x64|amd64)
-            FORMATTED_ARCH="amd64"
+            FORMATTED_ARCH="x86_64"
             ;;
           arm|arm64)
-            FORMATTED_ARCH="arm64"
+            FORMATTED_ARCH="aarch64"
             ;;
           *)
             echo "Unsupported architecture: $ARCH"
