@@ -46,7 +46,7 @@ jobs:
         id: apk
         uses: ./.github/actions/melange/build
         with:
-          version: ${{ steps.github.outputs.version }}
+          version: ${{ steps.github.outputs.ga-version }}
           arch: ${{ steps.github.outputs.arch }}
           signing-key: ${{ runner.temp }}/packages/melange.rsa
           output-dir: ${{ runner.temp }}/packages

@@ -62,5 +62,7 @@ runs:
         # Extract the tag, remove "v" prefix if it exists
         RAW_VERSION=${GITHUB_REF##*/}
         VERSION=${RAW_VERSION#v}
+        GA_VERSION=${VERSION%-*}
         echo "VERSION: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "ga-version=$GA_VERSION" >> $GITHUB_OUTPUT
