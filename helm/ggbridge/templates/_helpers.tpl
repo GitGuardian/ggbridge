@@ -174,24 +174,24 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{- end -}}
 
 {{/*
-Return the proper shell image name.
+Return the proper caBundle image name.
 If image tag and digest are not defined, termination fallbacks to chart appVersion.
-{{ include "ggbridge.shell.image" }}
+{{ include "ggbridge.caBundle.image" }}
 */}}
-{{- define "ggbridge.shell.image" -}}
-{{- $registryName := .Values.shell.image.registry -}}
-{{- $repositoryName := .Values.shell.image.repository -}}
+{{- define "ggbridge.caBundle.image" -}}
+{{- $registryName := .Values.caBundle.image.registry -}}
+{{- $repositoryName := .Values.caBundle.image.repository -}}
 {{- $separator := ":" -}}
-{{- $termination := .Values.shell.image.tag | toString -}}
+{{- $termination := .Values.caBundle.image.tag | toString -}}
 
-{{- if not .Values.shell.image.tag }}
+{{- if not .Values.caBundle.image.tag }}
   {{- if .Chart }}
     {{- $termination = printf "%s-shell" .Chart.AppVersion | toString -}}
   {{- end -}}
 {{- end -}}
-{{- if .Values.shell.image.digest }}
+{{- if .Values.caBundle.image.digest }}
     {{- $separator = "@" -}}
-    {{- $termination = .Values.shell.image.digest | toString -}}
+    {{- $termination = .Values.caBundle.image.digest | toString -}}
 {{- end -}}
 {{- if $registryName }}
     {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}

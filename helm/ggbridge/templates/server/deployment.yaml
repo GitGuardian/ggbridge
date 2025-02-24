@@ -59,7 +59,7 @@ spec:
           securityContext:
             {{- toYaml (omit $.Values.containerSecurityContext "enabled") | nindent 12 }}
           {{- end }}
-          image: {{ include "ggbridge.shell.image" $ }}
+          image: {{ include "ggbridge.caBundle.image" $ }}
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: ["/bin/sh", "-c"]
           args:
