@@ -98,6 +98,21 @@ jobs:
         id: github
         uses: ./.github/actions/github
 
+      - name: Login to GitHub registry
+        uses: docker/login-action@v3
+        id: login-to-github
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Login to DockerHub registry
+        uses: docker/login-action@v3
+        id: login-to-docker-hub
+        with:
+          username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
       - name: Write Melange Public Key
         id: melange-public-key
         shell: bash
@@ -127,20 +142,21 @@ jobs:
           tag: '${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
           repository-append: ${{ runner.temp }}/packages
           keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
+          sbom-path: ${{ runner.temp }}/sbom
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Sign image
+      - name: Sign and Attest image
         id: sign
         uses: ./.github/actions/cosign/sign
         with:
-          image: '${{ steps.github.outputs.repository }}@${{ steps.publish.outputs.digest }}'
+          image: '${{ steps.github.outputs.repository }}'
+          tag: ${{ matrix.tag }}
+          sbom-path: ${{ runner.temp }}/sbom
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 

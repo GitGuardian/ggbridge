@@ -26,6 +26,10 @@ inputs:
   dockerhub-password:
     description: 'Password for Docker Hub authentication'
     required: true
+  sbom-path:
+    description: 'The SBOM directory'
+    required: false
+    default: ${{ runner.temp }}/sbom
   dagger-version:
     description: 'The Dagger Engine version'
     required: false
@@ -38,7 +42,7 @@ inputs:
 outputs:
   digest:
     description: 'Image digest'
-    value: ${{ steps.publish.outputs.output }}
+    value: ${{ steps.digest.outputs.output }}
 
 runs:
   using: composite
@@ -53,7 +57,7 @@ runs:
         engine-stop: false
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/apko@v1.6.2
+        module: github.com/opopops/daggerverse/apko@v1.6.3
         verb: call
         args: |
           with-registry-auth \
@@ -72,4 +76,17 @@ runs:
             --arch=${{ inputs.arch }} \
             --keyring-append=${{ inputs.keyring-append }} \
             --repository-append=${{ inputs.repository-append }} \
+          sbom-dir \
+          export --path ${{ inputs.sbom-path }} \
+
+    - name: Digest
+      id: digest
+      uses: dagger/dagger-for-github@v7
+      with:
+        version: ${{ inputs.dagger-version }}
+        cloud-token: ${{ inputs.dagger-cloud-token }}
+        module: github.com/opopops/daggerverse/crane@v1.2.3
+        verb: call
+        args: |
           digest \
+            --image=ghcr.io/${{ inputs.tag }} \
