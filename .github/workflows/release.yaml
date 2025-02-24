@@ -129,7 +129,8 @@ jobs:
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Tag image as latest
+      - if: steps.github.outputs.version == steps.github.outputs.ga-version
+        name: Tag image as latest
         uses: ./.github/actions/crane/tag
         with:
           image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
@@ -147,10 +148,6 @@ jobs:
           tag: ${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}
           sbom-path: ${{ runner.temp }}/sbom
           attest-provenance: 'true'
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan

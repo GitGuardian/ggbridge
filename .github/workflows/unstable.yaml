@@ -155,10 +155,6 @@ jobs:
           image: '${{ steps.github.outputs.repository }}'
           tag: ${{ matrix.tag }}
           sbom-path: ${{ runner.temp }}/sbom
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan vulnerabilities
         id: scan
