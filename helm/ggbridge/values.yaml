@@ -550,9 +550,6 @@ proxy:
         className: ""
         # -- Set ingress annotations
         annotations: {}
-        tls:
-          # -- Enable TLS traffic
-          enabled: true
         # -- Specify web tunnel listeners
         ## In this example, the following redirection will occur through the web tunnel:
         ## - https://api.internal.com -> https://api.gitguardian.com
@@ -581,9 +578,6 @@ proxy:
           ports:
             http: 80
             https: 443
-          tls:
-            # -- Enable TLS traffic
-            enabled: true
           # -- Specify web tunnel listeners
           ## e.g:
           ## listeners:

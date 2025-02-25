@@ -1,16 +1,6 @@
 {{- $ingress := .Values.proxy.tunnels.web.ingress -}}
 {{- if $ingress.enabled -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
-  {{- if and (eq $ingress.controller "traefik") $ingress.tls.enabled }}
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: {{ printf "%s-web" $proxyFullname }}
-spec:
-  redirectScheme:
-    scheme: https
-  {{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -20,7 +10,10 @@ metadata:
   labels:
     {{- include "ggbridge.labels" . | nindent 4 }}
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
-  annotations: {{ include "ggbridge.proxy.tunnels.web.ingress.annotations" . | nindent 4 }}
+  {{- if or .Values.commonAnnotations $ingress.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $ingress.annotations .Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $ingress "context" .) | nindent 4 }}
+  {{- end }}
 spec:
   ingressClassName: {{ $ingress.className | quote }}
   rules:
@@ -36,12 +29,5 @@ spec:
                 port:
                   number: {{ $.Values.proxy.tunnels.web.service.ports.web.port }}
     {{- end }}
-  {{- if $ingress.tls.enabled }}
-  tls:
-    {{- range $ingress.listeners }}
-    - hosts:
-      - {{ .hostname }}
-      secretName: {{ .tls.secretName }}
-    {{- end }}
-  {{- end }}
+  tls: {{ include "ggbridge.proxy.tunnels.web.ingress.tls" $ | nindent 4 }}
 {{- end }}

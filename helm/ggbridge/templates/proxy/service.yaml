@@ -80,7 +80,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .hostname }}
+  name: {{ .name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
