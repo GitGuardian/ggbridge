@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+{{- if eq .Values.mode "server" -}}
   {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}

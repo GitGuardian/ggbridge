@@ -80,7 +80,7 @@ restrictions:
         protocol:
           - Tcp
         port:
-          - {{ .Values.proxy.service.ports.web.containerPort }}
+          - {{ .Values.proxy.service.ports.web.internalPort }}
         host: ^localhost$
         cidr:
           - 127.0.0.1/32

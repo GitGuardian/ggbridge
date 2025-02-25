@@ -19,6 +19,7 @@ spec:
   gatewayClassName: {{ $gateway.gateway.className | quote }}
   listeners:
     {{- range $gateway.gateway.listeners }}
+      {{- $tlsEnabled := eq (include "ggbridge.proxy.listener.tlsEnabled" (dict "listener" . "context" $)) "true" }}
     - allowedRoutes:
         namespaces:
           from: Same
@@ -26,9 +27,9 @@ spec:
           - kind: HTTPRoute
       name: {{ .hostname | replace "." "-" | trunc 63 | trimSuffix "-" }}
       hostname: {{ .hostname }}
-      port: {{ ternary $gateway.gateway.ports.https $gateway.gateway.ports.http $gateway.gateway.tls.enabled }}
-      protocol: {{ ternary "HTTPS" "HTTP" $gateway.gateway.tls.enabled }}
-      {{- if $gateway.gateway.tls.enabled }}
+      port: {{ ternary $gateway.gateway.ports.https $gateway.gateway.ports.http $tlsEnabled }}
+      protocol: {{ ternary "HTTPS" "HTTP" $tlsEnabled }}
+      {{- if $tlsEnabled }}
       tls:
         mode: Terminate
         certificateRefs:

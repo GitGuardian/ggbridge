@@ -54,7 +54,6 @@ spec:
     {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
     index: {{ $index | quote }}
 ---
-  {{- if eq (include "ggbridge.proxy.enabled" $) "true" }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -64,8 +63,8 @@ metadata:
     {{- include "ggbridge.labels" $ | nindent 4 }}
     {{- include "ggbridge.server.labels" $ | nindent 4 }}
     index: {{ $index | quote }}
-   {{- if or $.Values.commonAnnotations $.Values.proxy.service.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.service.annotations $.Values.commonAnnotations ) "context" . ) }}
+  {{- if or $.Values.commonAnnotations $.Values.proxy.service.annotations }}
+    {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.service.annotations $.Values.commonAnnotations ) "context" . ) }}
   annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
@@ -76,6 +75,5 @@ spec:
     {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
     index: {{ $index | quote }}
-    {{- end }}
   {{- end }}
 {{- end }}

@@ -525,6 +525,22 @@ proxy:
             port: 80
             # -- Defines whether the web port is exposed if service.type is LoadBalancer or NodePort
             exposed: true
+        # -- Specify web tunnel listeners
+        ## Each listener defines a service name that will be used to construct the full internal service DNS.
+        ## - `name`: Corresponds to the service name and will be suffixed by `<namespace>.svc.<clusterDomain>`,
+        ## making it resolvable within the cluster.
+        ## e.g., if `name: api-gitguardian-com` is defined in the `ggbridge` namespace with cluster domain `cluster.local`,
+        ## the full DNS would be `api-gitguardian-com.ggbridge.svc.cluster.local`.
+        ##
+        ## - `backend`: Specifies the external host where the request will be redirected.
+        ##   This is typically a public or internal endpoint that the service should forward traffic to.
+        ## In this example, the following redirection will occur through the web tunnel:
+        ## http://api-gitguardian-com.ggbridge.svc.cluster.local -> https://api.gitguardian.com
+        ##
+        ## listeners:
+        ##   - name: api-gitguardian-com
+        ##     backend: api.gitguardian.com
+        listeners: []
       ingress:
         # -- Enable web tunnel exposure using Kubernetes Ingress API
         enabled: false
@@ -534,10 +550,10 @@ proxy:
         className: ""
         # -- Set ingress annotations
         annotations: {}
-        tls:
-          # -- Enable TLS traffic
-          enabled: true
         # -- Specify web tunnel listeners
+        ## In this example, the following redirection will occur through the web tunnel:
+        ## - https://api.internal.com -> https://api.gitguardian.com
+        ## - https://hook.internal.com -> https://hook.gitguardian.com
         ## e.g:
         ## listeners:
         ##    - hostname: api.internal.com
@@ -562,9 +578,6 @@ proxy:
           ports:
             http: 80
             https: 443
-          tls:
-            # -- Enable TLS traffic
-            enabled: true
           # -- Specify web tunnel listeners
           ## e.g:
           ## listeners:

@@ -73,6 +73,28 @@ spec:
         {{- include "ggbridge.client.selectorLabels" $ | nindent 4 }}
       {{- end }}
     {{- end }}
+
+      {{- if $tunnel_config.service.listeners  -}}
+        {{- range $tunnel_config.service.listeners }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
+  {{- if or $.Values.commonAnnotations $tunnel_config.service.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $tunnel_config.service.annotations $.Values.commonAnnotations ) "context" . ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "%s-%s.%s.svc.%s" $proxyFullname $tunnel $.Release.Namespace $.Values.clusterDomain }}
+        {{- end }}
+      {{- end }}
+
     {{- end }}
   {{- end }}
 {{- end }}
