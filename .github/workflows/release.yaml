@@ -134,7 +134,7 @@ jobs:
         uses: ./.github/actions/crane/tag
         with:
           image: '${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
-          tag: latest
+          tag: 'latest${{ matrix.tag-suffix }}'
           dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           dagger-version: ${{ env.DAGGER_VERSION }}
