@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+{{- if eq .Values.mode "server" -}}
   {{- range $index := until (.Values.deploymentCount | int) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $proxyFullname := include "ggbridge.proxy.fullname" $ }}
@@ -62,16 +62,10 @@ spec:
           command: ['/usr/sbin/nginx']
           args: ['-c', '/etc/nginx/nginx.conf', '-e', '/dev/stderr', '-g', 'daemon off;']
           ports:
-            - name: web
-              containerPort: {{ $.Values.proxy.service.ports.web.containerPort }}
-              protocol: TCP
-            {{- range $key, $value := $.Values.client.reverseTunnels }}
-              {{- if $value.enabled }}
-                {{- $port := get $.Values.proxy.service.ports $key }}
+            {{- range $key, $value := $.Values.proxy.service.ports }}
             - name: {{ $key }}
-              containerPort: {{ $port.containerPort }}
+              containerPort: {{ $value.containerPort }}
               protocol: TCP
-              {{- end }}
             {{- end }}
           {{- if $.Values.proxy.readinessProbe.enabled }}
           readinessProbe:

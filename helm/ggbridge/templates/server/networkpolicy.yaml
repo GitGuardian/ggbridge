@@ -37,7 +37,6 @@ spec:
     - ports:
         - port: {{ .Values.server.service.ports.ws.containerPort }}
           protocol: TCP
-    {{- if (eq (include "ggbridge.proxy.enabled" $) "true") }}
     - ports:
         {{- range $port, $value := .Values.proxy.service.ports }}
         - port: {{ $value.containerPort }}
@@ -62,7 +61,6 @@ spec:
               {{- end }}
           {{- end }}
         {{- end }}
-      {{- end }}
     {{- end }}
     {{- if .Values.networkPolicy.extraIngress }}
     {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.networkPolicy.extraIngress "context" . ) | nindent 4 }}

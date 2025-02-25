@@ -264,10 +264,13 @@ Returns true when proxy is enabled
 */}}
 {{- define "ggbridge.proxy.enabled" -}}
 {{- $result := "false" -}}
-{{- $tunnels := ternary .Values.client.reverseTunnels .Values.client.tunnels (eq .Values.mode "server") -}}
-{{- range $key, $value := $tunnels -}}
-  {{- if $value.enabled -}}
-    {{- $result = "true" -}}
+{{- if eq .Values.mode "server" -}}
+  {{- $result = "true" -}}
+{{- else -}}
+  {{- range $key, $value := .Values.client.tunnels -}}
+    {{- if $value.enabled -}}
+      {{- $result = "true" -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{ $result }}
