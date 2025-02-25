@@ -1,0 +1,27 @@
+# Example values to expose the GitGuardian API internally using Gateway API
+---
+hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+client:
+  tunnels:
+    web:
+      enabled: true
+
+proxy:
+  tunnels:
+    web:
+      gateway:
+        className: <my-gateway-className> # (Optional) Uses the default Gateway class if not set
+        listeners:
+          - hostname: api-gitguardian.<my-domain>
+            backend: api.gitguardian.com
+            tls:
+              secretName: <my-tls-secret>

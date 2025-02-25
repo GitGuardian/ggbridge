@@ -1,0 +1,24 @@
+# Example values to expose the GitGuardian API internally using Service (In-Cluster access only)
+---
+hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+client:
+  tunnels:
+    web:
+      enabled: true
+
+proxy:
+  tunnels:
+    web:
+      service:
+        listeners:
+          - name: <my-service-name>
+            backend: api.gitguardian.com
