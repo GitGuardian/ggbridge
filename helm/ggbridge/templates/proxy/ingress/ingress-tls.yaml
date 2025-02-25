@@ -21,7 +21,7 @@ spec:
     - match: {{ printf "HostSNI(`%s`)" . }}
       services:
         - name: {{ printf "%s-tls" $proxyFullname }}
-          port: {{ .Values.proxy.tunnels.tls.service.ports.tls.port }}
+          port: {{ $.Values.proxy.tunnels.tls.service.ports.tls.port }}
     {{- end }}
   tls:
     passthrough: true

@@ -34,7 +34,7 @@ spec:
               service:
                 name: {{ printf "%s-web" $proxyFullname }}
                 port:
-                  number: {{ .Values.proxy.tunnels.web.service.ports.web.port }}
+                  number: {{ $.Values.proxy.tunnels.web.service.ports.web.port }}
     {{- end }}
   {{- if $ingress.tls.enabled }}
   tls:
