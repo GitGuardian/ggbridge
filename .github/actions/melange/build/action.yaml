@@ -47,8 +47,7 @@ runs:
 
     - uses: docker/setup-qemu-action@v3
 
-    - if: ${{ inputs.version != '' }}
-      name: Bump Version
+    - name: Bump Version
       uses: dagger/dagger-for-github@v7
       with:
         version: ${{ inputs.dagger-version }}
