@@ -1,0 +1,27 @@
+# Example values to expose the GitGuardian API internally using Ingress
+---
+hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+client:
+  tunnels:
+    web:
+      enabled: true
+
+proxy:
+  tunnels:
+    web:
+      ingress:
+        className: <my-ingress-className> # (Optional) Uses the default Ingress class if not set
+        listeners:
+          - hostname: api-gitguardian.<my-domain>
+            backend: api.gitguardian.com
+            tls:
+              secretName: <my-tls-secret>

@@ -1,6 +1,6 @@
 # ggbridge: connect your on-prem VCS with the GitGuardian Platform
 
-**ggbridge** is a tool designed to facilitate secure connections between the GitGuardian SaaS platform and your on-premise Version Control Systems (VCS) that are not exposed to the public internet. By acting as a secure bridge, GGBridge enables GitGuardian to access repositories located in isolated environments, ensuring that your sensitive code data remains protected while taking advantage of GitGuardian’s powerful scanning capabilities.
+**ggbridge** is a tool designed to facilitate secure connections between the GitGuardian SaaS platform and your on-premise Version Control Systems (VCS) that are not exposed to the public internet. By acting as a secure bridge, ggbridge enables GitGuardian to access repositories located in isolated environments, ensuring that your sensitive code data remains protected while taking advantage of GitGuardian’s powerful scanning capabilities.
 
 With ggbridge, organizations can maintain their internal infrastructure and security protocols without sacrificing the ability to integrate with GitGuardian’s monitoring and alerting features.
 
@@ -29,7 +29,7 @@ The project offers two deployment methods:
 
 ### Docker deployment
 
-Deploy the GGBridge client via Docker Compose by performing the following actions:
+Deploy the ggbridge client via Docker Compose by performing the following actions:
 
 - Create `docker-compose.yml` file
 
@@ -57,7 +57,7 @@ docker compose up
 
 ### Helm deployment
 
-Deploy the GGBridge client via the Helm chart by performing the following actions.
+Deploy the ggbridge client via the Helm chart by performing the following actions.
 
 - Create `values.yaml` file
 
@@ -80,3 +80,11 @@ helm -n ggbridge upgrade --install --create-namespace \
   ggbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
   -f values.yaml
 ```
+
+## Examples
+
+Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your on-premise services and the GitGuardian platform.
+
+| Name                          | Description                                   |
+| ----------------------------- | --------------------------------------------- |
+| [ggscout](./examples/ggscout) | Connect ggscout with the GitGuardian platform |
