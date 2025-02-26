@@ -17,6 +17,9 @@ outputs:
   version:
     description: 'The formatted version'
     value: ${{ steps.version.outputs.version }}
+  ga-version:
+    description: 'The formatted GA version'
+    value: ${{ steps.version.outputs.ga-version }}
 
 runs:
   using: composite
@@ -64,5 +67,6 @@ runs:
         VERSION=${RAW_VERSION#v}
         GA_VERSION=${VERSION%-*}
         echo "VERSION: $VERSION"
+        echo "GA_VERSION: $GA_VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "ga-version=$GA_VERSION" >> $GITHUB_OUTPUT
