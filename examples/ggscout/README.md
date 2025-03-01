@@ -73,11 +73,9 @@ proxy:
             backend: api.gitguardian.com
 ```
 
-- `hostname`: The subdomain assigned to your ggbridge instance.
-
 The GitGuardian API will be accessible internally at:
 
-```
+```shell
 http://<my-service-name>.<namespace>.svc.cluster.local
 ```
 
@@ -92,6 +90,7 @@ proxy:
   tunnels:
     web:
       ingress:
+        enabled: true
         className: <my-ingress-className> # (Optional) Uses the default Ingress class if not set
         listeners:
           - hostname: api-gitguardian.<my-domain>
@@ -102,7 +101,7 @@ proxy:
 
 The GitGuardian API will be accessible at:
 
-```
+```shell
 https://api-gitguardian.<my-domain>
 ```
 
@@ -117,6 +116,7 @@ proxy:
   tunnels:
     web:
       gateway:
+        enabled: true
         className: <my-gateway-className> # (Optional) Uses the default Gateway class if not set
         listeners:
           - hostname: api-gitguardian.<my-domain>
@@ -127,7 +127,7 @@ proxy:
 
 The GitGuardian API will be accessible at:
 
-```
+```shell
 https://api-gitguardian.<my-domain>
 ```
 

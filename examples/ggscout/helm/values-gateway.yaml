@@ -19,6 +19,7 @@ proxy:
   tunnels:
     web:
       gateway:
+        enabled: true
         className: <my-gateway-className> # (Optional) Uses the default Gateway class if not set
         listeners:
           - hostname: api-gitguardian.<my-domain>

@@ -19,6 +19,7 @@ proxy:
   tunnels:
     web:
       ingress:
+        enabled: true
         className: <my-ingress-className> # (Optional) Uses the default Ingress class if not set
         listeners:
           - hostname: api-gitguardian.<my-domain>
