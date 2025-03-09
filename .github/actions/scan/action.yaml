@@ -1,9 +1,9 @@
-name: Scan Docker image
-description: 'Scan Docker image'
+name: Scan Image
+description: 'Scan Image using Grype'
 
 inputs:
-  source:
-    description: 'The source to scan'
+  image:
+    description: 'The image to scan'
     required: true
   fail-build:
     description: "Set to false to avoid failing based on severity-cutoff. Default is to fail when severity-cutoff is reached (or surpassed)"
@@ -14,50 +14,30 @@ inputs:
     required: false
     default: 'high'
   upload:
-    description: 'Whether to upload the scan report on GitHub or not'
+    description: 'Whether to upload report file or not'
     required: false
     default: 'false'
-  dagger-version:
-    description: 'The Dagger Engine version'
-    required: false
-    default: 'latest'
-  dagger-cloud-token:
-    description: 'The Dagger cloud token'
-    required: false
-    default: ''
 
 outputs:
   report:
     description: 'Scan report file'
-    value: ${{ steps.output.outputs.report }}
+    value: ${{ steps.scan.outputs.sarif }}
 
 runs:
   using: composite
   steps:
-    - name: Create Output file
-      id: output
-      shell: bash
-      run: |
-        echo "report=$(mktemp -p ${{ runner.temp }} -t scan.XXXXXX)" >> $GITHUB_OUTPUT
-
-    - name: Scan
-      uses: dagger/dagger-for-github@v7
+    - name: Scan image
+      id: scan
+      uses: anchore/scan-action@v6
       with:
-        version: ${{ inputs.dagger-version }}
-        cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/grype@v1.5.0
-        verb: call
-        args: |
-          scan \
-            --source=${{ inputs.source }} \
-            --fail=${{ inputs.fail-build }} \
-            --severity-cutoff=${{ inputs.severity-cutoff }} \
-            --output-format=sarif \
-          export \
-            --path=${{ steps.output.outputs.report }} \
+        image: ${{ inputs.image }}
+        cache-db: true
+        fail-build: ${{ inputs.fail-build }}
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        output-format: 'sarif'
 
     - if: ${{ inputs.upload == 'true' }}
       name: Upload scan report
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: ${{ steps.output.outputs.report }}
+        sarif_file: ${{ steps.scan.outputs.sarif }}

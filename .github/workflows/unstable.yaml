@@ -148,6 +148,12 @@ jobs:
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
+      - name: Scan vulnerabilities
+        id: scan
+        uses: ./.github/actions/scan
+        with:
+          image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
+
       - name: Sign and Attest image
         id: sign
         uses: ./.github/actions/cosign/sign
@@ -156,17 +162,9 @@ jobs:
           tag: ${{ matrix.tag }}
           sbom-path: ${{ runner.temp }}/sbom
 
-      - name: Scan vulnerabilities
-        id: scan
-        uses: ./.github/actions/scan
-        with:
-          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
-          severity-cutoff: high
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
   publish-helm-chart:
     name: Publish Helm Chart
+    needs: [publish-images]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

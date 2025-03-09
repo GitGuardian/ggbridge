@@ -49,9 +49,6 @@ jobs:
         id: scan
         uses: ./.github/actions/scan
         with:
-          source: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.version.outputs.version }}'
-          severity-cutoff: high
+          image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.version.outputs.version }}'
           fail-build: 'false'
           upload: 'true'
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

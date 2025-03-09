@@ -1,14 +1,10 @@
-name: Scan directory
-description: 'Scan Directory'
+name: Scan Directory
+description: 'Scan Directory using Grype'
 
 inputs:
-  source:
-    description: 'The source to scan'
+  path:
+    description: 'The directory to scan'
     required: true
-  source-type:
-    description: 'The source type (oci-dir)'
-    required: false
-    default: 'oci-dir'
   fail-build:
     description: "Set to false to avoid failing based on severity-cutoff. Default is to fail when severity-cutoff is reached (or surpassed)"
     required: false
@@ -17,52 +13,21 @@ inputs:
     description: 'Optionally specify the minimum vulnerability severity to trigger an "error" level ACS result.  Valid choices are "negligible", "low", "medium", "high" and "critical".  Any vulnerability with a severity less than this value will lead to a "warning" result.  Default is "high".'
     required: false
     default: 'high'
-  output-format:
-    description: 'Scan report format'
-    required: false
-    default: 'table'
-  dagger-version:
-    description: 'The Dagger Engine version'
-    required: false
-    default: 'latest'
-  dagger-cloud-token:
-    description: 'The Dagger cloud token'
-    required: false
-    default: ''
 
 outputs:
   report:
     description: 'Scan report file'
-    value: ${{ steps.output.outputs.report }}
+    value: ${{ steps.scan.outputs.sarif }}
 
 runs:
   using: composite
   steps:
-    - name: Create Output file
-      id: output
-      shell: bash
-      run: |
-        echo "report=$(mktemp -p ${{ runner.temp }} -t scan.XXXXXX)" >> $GITHUB_OUTPUT
-
-    - name: Scan ${{ inputs.source-type }}
-      uses: dagger/dagger-for-github@v7
+    - name: Scan image
+      id: scan
+      uses: anchore/scan-action@v6
       with:
-        version: ${{ inputs.dagger-version }}
-        cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/grype@v1.5.0
-        verb: call
-        args: |
-          scan-directory \
-            --source=${{ inputs.source }} \
-            --source-type=${{ inputs.source-type }} \
-            --fail=${{ inputs.fail-build }} \
-            --severity-cutoff=${{ inputs.severity-cutoff }} \
-            --output-format=${{ inputs.output-format }} \
-          export \
-            --path=${{ steps.output.outputs.report }} \
-
-    - name: Print report
-      id: print
-      shell: bash
-      run: |
-        cat ${{ steps.output.outputs.report }}
+        path: ${{ inputs.path }}
+        cache-db: true
+        fail-build: ${{ inputs.fail-build }}
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        output-format: 'sarif'
