@@ -48,7 +48,7 @@ runs:
     - uses: docker/setup-qemu-action@v3
 
     - name: Bump Version
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
@@ -63,7 +63,7 @@ runs:
             --path=${{ github.workspace }}/melange/ggbridge.yaml \
 
     - name: Build packages
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}

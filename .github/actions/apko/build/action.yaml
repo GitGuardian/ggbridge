@@ -44,7 +44,7 @@ runs:
         echo "output-dir=$(mktemp -d -p ${{ runner.temp }} -t apko.XXXXXX)" >> $GITHUB_OUTPUT
 
     - name: Build image
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       env:
         _EXPERIMENTAL_DAGGER_CACHE_CONFIG: 'type=gha,mode=max'
       with:

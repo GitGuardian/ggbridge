@@ -24,7 +24,7 @@ runs:
   using: composite
   steps:
     - name: Publish Helm chart
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       env:
         GH_TOKEN: ${{ github.token }}
       with:

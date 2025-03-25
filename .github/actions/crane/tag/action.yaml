@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - name: Add tag
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       env:
         DOCKER_HUB_PASSWORD: ${{ inputs.dockerhub-password }}
         GH_TOKEN: ${{ github.token }}

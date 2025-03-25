@@ -36,7 +36,7 @@ runs:
         echo "public-key=${OUTPUT_DIR}/melange.rsa.pub" >> $GITHUB_OUTPUT
 
     - name: Keygen
-      uses: dagger/dagger-for-github@v7
+      uses: dagger/dagger-for-github@8.0.0
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
