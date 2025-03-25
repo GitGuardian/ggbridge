@@ -124,8 +124,8 @@ logLevel: INFO
 dnsResolver: ""
 
 proxyProtocol:
-  # -- When true, enables proxy protocol v2 for tcp tunnels
-  enabled: false
+  # -- When true, enables proxy protocol v2 for web/tls tunnels
+  enabled: true
 
 caBundle:
   # -- Specify CA certificates to inject (PEM format)

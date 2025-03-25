@@ -120,6 +120,7 @@ func buildClientCommand() []string {
 	connectionMinIdle := getEnv("CONNECTION_MIN_IDLE", "0")
 	dnsResolver := os.Getenv("DNS_RESOLVER")
 	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
+	proxyProtocolEnabled, err := strconv.ParseBool(getEnv("PROXY_PROTOCOL_ENABLED", "true"))
 	if err != nil {
 		log.Fatalf("Invalid boolean for tlsEnabled: %s", err)
 	}
@@ -213,12 +214,24 @@ func buildClientCommand() []string {
 
 	// Enables client to server tcp tunnel
 	if tunnelTlsEnabled {
-		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
+		target := fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort)
+
+		if proxyProtocolEnabled {
+			target += "?proxy_protocol"
+		}
+
+		cmd = append(cmd, "--local-to-remote", target)
 	}
 
 	// Enables client to server web tunnel
 	if tunnelWebEnabled {
-		cmd = append(cmd, "--local-to-remote", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
+		target := fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s", tunnelWebPort, tunnelWebRemotePort)
+
+		if proxyProtocolEnabled {
+			target += "?proxy_protocol"
+		}
+
+		cmd = append(cmd, "--local-to-remote", target)
 	}
 
 	// Enables server to client proxy tunnel
@@ -228,12 +241,24 @@ func buildClientCommand() []string {
 
 	// Enables server to client tcp tunnel
 	if reverseTunnelTlsEnabled {
-		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s?proxy_protocol", tunnelTlsPort, tunnelTlsRemotePort))
+		target := fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelTlsPort, tunnelTlsRemotePort)
+
+		if proxyProtocolEnabled {
+			target += "?proxy_protocol"
+		}
+
+		cmd = append(cmd, "--remote-to-local", target)
 	}
 
 	// Enables server to client web tunnel
 	if reverseTunnelWebEnabled {
-		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s?proxy_protocol", tunnelWebPort, tunnelWebRemotePort))
+		target := fmt.Sprintf("tcp://127.0.0.1:%s:127.0.0.1:%s", tunnelWebPort, tunnelWebRemotePort)
+
+		if proxyProtocolEnabled {
+			target += "?proxy_protocol"
+		}
+
+		cmd = append(cmd, "--remote-to-local", target)
 	}
 
 	return cmd

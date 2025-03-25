@@ -168,7 +168,7 @@ A Helm chart for installing ggbridge
 | proxy.updateStrategy.rollingUpdate.maxSurge | int | `1` |  |
 | proxy.updateStrategy.rollingUpdate.maxUnavailable | int | `0` |  |
 | proxy.updateStrategy.type | string | `"RollingUpdate"` | Customize updateStrategy |
-| proxyProtocol.enabled | bool | `false` | When true, enables proxy protocol v2 for tcp tunnels |
+| proxyProtocol.enabled | bool | `true` | When true, enables proxy protocol v2 for web/tls tunnels |
 | replicaCount | int | `1` | Number of pods for each deployment |
 | resources.limits | object | `{}` | Set container limits |
 | resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Set container requests |
