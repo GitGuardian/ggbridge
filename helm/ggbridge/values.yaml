@@ -311,7 +311,12 @@ server:
     ports:
       ws:
         # -- Set the server websocket service port
-        port: 9000
+        port: 80
+        # -- Set the server websocket container port
+        containerPort: 9000
+      wss:
+        # -- Set the server secured websocket service port
+        port: 443
         # -- Set the server websocket container port
         containerPort: 9000
 

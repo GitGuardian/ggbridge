@@ -194,7 +194,9 @@ A Helm chart for installing ggbridge
 | server.istio.gateways | list | `[]` | Specify the existing gateway resources for Virtual Service |
 | server.service.annotations | object | `{}` | Specify server serivce annottions |
 | server.service.ports.ws.containerPort | int | `9000` | Set the server websocket container port |
-| server.service.ports.ws.port | int | `9000` | Set the server websocket service port |
+| server.service.ports.ws.port | int | `80` | Set the server websocket service port |
+| server.service.ports.wss.containerPort | int | `9000` | Set the server websocket container port |
+| server.service.ports.wss.port | int | `443` | Set the server secured websocket service port |
 | server.service.type | string | `"ClusterIP"` | Kubernetes Service type |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |

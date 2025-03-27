@@ -17,10 +17,17 @@ metadata:
 spec:
   type: {{ .Values.server.service.type }}
   ports:
-    - port: {{ .Values.server.service.ports.ws.port }}
+    {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
+    - port: {{ $.Values.server.service.ports.wss.port }}
+      targetPort: ws
+      protocol: TCP
+      name: wss
+    {{- else }}
+    - port: {{ $.Values.server.service.ports.ws.port }}
       targetPort: ws
       protocol: TCP
       name: ws
+    {{- end }}
   selector:
     {{- include "ggbridge.selectorLabels" . | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" . | nindent 4 }}
@@ -45,10 +52,17 @@ metadata:
 spec:
   type: {{ $.Values.server.service.type }}
   ports:
+    {{- if and $.Values.tls.enabled (eq (include "ggbridge.server.trafficRouting.enabled" $) "false") }}
+    - port: {{ $.Values.server.service.ports.wss.port }}
+      targetPort: ws
+      protocol: TCP
+      name: wss
+    {{- else }}
     - port: {{ $.Values.server.service.ports.ws.port }}
       targetPort: ws
       protocol: TCP
       name: ws
+    {{- end }}
   selector:
     {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
