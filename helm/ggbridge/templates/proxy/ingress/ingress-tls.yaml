@@ -37,7 +37,9 @@ metadata:
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
   annotations: {{ include "ggbridge.proxy.tunnels.tls.ingress.annotations" . | nindent 4 }}
 spec:
+  {{- if $ingress.className }}
   ingressClassName: {{ $ingress.className | quote }}
+  {{- end }}
   rules:
     {{- range $ingress.listeners }}
     - host: {{ .hosntame }}

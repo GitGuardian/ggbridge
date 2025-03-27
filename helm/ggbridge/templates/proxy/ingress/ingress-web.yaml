@@ -12,10 +12,12 @@ metadata:
     {{- include "ggbridge.proxy.labels" . | nindent 4 }}
   {{- if or .Values.commonAnnotations $ingress.annotations }}
   {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $ingress.annotations .Values.commonAnnotations ) "context" . ) }}
-  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $ingress "context" .) | nindent 4 }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" .) | nindent 4 }}
   {{- end }}
 spec:
+  {{- if $ingress.className }}
   ingressClassName: {{ $ingress.className | quote }}
+  {{- end }}
   rules:
     {{- range $ingress.listeners }}
     - host: {{ .hostname }}
