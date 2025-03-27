@@ -108,8 +108,10 @@ spec:
           env:
             - name: SERVER_ADDRESS
               value: {{ include "ggbridge.hostname" $ | quote }}
+            {{- if gt ($.Values.deploymentCount | int) 1 }}
             - name: SERVER_PATH_PREFIX
               value: {{ $index | quote }}
+            {{- end }}
             - name: TLS_ENABLED
               value: {{ $.Values.tls.enabled | quote }}
             - name: TLS_VERIFY_CERTIFICATE
