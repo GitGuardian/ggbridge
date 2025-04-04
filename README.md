@@ -1,6 +1,6 @@
-# ggbridge: connect your on-prem VCS with the GitGuardian Platform
+# ggbridge: connect your self-hosted services with the GitGuardian Platform
 
-**ggbridge** is a tool designed to facilitate secure connections between the GitGuardian SaaS platform and your on-premise Version Control Systems (VCS) that are not exposed to the public internet. By acting as a secure bridge, ggbridge enables GitGuardian to access repositories located in isolated environments, ensuring that your sensitive code data remains protected while taking advantage of GitGuardian’s powerful scanning capabilities.
+**ggbridge** is a tool designed to facilitate secure connections between the GitGuardian SaaS platform and your self-hosted services (e.g., Version Control Systems or Secrets Managers) that are not exposed to the public internet. By acting as a secure bridge, ggbridge enables GitGuardian to access repositories located in isolated environments, ensuring that your sensitive code data remains protected while taking advantage of GitGuardian’s powerful scanning capabilities.
 
 With ggbridge, organizations can maintain their internal infrastructure and security protocols without sacrificing the ability to integrate with GitGuardian’s monitoring and alerting features.
 
@@ -15,7 +15,7 @@ With ggbridge, organizations can maintain their internal infrastructure and secu
 
 The client component connects to the server using the WebSocket protocol to establish a secure, mutually authenticated (mTLS) tunnel between the customer’s network and the GitGuardian SaaS platform. This ensures both ends are securely authenticated.
 
-Once the tunnel is established, a proxy server is deployed on the GitGuardian side, which allows secure access to the client’s on-prem VCS through the tunnel. This proxy connection enables GitGuardian to scan and monitor your repositories without requiring your VCS to be publicly accessible.
+Once the tunnel is established, a proxy server is deployed on the GitGuardian side, which allows secure access to the client’s self-hosted services through the tunnel. This proxy connection enables GitGuardian to scan and monitor your repositories without requiring your VCS to be publicly accessible.
 
 ## Install and configure
 
@@ -83,7 +83,7 @@ helm -n ggbridge upgrade --install --create-namespace \
 
 ## Examples
 
-Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your on-premise services and the GitGuardian platform.
+Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your self-hosted services and the GitGuardian platform.
 
 | Name                          | Description                                   |
 | ----------------------------- | --------------------------------------------- |
