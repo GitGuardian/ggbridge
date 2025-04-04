@@ -4,7 +4,7 @@ You want to deploy **[ggscout](https://docs.gitguardian.com/ggscout-docs/home)**
 
 `ggbridge` can help you establish a secure and mTLS-authenticated gateway between your network and the GitGuardian platform, allowing ggscout to communicate with the GitGuardian public API, and thus, transmit the inventory.
 
-![nhi-scout](../../docs/images/ggscout.drawio.png)
+![ggscout](../../docs/images/ggscout-ggbridge.drawio.png)
 
 As you can see in the diagram above, we configure the ggbridge client to expose an internal API endpoint dedicated to communicating with the GitGuardian API through ggbridge’s secure tunnel.
 
