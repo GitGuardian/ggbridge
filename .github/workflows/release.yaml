@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 env:
-  DAGGER_VERSION: '0.18.2'
+  DAGGER_VERSION: '0.18.3'
 
 jobs:
   build-packages:
