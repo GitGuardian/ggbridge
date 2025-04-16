@@ -66,14 +66,14 @@ paths:
     gid: 0
   - path: /var/lib/nginx/tmp
     type: directory
-    permissions: 0o775
+    permissions: 0o777
     uid: 65532
-    gid: 0
+    gid: 65532
   - path: /var/run
     type: directory
     permissions: 0o777
     uid: 65532
-    gid: 0
+    gid: 65532
 
 archs:
   - aarch64
