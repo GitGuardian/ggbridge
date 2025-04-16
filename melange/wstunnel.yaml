@@ -1,6 +1,6 @@
 package:
   name: wstunnel
-  version: "10.1.10"
+  version: "10.1.11"
   epoch: 0
   description: Wstunnel uses the websocket protocol which is compatible with http in order to bypass firewalls and proxies
   url: https://github.com/erebe/wstunnel
@@ -22,13 +22,13 @@ pipeline:
     uses: fetch
     with:
       uri: https://github.com/erebe/wstunnel/releases/download/v${{package.version}}/wstunnel_${{package.version}}_linux_arm64.tar.gz
-      expected-sha256: f68f9f15ea24e8a9736e73a5e05c2afd5775779be8aa311421a52cac0e143d75
+      expected-sha256: 53cd153cc77976802e6443cf35a22f0562899f79c209e466663f7fd7966f2a91
       strip-components: 0
   - if: ${{build.arch}} == 'x86_64'
     uses: fetch
     with:
       uri: https://github.com/erebe/wstunnel/releases/download/v${{package.version}}/wstunnel_${{package.version}}_linux_amd64.tar.gz
-      expected-sha256: 80e6eb97f46e11ebb72bb765174aeb90a228e559075336d762bd4aac2256c025
+      expected-sha256: 6b2c9e084d3abaca36e1f1a1e95b2149078deab353e7333ff4e63f563a046e8b
       strip-components: 0
   - runs: |
       install -dm755 "${{targets.destdir}}"/usr/bin
