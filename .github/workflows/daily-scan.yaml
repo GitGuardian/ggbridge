@@ -13,7 +13,7 @@ permissions:
   actions: read
 
 env:
-  DAGGER_VERSION: '0.18.3'
+  DAGGER_VERSION: '0.18.4'
 
 jobs:
   scan:

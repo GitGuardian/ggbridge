@@ -19,7 +19,7 @@ runs:
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/helm@v1.2.3
+        module: github.com/opopops/daggerverse/helm@v1.3.0
         verb: call
         args: |
           lint \

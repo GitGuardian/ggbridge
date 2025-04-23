@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DAGGER_VERSION: '0.18.3'
+  DAGGER_VERSION: '0.18.4'
 
 jobs:
   build-packages:
@@ -110,8 +110,8 @@ jobs:
         uses: docker/login-action@v3
         id: login-to-docker-hub
         with:
-          username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Write Melange Public Key
         id: melange-public-key
@@ -143,8 +143,8 @@ jobs:
           repository-append: ${{ runner.temp }}/packages
           keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
           sbom-path: ${{ runner.temp }}/sbom
-          dockerhub-username: ${{ vars.DOCKER_REGISTRY_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           dagger-version: ${{ env.DAGGER_VERSION }}
           dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
