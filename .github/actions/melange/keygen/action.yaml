@@ -40,7 +40,7 @@ runs:
       with:
         version: ${{ inputs.dagger-version }}
         cloud-token: ${{ inputs.dagger-cloud-token }}
-        module: github.com/opopops/daggerverse/melange@v1.4.0
+        module: github.com/opopops/daggerverse/melange@v1.5.0
         verb: call
         args: |
           keygen \

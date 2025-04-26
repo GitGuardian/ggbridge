@@ -1,10 +1,5 @@
 default_stages: [pre-commit]
 repos:
-  - repo: https://github.com/gitguardian/ggshield
-    rev: v1.38.1
-    hooks:
-      - id: ggshield
-        language_version: python3
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.28
     hooks:
@@ -18,3 +13,8 @@ repos:
       - id: helm-docs
         args:
           - --chart-search-root=helm/ggbridge
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.38.1
+    hooks:
+      - id: ggshield
+        language_version: python3
