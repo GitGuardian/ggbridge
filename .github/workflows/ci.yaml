@@ -33,84 +33,139 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  DAGGER_VERSION: '0.18.5'
-
 jobs:
-  docker:
-    name: Build and Scan Docker image
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
-
+  build-packages:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+    name: Build packages for ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get GitHub vars
+      - name: Set GitHub vars
         id: github
         uses: ./.github/actions/github
 
-      - name: Write Melange Keys
+      - name: Write Melange Signing Key
         id: melange-signing-key
         shell: bash
         env:
           PUBLIC_KEY_BASE64: ${{ vars.MELANGE_PUBLIC_KEY_BASE64 }}
           SIGNING_KEY_BASE64: ${{ secrets.MELANGE_SIGNING_KEY_BASE64 }}
         run: |
-          mkdir -p ${{ runner.temp }}/packages
-          echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa.pub
-          echo -n "$SIGNING_KEY_BASE64" | base64 -d > ${{ runner.temp }}/packages/melange.rsa
+          mkdir -p ${{ github.workspace }}/packages
+          echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa.pub
+          echo -n "$SIGNING_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa
 
       - name: Build packages
         id: apk
-        uses: ./.github/actions/melange/build
+        uses: ./.github/actions/melange
         with:
           arch: ${{ steps.github.outputs.arch }}
-          signing-key: ${{ runner.temp }}/packages/melange.rsa
-          output-dir: ${{ runner.temp }}/packages
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          signing-key: ${{ github.workspace }}/packages/melange.rsa
+          output-dir: ${{ github.workspace }}/packages
 
-      - name: Build prod image
-        id: build-prod
-        uses: ./.github/actions/apko/build
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
         with:
-          config: 'apko/prod.yaml'
-          tag: 'local/prod'
-          repository-append: ${{ runner.temp }}/packages
-          keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
-          arch: ${{ steps.github.outputs.arch }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          name: packages-${{ steps.github.outputs.arch }}
+          path: ${{ github.workspace }}/packages/${{ steps.github.outputs.arch }}/
+          retention-days: 1
 
-      - name: Build shell image
-        id: build-shell
-        uses: ./.github/actions/apko/build
-        with:
-          config: 'apko/shell.yaml'
-          tag: 'local/shell'
-          repository-append: ${{ runner.temp }}/packages
-          keyring-append: ${{ runner.temp }}/packages/melange.rsa.pub
-          arch: ${{ steps.github.outputs.arch }}
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - name: Scan vulnerabilities
-        id: scan
-        uses: ./.github/actions/scan-directory
-        with:
-          path: ${{ steps.build-prod.outputs.output-dir }}
-          fail-build: 'false'
-
-  helm:
-    name: Test Helm chart
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
-
+  publish:
+    strategy:
+      matrix:
+        include:
+          - variant: prod
+            tag-suffix: ''
+          - variant: shell
+            tag-suffix: '-shell'
+    name: Publish ${{ matrix.variant }} image
+    needs: [build-packages]
+    runs-on: ubuntu-24.04
     steps:
+      - uses: imjasonh/setup-crane@v0.4
+      - uses: sigstore/cosign-installer@v3
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test Helm chart
-        uses: ./.github/actions/helm/test
+      - name: Set GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
+      - name: Write Melange Public Key
+        id: melange-public-key
+        shell: bash
+        env:
+          PUBLIC_KEY_BASE64: ${{ vars.MELANGE_PUBLIC_KEY_BASE64 }}
+        run: |
+          mkdir -p ${{ github.workspace }}/packages
+          echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa.pub
+
+      - name: Download aarch64 packages
+        uses: actions/download-artifact@v4
         with:
-          dagger-version: ${{ env.DAGGER_VERSION }}
-          dagger-cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          name: packages-aarch64
+          path: ${{ github.workspace }}/packages/aarch64
+
+      - name: Download x86_64 packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-x86_64
+          path: ${{ github.workspace }}/packages/x86_64
+
+      - name: Publish image
+        id: publish
+        uses: ./.github/actions/apko
+        with:
+          config: 'apko/${{ matrix.variant }}.yaml'
+          tag: 'ttl.sh/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
+          repository-append: ${{ github.workspace }}/packages
+          keyring-append: ${{ github.workspace }}/packages/melange.rsa.pub
+          publish: 'true'
+
+      - name: Scan image
+        id: scan
+        uses: anchore/scan-action@v6
+        with:
+          image: 'ttl.sh/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
+          cache-db: true
+          fail-build: 'false'
+          severity-cutoff: 'high'
+          output-format: 'sarif'
+
+      - name: Sign and Attest
+        id: sign
+        uses: ./.github/actions/cosign
+        with:
+          image: 'ttl.sh/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
+
+  publish-chart:
+    name: Publish Helm Chart
+    needs: [publish]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: azure/setup-helm@v4.3.0
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set GitHub vars
+        id: github
+        uses: ./.github/actions/github
+
+      - name: Publish Helm chart
+        uses: ./.github/actions/helm
+        with:
+          chart: ${{ github.workspace }}/helm/ggbridge
+          version: '0.0.0'
+          app-version: ${{ steps.github.outputs.short-sha }}
+          publish: 'true'
+          registry: oci://ttl.sh/${{ steps.github.outputs.repository }}/helm

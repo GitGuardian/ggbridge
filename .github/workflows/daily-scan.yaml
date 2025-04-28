@@ -12,9 +12,6 @@ permissions:
   security-events: write
   actions: read
 
-env:
-  DAGGER_VERSION: '0.18.5'
-
 jobs:
   scan:
     name: Scan image
@@ -45,10 +42,17 @@ jobs:
         id: github
         uses: ./.github/actions/github
 
-      - name: Scan vulnerabilities
+      - name: Scan image
         id: scan
-        uses: ./.github/actions/scan
+        uses: anchore/scan-action@v6
         with:
           image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.version.outputs.version }}'
+          cache-db: true
           fail-build: 'false'
-          upload: 'true'
+          severity-cutoff: 'high'
+          output-format: 'sarif'
+
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}

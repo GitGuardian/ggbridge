@@ -1,0 +1,42 @@
+name: Build and Publish Helm chart
+description: 'Build and Publish Helm chart'
+
+inputs:
+  chart:
+    description: 'The Helm chart to build'
+    required: true
+  version:
+    description: 'The Helm chart version'
+    required: true
+  app-version:
+    description: 'The Helm chart App version'
+    required: true
+  publish:
+    description: 'Publish the image'
+    required: false
+    default: 'false'
+  registry:
+    description: 'The Helm registry'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Test Helm chart
+      shell: bash
+      run: |
+        helm lint --strict \
+          ${{ inputs.chart }}
+
+    - name: Package Helm chart
+      shell: bash
+      run: |
+        helm package ${{ inputs.chart }} \
+          --app-version=${{ inputs.app-version }} \
+          --version=${{ inputs.version }}
+
+    - if: ${{ inputs.publish == 'true' }}
+      name: Publish Helm chart
+      shell: bash
+      run: |
+        helm push ggbridge-${{ inputs.version }}.tgz ${{ inputs.registry }}

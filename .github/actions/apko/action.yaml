@@ -1,0 +1,62 @@
+name: Build and Publish image
+description: 'Build an image using APKO'
+
+inputs:
+  config:
+    description: 'The APKO config file'
+    required: true
+  tag:
+    description: 'The image tag'
+    required: true
+  arch:
+    description: 'The architecture to build for'
+    required: false
+    default: ''
+  keyring-append:
+    description: 'Extra key to include in the keyring'
+    required: false
+    default: ${{ github.workspace }}/packages/melange.rsa.pub
+  repository-append:
+    description: 'Extra repository to include'
+    required: false
+    default: ${{ github.workspace }}/packages
+  sbom-path:
+    description: 'The SBOM directory'
+    required: false
+    default: ${{ github.workspace }}/sbom
+  publish:
+    description: 'Publish the image'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Create SBOM directory
+      shell: bash
+      run: |
+        mkdir -p ${{ inputs.sbom-path }}
+
+    - if: ${{ inputs.publish == 'false' }}
+      name: Build OCI image
+      id: build
+      uses: chainguard-images/actions/apko-build@v1.0.0
+      with:
+        config: ${{ inputs.config }}
+        tag: ${{ inputs.tag }}
+        archs: ${{ inputs.arch }}
+        keyring-append: ${{ inputs.keyring-append }}
+        repository-append: ${{ inputs.repository-append }}
+        sbom-path: ${{ inputs.sbom-path }}
+
+    - if: ${{ inputs.publish == 'true' }}
+      name: Publish image
+      id: publish
+      uses: chainguard-images/actions/apko-publish@v1.0.0
+      with:
+        config: ${{ inputs.config }}
+        tag: ${{ inputs.tag }}
+        archs: ${{ inputs.arch }}
+        keyring-append: ${{ inputs.keyring-append }}
+        repository-append: ${{ inputs.repository-append }}
+        sbom-path: ${{ inputs.sbom-path }}

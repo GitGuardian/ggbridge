@@ -1,0 +1,83 @@
+name: Sign and Attest Image
+description: 'Sign  and Attest Image using Cosign'
+
+inputs:
+  image:
+    description: 'The image name'
+    required: true
+  sbom-path:
+    description: 'The SBOM directory'
+    required: false
+    default: ${{ github.workspace }}/sbom
+  attest-sbom:
+    description: 'Attest SBOMs'
+    required: false
+    default: 'true'
+  attest-provenance:
+    description: 'Attest the build provenance'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - id: digest
+      shell: bash
+      run: |
+        echo "digest=$(crane digest ${{ inputs.image }})" >> $GITHUB_OUTPUT
+        echo "digest-amd64=$(crane digest ${{ inputs.image }} --platform=linux/amd64)" >> $GITHUB_OUTPUT
+        echo "digest-arm64=$(crane digest ${{ inputs.image }} --platform=linux/arm64)" >> $GITHUB_OUTPUT
+
+    - id: sign
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        cosign sign \
+          --recursive \
+          --oidc-provider=github-actions \
+          ${{ inputs.image }}@${{ steps.digest.outputs.digest }}
+
+    - if: ${{ inputs.attest-sbom == 'true' }}
+      id: attest-sbom-index
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        cosign attest \
+          --type=spdxjson \
+          --predicate=${{ inputs.sbom-path }}/sbom-index.spdx.json \
+          --oidc-provider=github-actions \
+          ${{ inputs.image }}@${{ steps.digest.outputs.digest }}
+
+    - if: ${{ inputs.attest-sbom == 'true' }}
+      id: attest-sbom-amd64
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        cosign attest \
+          --type=spdxjson \
+          --predicate=${{ inputs.sbom-path }}/sbom-x86_64.spdx.json \
+          --oidc-provider=github-actions \
+          ${{ inputs.image }}@${{ steps.digest.outputs.digest-amd64 }}
+
+    - if: ${{ inputs.attest-sbom == 'true' }}
+      id: attest-sbom-arm64
+      shell: bash
+      env:
+        COSIGN_YES: "true"
+      run: |
+        cosign attest \
+          --type=spdxjson \
+          --predicate=${{ inputs.sbom-path }}/sbom-aarch64.spdx.json \
+          --oidc-provider=github-actions \
+          ${{ inputs.image }}@${{ steps.digest.outputs.digest-arm64 }}
+
+    - if: ${{ inputs.attest-provenance == 'true' }}
+      id: attest-provenance-github
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-name: ${{ inputs.image }}
+        subject-digest: ${{ steps.digest.outputs.digest }}
+        push-to-registry: true
