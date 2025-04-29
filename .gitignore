@@ -1,2 +1,6 @@
 .DS_Store
 .local/
+
+melange.rsa*
+cosign.key
+cosign.pub
