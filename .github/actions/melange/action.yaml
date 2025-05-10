@@ -1,0 +1,63 @@
+name: Build APK packages
+description: 'Build APK packages using Melange'
+
+inputs:
+  version:
+    description: 'The version of the ggbridge package'
+    required: false
+    default: '1.0.0'
+  arch:
+    description: 'The architecture to build for'
+    required: false
+    default: ''
+  signing-key:
+    description: 'The melange signing key'
+    required: false
+    default: ${{ github.workspace }}/packages/melange.rsa
+  output-dir:
+    description: 'Output dir'
+    required: false
+    default: ${{ github.workspace }}/packages
+  melange-version:
+    description: 'Melange version'
+    required: false
+    default: 'v0.23.15'
+
+runs:
+  using: composite
+  steps:
+    - name: Create outputs
+      id: output
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        mkdir -p "$OUTPUT_DIR"
+
+    - uses: chainguard-dev/actions/setup-melange@v1.0.7
+      with:
+        version: ${{ inputs.melange-version }}
+
+    - name: Bump ggbridge version
+      shell: bash
+      run: |
+        melange bump \
+          ${{ github.workspace }}/melange/ggbridge.yaml \
+          ${{ inputs.version }}
+
+    - name: Build wstunnel
+      uses: chainguard-dev/actions/melange-build-pkg@v1.0.7
+      with:
+        config: ${{ github.workspace }}/melange/wstunnel.yaml
+        archs: ${{ inputs.arch }}
+        sign-with-key: 'true'
+        signing-key-path: ${{ inputs.signing-key }}
+        repository-path: ${{ inputs.output-dir }}
+
+    - name: Build ggbridge
+      uses: chainguard-dev/actions/melange-build-pkg@v1.0.7
+      with:
+        config: ${{ github.workspace }}/melange/ggbridge.yaml
+        archs: ${{ inputs.arch }}
+        sign-with-key: 'true'
+        signing-key-path: ${{ inputs.signing-key }}
+        repository-path: ${{ inputs.output-dir }}
