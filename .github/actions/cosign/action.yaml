@@ -21,9 +21,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - id: digest
+    - id: vars
       shell: bash
       run: |
+        echo "image-name=$(echo ${{ inputs.image }} | cut -d':' -f1)" >> $GITHUB_OUTPUT
+        echo "image-tag=$(echo ${{ inputs.image }} | cut -d':' -f2)" >> $GITHUB_OUTPUT
         echo "digest=$(crane digest ${{ inputs.image }})" >> $GITHUB_OUTPUT
         echo "digest-amd64=$(crane digest ${{ inputs.image }} --platform=linux/amd64)" >> $GITHUB_OUTPUT
         echo "digest-arm64=$(crane digest ${{ inputs.image }} --platform=linux/arm64)" >> $GITHUB_OUTPUT
@@ -36,7 +38,7 @@ runs:
         cosign sign \
           --recursive \
           --oidc-provider=github-actions \
-          ${{ inputs.image }}@${{ steps.digest.outputs.digest }}
+          ${{ inputs.image }}@${{ steps.vars.outputs.digest }}
 
     - if: ${{ inputs.attest-sbom == 'true' }}
       id: attest-sbom-index
@@ -48,7 +50,7 @@ runs:
           --type=spdxjson \
           --predicate=${{ inputs.sbom-path }}/sbom-index.spdx.json \
           --oidc-provider=github-actions \
-          ${{ inputs.image }}@${{ steps.digest.outputs.digest }}
+          ${{ inputs.image }}@${{ steps.vars.outputs.digest }}
 
     - if: ${{ inputs.attest-sbom == 'true' }}
       id: attest-sbom-amd64
@@ -60,7 +62,7 @@ runs:
           --type=spdxjson \
           --predicate=${{ inputs.sbom-path }}/sbom-x86_64.spdx.json \
           --oidc-provider=github-actions \
-          ${{ inputs.image }}@${{ steps.digest.outputs.digest-amd64 }}
+          ${{ inputs.image }}@${{ steps.vars.outputs.digest-amd64 }}
 
     - if: ${{ inputs.attest-sbom == 'true' }}
       id: attest-sbom-arm64
@@ -72,12 +74,12 @@ runs:
           --type=spdxjson \
           --predicate=${{ inputs.sbom-path }}/sbom-aarch64.spdx.json \
           --oidc-provider=github-actions \
-          ${{ inputs.image }}@${{ steps.digest.outputs.digest-arm64 }}
+          ${{ inputs.image }}@${{ steps.vars.outputs.digest-arm64 }}
 
     - if: ${{ inputs.attest-provenance == 'true' }}
       id: attest-provenance-github
       uses: actions/attest-build-provenance@v2
       with:
-        subject-name: ${{ inputs.image }}
-        subject-digest: ${{ steps.digest.outputs.digest }}
+        subject-name: ${{ steps.vars.outputs.image-name }}
+        subject-digest: ${{ steps.vars.outputs.digest }}
         push-to-registry: true
