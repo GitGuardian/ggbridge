@@ -1,0 +1,40 @@
+{
+  "name": "ggbridge",
+  "engineVersion": "v0.18.6",
+  "sdk": {
+    "source": "python"
+  },
+  "dependencies": [
+    {
+      "name": "apko",
+      "source": "github.com/opopops/daggerverse/apko@apko/v1.12.1",
+      "pin": "182a7f073ae270ad14e161e68ab478471f0bd81f"
+    },
+    {
+      "name": "cosign",
+      "source": "github.com/opopops/daggerverse/cosign@cosign/v1.7.1",
+      "pin": "da9e360149b042572c69908feae6fd0cb68f031a"
+    },
+    {
+      "name": "crane",
+      "source": "github.com/opopops/daggerverse/crane@crane/v1.4.5",
+      "pin": "ebc9d96922e11cc0d9ba852becadf944b417b791"
+    },
+    {
+      "name": "grype",
+      "source": "github.com/opopops/daggerverse/grype@grype/v1.7.2",
+      "pin": "5c4f5a7df7709df2c5e94ca88619a3e031852fb3"
+    },
+    {
+      "name": "helm",
+      "source": "github.com/opopops/daggerverse/helm@helm/v1.5.6",
+      "pin": "70eb51a0df98d0d870320512cb2cf00bf050adde"
+    },
+    {
+      "name": "melange",
+      "source": "github.com/opopops/daggerverse/melange@melange/v1.6.0",
+      "pin": "dfff699ba9905a66cc2621527e5db955058152dd"
+    }
+  ],
+  "source": "dagger"
+}
