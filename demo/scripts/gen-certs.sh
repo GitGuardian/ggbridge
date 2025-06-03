@@ -23,12 +23,12 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = tunnel.gitguardian.public
+DNS.1 = ggbridge.gitguardian.public
 EOF
 
 openssl genrsa -out server.key 2048
 openssl req -new -key server.key -out server.csr \
-  -subj "/CN=tunnel.gitguardian.public"
+  -subj "/CN=ggbridge.gitguardian.public"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out server.crt -days 365 -sha256 -extfile server.ext
 cat ca.crt >> server.crt

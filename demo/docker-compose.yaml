@@ -71,8 +71,8 @@ services:
           - proxy.gitguardian.internal
       public:
         aliases:
-          # GitGuardian tunnel endpoint
-          - tunnel.gitguardian.public
+          # GitGuardian ggbridge endpoint
+          - ggbridge.gitguardian.public
     extra_hosts:
       kube-dns.kube-system.svc.cluster.local: "127.0.0.11"
 
@@ -86,10 +86,11 @@ services:
     deploy:
       replicas: 1
     environment:
-      SERVER_ADDRESS: "tunnel.gitguardian.public"
+      SERVER_ADDRESS: "ggbridge.gitguardian.public"
       TLS_ENABLED: "true"
       LOG_LEVEL: ${LOG_LEVEL}
-      CLIENT_TUNNEL_TLS_ENABLED: "true"
+      TUNNEL_TLS_ENABLED: "true"
+      TUNNEL_TLS_PORT: "443"
     volumes:
        - ./certs:/etc/ggbridge/tls:ro
     networks:
