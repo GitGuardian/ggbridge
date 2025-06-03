@@ -1,0 +1,15 @@
+[project]
+name = "ggbridge"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "dagger-io",
+    "pyyaml>=6.0.2",
+]
+
+[build-system]
+requires = ["hatchling==1.25.0"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+dagger-io = { path = "sdk", editable = true }

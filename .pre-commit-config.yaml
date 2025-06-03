@@ -1,5 +1,27 @@
+# https://pre-commit.com/
+default_language_version:
+  python: python3
 default_stages: [pre-commit]
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.7
+    hooks:
+      - id: ruff
+        name: ruff
+        description: "Run 'ruff' for Python linting"
+        entry: ruff check --force-exclude --fix
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        additional_dependencies: []
+      - id: ruff-format
+        name: ruff-format
+        description: "Run 'ruff format' for Python formatting"
+        entry: ruff format --force-exclude
+        language: python
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        additional_dependencies: []
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.29
     hooks:
