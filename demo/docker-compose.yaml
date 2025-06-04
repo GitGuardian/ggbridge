@@ -75,6 +75,13 @@ services:
           - ggbridge.gitguardian.public
     extra_hosts:
       kube-dns.kube-system.svc.cluster.local: "127.0.0.11"
+    healthcheck:
+      # Check that the server is connected to the client using health tunnel
+      test: ggbridge healthcheck
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 ### Client network
 #######################################
@@ -103,6 +110,13 @@ services:
       public:
     extra_hosts:
       kube-dns.kube-system.svc.cluster.local: "127.0.0.11"
+    healthcheck:
+      # Check that the client is connected to the server using health tunnel
+      test: ggbridge healthcheck
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - server
 
