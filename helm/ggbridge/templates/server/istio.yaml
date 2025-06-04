@@ -62,16 +62,6 @@ spec:
   {{- else }}
   gateways: {{ toYaml .Values.server.istio.gateways | nindent 4 }}
   {{- end }}
-  tls:
-    - match:
-        - port: {{ $.Values.server.istio.gateway.ports.https }}
-          sniHosts:
-            - {{ include "ggbridge.hostname" $ | quote }}
-      route:
-        - destination:
-            host: {{ $serverFullname }}
-            port:
-              number: {{ $.Values.server.service.ports.ws.port }}
   http:
     {{- range $index := until ($.Values.deploymentCount | int) }}
       {{- $serverFullname := include "ggbridge.server.fullname" $ }}
