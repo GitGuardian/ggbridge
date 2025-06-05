@@ -84,3 +84,5 @@ openssl req -new -key vcs.key -out vcs.csr \
   -subj "/CN=vcs.client.internal"
 openssl x509 -req -in vcs.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out vcs.crt -days 365 -sha256 -extfile vcs.ext
+
+chmod 644 *
