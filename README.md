@@ -113,6 +113,7 @@ helm -n ggbridge upgrade --install --create-namespace \
 
 Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your self-hosted services and the GitGuardian platform.
 
-| Name                          | Description                                   |
-| ----------------------------- | --------------------------------------------- |
-| [ggscout](./examples/ggscout) | Connect ggscout with the GitGuardian platform |
+| Name                                          | Description                                   |
+| --------------------------------------------- | --------------------------------------------- |
+| [2-way-tunneling](./examples/2-way-tunneling) | Enable client-to-server tunnels               |
+| [ggscout](./examples/ggscout)                 | Connect ggscout with the GitGuardian platform |

@@ -1,0 +1,28 @@
+---
+hostname: <id>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+client:
+  tunnels:
+    web:
+      enabled: true
+
+proxy:
+  tunnels:
+    web:
+      gateway:
+        enabled: true
+        # -- Set the gateway ClassName (leave empty to use default)
+        className: ""
+        listeners:
+          - hostname: hook-gitguardian.internal.com
+            backend: hook.gitguardian.com
+            tls:
+              secretName: internal-crt

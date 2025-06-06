@@ -1,0 +1,24 @@
+---
+hostname: <id>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+client:
+  tunnels:
+    tls:
+      enabled: true
+
+proxy:
+  tunnels:
+    tls:
+      gateway:
+        enabled: true
+        # This will create the gateway resource, you can disable it if you want to mange it on you own.
+        create: true
+        className: ""
