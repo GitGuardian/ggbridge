@@ -27,7 +27,7 @@ const (
 	DefaultTunnelSocksPort        = 9180
 	DefaultTunnelTlsPort          = 9443
 	DefaultTunnelTlsRemotePort    = 8443
-	DefaultTunnelWebPort          = 8090
+	DefaultTunnelWebPort          = 9080
 	DefaultTunnelWebRemotePort    = 8443
 )
 

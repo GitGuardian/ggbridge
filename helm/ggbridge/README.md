@@ -97,22 +97,22 @@ A Helm chart for installing ggbridge
 | proxy.resources.requests | object | `{"cpu":"50m","memory":"64Mi"}` | Set proxy container requests |
 | proxy.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Set proxy service annotations |
 | proxy.service.name | string | `""` | - Set the proxy service name |
-| proxy.service.ports.health.containerPort | int | `9081` |  |
+| proxy.service.ports.health.containerPort | int | `9081` | Specify the health tunnel port |
 | proxy.service.ports.health.exposed | bool | `false` | Defines whether the health port is exposed if service.type is LoadBalancer or NodePort |
 | proxy.service.ports.health.port | int | `8081` | Specify the health service port number |
-| proxy.service.ports.health.remoteContainerPort | int | `8081` |  |
-| proxy.service.ports.socks.containerPort | int | `9180` |  |
+| proxy.service.ports.health.remoteContainerPort | int | `8081` | Specify the health tunnel remote port |
+| proxy.service.ports.socks.containerPort | int | `9180` | Specify the socks tunnel port |
 | proxy.service.ports.socks.exposed | bool | `true` | Defines whether the socks port is exposed if service.type is LoadBalancer or NodePort |
 | proxy.service.ports.socks.port | int | `1080` | Specify the socks service port number |
-| proxy.service.ports.tls.containerPort | int | `9443` |  |
+| proxy.service.ports.tls.containerPort | int | `9443` | Specify the tls tunnel port |
 | proxy.service.ports.tls.exposed | bool | `true` | Defines whether the tls port is exposed if service.type is LoadBalancer or NodePort |
 | proxy.service.ports.tls.port | int | `443` | Specify the tls service port number |
-| proxy.service.ports.tls.remoteContainerPort | int | `8443` |  |
-| proxy.service.ports.web.containerPort | int | `9080` |  |
+| proxy.service.ports.tls.remoteContainerPort | int | `8443` | Specify the tls tunnel remote port |
+| proxy.service.ports.web.containerPort | int | `9080` | Specify the web tunnel port (nginx) |
 | proxy.service.ports.web.exposed | bool | `true` | Defines whether the web port is exposed if service.type is LoadBalancer or NodePort |
-| proxy.service.ports.web.internalPort | int | `8080` |  |
+| proxy.service.ports.web.internalPort | int | `8080` | Specify the web tunnel internal port (wstunnel) |
 | proxy.service.ports.web.port | int | `80` | Specify the web service port number |
-| proxy.service.ports.web.remoteContainerPort | int | `8443` |  |
+| proxy.service.ports.web.remoteContainerPort | int | `8443` | Specify the web tunnel remote port |
 | proxy.service.type | string | `"ClusterIP"` | Kubernetes Service type |
 | proxy.tolerations | list | `[]` | Tolerations for pod assignment |
 | proxy.topologySpreadConstraints | list | `[]` | Topology spread constraints for pod assignment |

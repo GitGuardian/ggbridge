@@ -399,28 +399,36 @@ proxy:
       health:
         # -- Specify the health service port number
         port: 8081
+        # -- Specify the health tunnel port
         containerPort: 9081
+        # -- Specify the health tunnel remote port
         remoteContainerPort: 8081
         # -- Defines whether the health port is exposed if service.type is LoadBalancer or NodePort
         exposed: false
       socks:
         # -- Specify the socks service port number
         port: 1080
+        # -- Specify the socks tunnel port
         containerPort: 9180
         # -- Defines whether the socks port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
       tls:
         # -- Specify the tls service port number
         port: 443
+        # -- Specify the tls tunnel port
         containerPort: 9443
+        # -- Specify the tls tunnel remote port
         remoteContainerPort: 8443
         # -- Defines whether the tls port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
       web:
         # -- Specify the web service port number
         port: 80
+        # -- Specify the web tunnel port (nginx)
         containerPort: 9080
+        # -- Specify the web tunnel internal port (wstunnel)
         internalPort: 8080
+        # -- Specify the web tunnel remote port
         remoteContainerPort: 8443
         # -- Defines whether the web port is exposed if service.type is LoadBalancer or NodePort
         exposed: true
