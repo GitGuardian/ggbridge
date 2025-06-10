@@ -62,6 +62,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/packages
           echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa.pub
           echo -n "$SIGNING_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa
+          file ${{ github.workspace }}/packages/melange.rsa
 
       - name: Build packages
         id: apk
