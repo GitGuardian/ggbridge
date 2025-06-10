@@ -1,5 +1,6 @@
 version: 2
 updates:
+  # Workflows updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -9,6 +10,24 @@ updates:
         patterns:
           - '*'
     open-pull-requests-limit: 1
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+
+  # Composite action in .github/actions/apko/
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/apko"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+
+  # Composite action in .github/actions/melange/
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/melange"
+    schedule:
+      interval: "weekly"
     commit-message:
       prefix: "chore(actions)"
       include: "scope"
