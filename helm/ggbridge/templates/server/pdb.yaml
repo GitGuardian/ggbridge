@@ -1,4 +1,4 @@
-{{- if and (eq .Values.mode "server") }}
+{{- if and (eq .Values.mode "server") .Values.pdb.create }}
   {{- range $index := until (int .Values.deploymentCount) }}
     {{- $fullname := include "ggbridge.fullname" $ }}
     {{- $serverFullname := include "ggbridge.server.fullname" $ }}

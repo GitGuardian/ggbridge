@@ -65,7 +65,7 @@ A Helm chart for installing ggbridge
 | networkPolicy.ingressNSMatchLabels | object | `{}` | Labels to match to allow traffic to the proxy server from other namespaces |
 | networkPolicy.ingressNSPodMatchLabels | object | `{}` | Pod labels to match to allow traffic to the proxy server from other namespaces |
 | nodeSelector | object | `{}` | Node labels for pod assignment |
-| pdb.create | bool | `true` | Enable/disable a Pod Disruption Budget creation |
+| pdb.create | bool | `false` | Enable/disable a Pod Disruption Budget creation |
 | pdb.maxUnavailable | string | `""` | Max number of pods that can be unavailable after the eviction |
 | pdb.minAvailable | int | `1` | Minimum number of pods that must still be available after the eviction |
 | podAnnotations | object | `{}` | This is for setting Kubernetes Annotations to a Pod |

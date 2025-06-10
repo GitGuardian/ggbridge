@@ -226,7 +226,7 @@ labels: {}
 
 pdb:
   # -- Enable/disable a Pod Disruption Budget creation
-  create: true
+  create: false
   # -- Minimum number of pods that must still be available after the eviction
   minAvailable: 1
   # -- Max number of pods that can be unavailable after the eviction
