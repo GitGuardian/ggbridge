@@ -70,6 +70,19 @@ proxy:
         className: ""
 ```
 
+4. OpenShift Route
+
+Helm values file example 👉 [values-tls-openshift-route.yaml](./helm/values-tls-openshift-route.yaml)
+
+```yaml
+proxy:
+  resolver: dns-default.openshift-dns.svc.cluster.local
+  tunnels:
+    tls:
+      openShiftRoute:
+        enabled: true
+```
+
 ## HTTPS Routing
 
 ![https-routing](../../docs/images/ggbridge-https-routing.drawio.png)
@@ -125,6 +138,24 @@ proxy:
             tls:
               # Certificate for hook.private.com
               secretName: internal-crt
+```
+
+3. OpenShift Route
+
+Helm values file example 👉 [values-https-openshift-route.yaml](./helm/values-https-openshift-route.yaml)
+
+```yaml
+proxy:
+  resolver: dns-default.openshift-dns.svc.cluster.local
+  tunnels:
+    web:
+      openShiftRoute::
+        enabled: true
+        listeners:
+          - hostname: hook-gitguardian.internal.com
+            backend: hook.gitguardian.com
+            tls:
+              termination: edge
 ```
 
 With these configurations, your ggbridge client can securely forward traffic through the tunnel from the client side to approved GitGuardian services.
