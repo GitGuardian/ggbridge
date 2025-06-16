@@ -1,5 +1,11 @@
 # Default values for ggbridge.
 
+global:
+  # -- Global Docker image registry
+  imageRegistry: ""
+  # -- Global Docker registry secret names as an array
+  imagePullSecrets: []
+
 # -- Override the default chart name
 nameOverride: ""
 # -- Override the default fully qualified app name

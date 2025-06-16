@@ -47,6 +47,8 @@ A Helm chart for installing ggbridge
 | domain | string | `"ggbridge.gitguardian.com"` | Domain |
 | extraEnv | list | `[]` | Array with extra environment variables # e.g: # extraEnv: #   - name: FOO #     value: "bar" # |
 | fullnameOverride | string | `""` | Override the default fully qualified app name |
+| global.imagePullSecrets | list | `[]` | Global Docker registry secret names as an array |
+| global.imageRegistry | string | `""` | Global Docker image registry |
 | hostname | string | `""` | Hostname |
 | image.digest | string | `""` | Image digest in the way sha256:aa.... |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |

@@ -43,10 +43,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with $.Values.image.pullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      {{- include "ggbridge.images.pullSecrets" (dict "images" (list $.Values.image $.Values.caBundle.image) "context" $) | nindent 6 }}
       serviceAccountName: {{ include "ggbridge.serviceAccountName" $ }}
       {{- if $.Values.podSecurityContext.enabled }}
       securityContext:
