@@ -387,6 +387,9 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
+  # -- Set the Proxy DNS resolver
+  resolver: kube-dns.kube-system.svc.cluster.local
+
   service:
     # --- Set the proxy service name
     name: ""
@@ -520,6 +523,16 @@ proxy:
         # -- Set gateway annotations
         annotations: {}
 
+      openShiftRoute:
+        # -- Enable tls tunnel exposure using OpenShift Route API
+        enabled: false
+        # -- Set ingress annotations
+        annotations: {}
+        # -- Specify tls tunnel listeners
+        listeners:
+          - hostname: api.gitguardian.com
+          - hostname: hook.gitguardian.com
+
     web:
       service:
         # -- Specify web service annotations
@@ -607,6 +620,27 @@ proxy:
         parentRefs: []
         # -- Set gateway annotations
         annotations: {}
+
+      openShiftRoute:
+        # -- Enable web tunnel exposure using OpenShift route API
+        enabled: false
+        # -- Set ingress annotations
+        annotations: {}
+        # -- Specify web tunnel listeners
+        ## In this example, the following redirection will occur through the web tunnel:
+        ## - https://api.internal.com -> https://api.gitguardian.com
+        ## - https://hook.internal.com -> https://hook.gitguardian.com
+        ## e.g:
+        ## listeners:
+        ##    - hostname: api.internal.com
+        ##      backend: api.gitguardian.com
+        ##      tls:
+        ##        terminattion: "edge"
+        ##    - hostname: hook.internal.com
+        ##      backend: hook.gitguardian.com
+        ##      tls:
+        ##        terminattion: "edge"
+        listeners: []
 
   readinessProbe:
     # -- Whether to enable readiness probe for proxy
