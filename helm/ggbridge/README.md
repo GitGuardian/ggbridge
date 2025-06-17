@@ -47,6 +47,8 @@ A Helm chart for installing ggbridge
 | domain | string | `"ggbridge.gitguardian.com"` | Domain |
 | extraEnv | list | `[]` | Array with extra environment variables # e.g: # extraEnv: #   - name: FOO #     value: "bar" # |
 | fullnameOverride | string | `""` | Override the default fully qualified app name |
+| global.imagePullSecrets | list | `[]` | Global Docker registry secret names as an array |
+| global.imageRegistry | string | `""` | Global Docker image registry |
 | hostname | string | `""` | Hostname |
 | image.digest | string | `""` | Image digest in the way sha256:aa.... |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
@@ -93,6 +95,7 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
+| proxy.resolver | string | `"kube-dns.kube-system.svc.cluster.local"` | Set the Proxy DNS resolver |
 | proxy.resources.limits | object | `{}` | Set proxy container limits |
 | proxy.resources.requests | object | `{"cpu":"50m","memory":"64Mi"}` | Set proxy container requests |
 | proxy.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Set proxy service annotations |
@@ -140,6 +143,9 @@ A Helm chart for installing ggbridge
 | proxy.tunnels.tls.ingress.controller | string | `""` | Specify the ingress controller |
 | proxy.tunnels.tls.ingress.enabled | bool | `false` | Enable tls tunnel exposure using Kubernetes Ingress API |
 | proxy.tunnels.tls.ingress.listeners | list | `[{"hostname":"api.gitguardian.com"},{"hostname":"hook.gitguardian.com"}]` | Specify tls tunnel listeners |
+| proxy.tunnels.tls.openShiftRoute.annotations | object | `{}` | Set ingress annotations |
+| proxy.tunnels.tls.openShiftRoute.enabled | bool | `false` | Enable tls tunnel exposure using OpenShift Route API |
+| proxy.tunnels.tls.openShiftRoute.listeners | list | `[{"hostname":"api.gitguardian.com"},{"hostname":"hook.gitguardian.com"}]` | Specify tls tunnel listeners |
 | proxy.tunnels.tls.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Specify tls service annotations |
 | proxy.tunnels.tls.service.ports.health.exposed | bool | `false` | Defines whether the health port is exposed if service.type is LoadBalancer or NodePort |
 | proxy.tunnels.tls.service.ports.health.port | int | `8081` | Specify the health port number |
@@ -158,6 +164,9 @@ A Helm chart for installing ggbridge
 | proxy.tunnels.web.ingress.controller | string | `""` | Specify the ingress controller |
 | proxy.tunnels.web.ingress.enabled | bool | `false` | Enable web tunnel exposure using Kubernetes Ingress API |
 | proxy.tunnels.web.ingress.listeners | list | `[]` | Specify web tunnel listeners # In this example, the following redirection will occur through the web tunnel: # - https://api.internal.com -> https://api.gitguardian.com # - https://hook.internal.com -> https://hook.gitguardian.com # e.g: # listeners: #    - hostname: api.internal.com #      backend: api.gitguardian.com #      tls: #        secretName: "internal-crt" #    - hostname: hook.internal.com #      backend: hook.gitguardian.com #      tls: #        secretName: "internal-crt" |
+| proxy.tunnels.web.openShiftRoute.annotations | object | `{}` | Set ingress annotations |
+| proxy.tunnels.web.openShiftRoute.enabled | bool | `false` | Enable web tunnel exposure using OpenShift route API |
+| proxy.tunnels.web.openShiftRoute.listeners | list | `[]` | Specify web tunnel listeners # In this example, the following redirection will occur through the web tunnel: # - https://api.internal.com -> https://api.gitguardian.com # - https://hook.internal.com -> https://hook.gitguardian.com # e.g: # listeners: #    - hostname: api.internal.com #      backend: api.gitguardian.com #      tls: #        terminattion: "edge" #    - hostname: hook.internal.com #      backend: hook.gitguardian.com #      tls: #        terminattion: "edge" |
 | proxy.tunnels.web.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Specify web service annotations |
 | proxy.tunnels.web.service.listeners | list | `[]` | Specify web tunnel listeners # Each listener defines a service name that will be used to construct the full internal service DNS. # - `name`: Corresponds to the service name and will be suffixed by `<namespace>.svc.<clusterDomain>`, # making it resolvable within the cluster. # e.g., if `name: api-gitguardian-com` is defined in the `ggbridge` namespace with cluster domain `cluster.local`, # the full DNS would be `api-gitguardian-com.ggbridge.svc.cluster.local`. # # - `backend`: Specifies the external host where the request will be redirected. #   This is typically a public or internal endpoint that the service should forward traffic to. # In this example, the following redirection will occur through the web tunnel: # http://api-gitguardian-com.ggbridge.svc.cluster.local -> https://api.gitguardian.com # # listeners: #   - name: api-gitguardian-com #     backend: api.gitguardian.com |
 | proxy.tunnels.web.service.ports.health.exposed | bool | `false` | Defines whether the health port is exposed if service.type is LoadBalancer or NodePort |

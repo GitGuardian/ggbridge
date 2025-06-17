@@ -1,0 +1,30 @@
+---
+{{- $openShiftRoute := .Values.proxy.tunnels.tls.openShiftRoute -}}
+{{- if $openShiftRoute.enabled -}}
+  {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
+  {{- range $openShiftRoute.listeners }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ printf "%s-tls-%s" $proxyFullname (.hostname | replace "." "-") | trunc 63 | trimSuffix "-" }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
+  {{- if or $.Values.commonAnnotations $openShiftRoute.annotations }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $openShiftRoute.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
+  {{- end }}
+spec:
+  host: {{ .hostname }}
+  to:
+    kind: Service
+    name: {{ printf "%s-tls" $proxyFullname }}
+    weight: 100
+  port:
+    targetPort: tls
+  tls:
+    termination: passthrough
+  {{- end }}
+{{- end }}

@@ -99,6 +99,30 @@ tls:
     key: tls.key
 ```
 
+For **OpenShift** deployment, use the following values:
+
+```yaml
+hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
+  existingSecretKeys:
+    caCrt: ca.crt
+    crt: tls.crt
+    key: tls.key
+
+podSecurityContext:
+  enabled: false
+
+containerSecurityContext:
+  enabled: false
+
+proxy:
+  # DNS used to resolve GitGuardian domain names (e.g.: hook.gitguardian.com)
+  resolver: dns-default.openshift-dns.svc.cluster.local
+```
+
 5. Deploy with Helm
 
 Run the Helm installation command:

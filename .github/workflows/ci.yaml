@@ -162,11 +162,15 @@ jobs:
         id: github
         uses: ./.github/actions/github
 
+      - name: Set Helm image registry
+        run: |
+          yq eval '.global.imageRegistry = "ttl.sh"' -i ${{ github.workspace }}/helm/ggbridge/values.yaml
+
       - name: Publish Helm chart
         uses: ./.github/actions/helm
         with:
           chart: ${{ github.workspace }}/helm/ggbridge
-          version: '0.0.0'
+          version: '0.0.0-${{ steps.github.outputs.short-sha }}'
           app-version: ${{ steps.github.outputs.short-sha }}
           publish: 'true'
           registry: oci://ttl.sh/${{ steps.github.outputs.repository }}/helm
