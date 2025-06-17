@@ -83,9 +83,9 @@ jobs:
       matrix:
         include:
           - variant: prod
-            tag: unstable
+            tag-suffix: ''
           - variant: shell
-            tag: unstable-shell
+            tag-suffix: '-shell'
     name: Publish ${{ matrix.variant }} image
     needs: [build-packages]
     runs-on: ubuntu-24.04
@@ -141,7 +141,7 @@ jobs:
         uses: ./.github/actions/apko
         with:
           config: 'apko/${{ matrix.variant }}.yaml'
-          tag: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
+          tag: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
           repository-append: ${{ github.workspace }}/packages
           keyring-append: ${{ github.workspace }}/packages/melange.rsa.pub
           publish: 'true'
@@ -150,7 +150,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v6
         with:
-          image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
+          image: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
           cache-db: true
           fail-build: 'false'
           severity-cutoff: 'high'
@@ -160,7 +160,7 @@ jobs:
         id: sign
         uses: ./.github/actions/cosign
         with:
-          image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}'
+          image: 'ghcr.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
 
       - name: Copy image to DockerHub
         id: copy
@@ -170,8 +170,18 @@ jobs:
         run: |
           cosign copy \
             --force \
-            ghcr.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }} \
-            docker.io/${{ steps.github.outputs.repository }}:${{ matrix.tag }}
+            ghcr.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }} \
+            docker.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}
+
+      - name: Tag image as unstable
+        shell: bash
+        run: |
+          crane tag \
+            ghcr.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }} \
+            unstable${{ matrix.tag-suffix }}
+          crane tag \
+            docker.io/${{ steps.github.outputs.repository }}:unstable-${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }} \
+            unstable${{ matrix.tag-suffix }}
 
   publish-chart:
     name: Publish Helm Chart
@@ -199,7 +209,7 @@ jobs:
         uses: ./.github/actions/helm
         with:
           chart: ${{ github.workspace }}/helm/ggbridge
-          version: '0.0.0'
-          app-version: 'unstable'
+          version: '0.0.0-${{ steps.github.outputs.short-sha }}'
+          app-version: 'unstable-${{ steps.github.outputs.short-sha }}'
           publish: 'true'
           registry: oci://ghcr.io/${{ steps.github.outputs.repository }}/helm
