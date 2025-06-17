@@ -209,7 +209,7 @@ jobs:
         uses: ./.github/actions/helm
         with:
           chart: ${{ github.workspace }}/helm/ggbridge
-          version: '0.0.0-${{ steps.github.outputs.short-sha }}'
+          version: '0.1.0-${{ github.run_number }}'
           app-version: 'unstable-${{ steps.github.outputs.short-sha }}'
           publish: 'true'
           registry: oci://ghcr.io/${{ steps.github.outputs.repository }}/helm
