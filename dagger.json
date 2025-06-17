@@ -1,6 +1,6 @@
 {
   "name": "ggbridge",
-  "engineVersion": "v0.18.9",
+  "engineVersion": "v0.18.10",
   "sdk": {
     "source": "python"
   },
@@ -17,8 +17,8 @@
     },
     {
       "name": "crane",
-      "source": "github.com/opopops/daggerverse/crane@crane/v1.5.1",
-      "pin": "c60c6ba67eccf7d1aac501117fec59d237b4fcf8"
+      "source": "github.com/opopops/daggerverse/crane@crane/v1.5.2",
+      "pin": "dbae1f0861e9f5a991dd757837fc3eae11f0b58f"
     },
     {
       "name": "grype",
@@ -32,8 +32,8 @@
     },
     {
       "name": "melange",
-      "source": "github.com/opopops/daggerverse/melange@melange/v1.9.2",
-      "pin": "381cc0a4bff5e5cbffc76f34043d216ce7f27f48"
+      "source": "github.com/opopops/daggerverse/melange@melange/v1.9.3",
+      "pin": "068bfdd3da567257d6ce5d097b4b9dec6140ecd2"
     }
   ],
   "source": "dagger"
