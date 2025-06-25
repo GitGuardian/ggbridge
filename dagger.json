@@ -1,19 +1,19 @@
 {
   "name": "ggbridge",
-  "engineVersion": "v0.18.10",
+  "engineVersion": "v0.18.11",
   "sdk": {
     "source": "python"
   },
   "dependencies": [
     {
       "name": "apko",
-      "source": "github.com/opopops/daggerverse/apko@apko/v1.16.5",
-      "pin": "dd96ce69a00bdf34c114db981717d48eed2fb816"
+      "source": "github.com/opopops/daggerverse/apko@apko/v1.16.6",
+      "pin": "78446b125865b4f29ad7588c83f9ce562a9f8ff0"
     },
     {
       "name": "cosign",
-      "source": "github.com/opopops/daggerverse/cosign@cosign/v1.8.2",
-      "pin": "e2aebc350aabf90a8e4e90d281107262040a88bf"
+      "source": "github.com/opopops/daggerverse/cosign@cosign/v1.8.4",
+      "pin": "b3df492dd36aca2076ad67e0b45ea154b49c5f77"
     },
     {
       "name": "crane",
@@ -22,18 +22,18 @@
     },
     {
       "name": "grype",
-      "source": "github.com/opopops/daggerverse/grype@grype/v1.9.1",
-      "pin": "39d0cc78bea5d10c33afd60cc7c31ffff3f57f5a"
+      "source": "github.com/opopops/daggerverse/grype@grype/v1.9.2",
+      "pin": "7ace0f800e61cd152906ca59a524fa964f51069b"
     },
     {
       "name": "helm",
-      "source": "github.com/opopops/daggerverse/helm@helm/v1.6.3",
-      "pin": "176934b26a09dda0b407963c639de9bc841063f4"
+      "source": "github.com/opopops/daggerverse/helm@helm/v1.6.5",
+      "pin": "1115887a775537bca8f93e681fbba4d6c954e754"
     },
     {
       "name": "melange",
-      "source": "github.com/opopops/daggerverse/melange@melange/v1.9.3",
-      "pin": "068bfdd3da567257d6ce5d097b4b9dec6140ecd2"
+      "source": "github.com/opopops/daggerverse/melange@melange/v1.9.4",
+      "pin": "b352411e8b8d0b5e2705e1f5e3db386fc35b5805"
     }
   ],
   "source": "dagger"
