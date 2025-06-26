@@ -1,0 +1,68 @@
+[tools]
+"aqua:dagger/dagger" = { version = "0.18.11" }
+"aqua:helm" = { version = "3.18.3"}
+"aqua:norwoodj/helm-docs" = { version = "1.14.2"}
+"pipx:ggshield" = { version = "1.41.0", uvx_args = "--python-preference=system" }
+"pipx:pre-commit" = { version = "4.2.0", uvx_args = "--python-preference=system" }
+
+[tasks.build]
+description = "Build ggbridge (images + chart)"
+run = "dagger call build $@ export --path={{ config_root }}/build"
+
+[tasks.scan]
+description = "Scan ggbridge Docker image"
+usage = '''
+flag "--variant <variant>" help="the variant to build" default="prod"
+'''
+run = 'dagger call scan --variant={{flag(name="variant")}} $@ contents'
+
+[tasks.publish]
+description = "Publish ggbridge (images + chart) on ttl.sh"
+usage = '''
+flag "-v --version <version>" help="ggbridge version" default="0.1.0"
+'''
+run = 'dagger call publish --version={{flag(name="version")}} $@'
+
+[tasks.build-chart]
+description = "Build ggbridge Helm chart"
+usage = '''
+flag "-v --version <version>" help="ggbridge version" default="0.1.0"
+'''
+run = 'dagger call chart build --version={{flag(name="version")}} $@ export --path={{ config_root }}/build/chart/ggbridge-{{arg(name="version")}}.tgz'
+
+[tasks.build-image]
+description = "Build ggbridge Docker image"
+usage = '''
+flag "--variant <variant>" help="the variant to build" default="prod"
+'''
+run = 'dagger call image build --variant={{flag(name="variant")}} export --path={{ config_root }}/build/image/{{flag(name="variant")}}'
+
+[tasks.terminal]
+description = "Build ggbridge shell variant Docker image and open a terminal"
+run = "dagger call container $@ terminal"
+
+[tasks.client]
+description = "Run ggbridge client"
+usage = '''
+flag "--server <server>" help="the server address"
+flag "--ca <ca>" help="the CA cert"
+flag "--cert <cert>" help="the client cert"
+flag "--key <key>" help="the client private key"
+'''
+run = 'dagger call client --server={{flag(name="server")}} --ca={{flag(name="ca")}} --cert={{flag(name="cert")}} --key={{flag(name="key")}} up'
+
+[tasks.lint]
+description = "Lint ggbridge Helm chart"
+run = "helm lint --strict helm/ggbridge"
+
+[tasks.test]
+description = "Test ggbridge and print the report"
+run = "dagger call test $@ contents"
+
+[tasks.cleanup]
+description = "Cleanup ggbridge"
+run = "rm -rf {{ config_root }}/build"
+
+[tasks.prune]
+description = "Prune dagger engine cache"
+run = "dagger core engine local-cache prune"

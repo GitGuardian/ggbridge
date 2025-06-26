@@ -254,7 +254,7 @@ class Ggbridge:
         server: Annotated[str, Doc("Server address")],
         ca: Annotated[dagger.File | None, Doc("Certificate authority")] = None,
         cert: Annotated[dagger.File | None, Doc("Client certificate")] = None,
-        key: Annotated[dagger.File | None, Doc("Client certificate key")] = None,
+        key: Annotated[dagger.Secret | None, Doc("Client certificate key")] = None,
         tunnel_health_port: Annotated[int, Doc("Health tunnel port")] = 9081,
     ) -> dagger.Container:
         """Return the ggbridge client container"""
@@ -273,9 +273,15 @@ class Ggbridge:
         )
         if tls_enabled:
             container = (
-                container.with_mounted_file("/etc/ggbridge/tls/ca.crt", source=ca)
-                .with_mounted_file("/etc/ggbridge/tls/client.crt", source=cert)
-                .with_mounted_file("/etc/ggbridge/tls/client.key", source=key)
+                container.with_mounted_file(
+                    "/etc/ggbridge/tls/ca.crt", source=ca, owner="nonroot"
+                )
+                .with_mounted_file(
+                    "/etc/ggbridge/tls/client.crt", source=cert, owner="nonroot"
+                )
+                .with_mounted_secret(
+                    "/etc/ggbridge/tls/client.key", source=key, owner="nonroot"
+                )
             )
         return container
 
@@ -284,7 +290,7 @@ class Ggbridge:
         self,
         ca: Annotated[dagger.File | None, Doc("Certificate authority")] = None,
         cert: Annotated[dagger.File | None, Doc("Client certificate")] = None,
-        key: Annotated[dagger.File | None, Doc("Client certificate key")] = None,
+        key: Annotated[dagger.Secret | None, Doc("Client certificate key")] = None,
         port: Annotated[int, Doc("Server port")] = 9000,
         tunnel_health_port: Annotated[int, Doc("Health port")] = 9081,
         tunnel_socks_port: Annotated[int, Doc("Socks port")] = 9180,
@@ -318,9 +324,15 @@ class Ggbridge:
         )
         if tls_enabled:
             container = (
-                container.with_mounted_file("/etc/ggbridge/tls/ca.crt", source=ca)
-                .with_mounted_file("/etc/ggbridge/tls/server.crt", source=cert)
-                .with_mounted_file("/etc/ggbridge/tls/server.key", source=key)
+                container.with_mounted_file(
+                    "/etc/ggbridge/tls/ca.crt", source=ca, owner="nonroot"
+                )
+                .with_mounted_file(
+                    "/etc/ggbridge/tls/server.crt", source=cert, owner="nonroot"
+                )
+                .with_mounted_secret(
+                    "/etc/ggbridge/tls/server.key", source=key, owner="nonroot"
+                )
             )
         return container
 
@@ -360,7 +372,7 @@ class Ggbridge:
         output_format: Annotated[str, Doc("Report output formatter")] = "table",
     ) -> dagger.File:
         """Scan the ggbridge image using grype"""
-        return self.image().scan(
+        return await self.image().scan(
             variant=variant, severity=severity, output_format=output_format
         )
 
