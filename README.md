@@ -19,6 +19,9 @@ Once the tunnel is established, a proxy server is deployed on the GitGuardian si
 
 ## Install and configure
 
+For GGBridge configuration instructions, please refer to our public documentation:
+- https://docs.gitguardian.com/platform/enterprise-administration/ggbridge
+
 **ggbridge** is distributed as a Distroless Docker image based on Wolfi OS, ensuring minimal dependencies and enhanced security.
 Additionaly, a **shell** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
 
@@ -44,8 +47,9 @@ services:
       TLS_ENABLED: 'true'
     volumes:
       - ./tls/ca.crt:/etc/ggbridge/tls/ca.crt:ro
-      - ./tls/client.crt:/etc/ggbridge/tls/client.crt:ro
-      - ./tls/client.key:/etc/ggbridge/tls/client.key:ro
+      - ./tls/tls.crt:/etc/ggbridge/tls/client.crt:ro
+      - ./tls/tls.key:/etc/ggbridge/tls/client.key:ro
+      - ./docker/nginx/nginx.local.conf:/etc/ggbridge/nginx.conf
     restart: on-failure
 ```
 
