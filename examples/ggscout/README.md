@@ -1,5 +1,7 @@
 # Connect ggscout with the GitGuardian Platform
 
+[![Watch the video](https://img.youtube.com/vi/_q0A-LZM2FI/hqdefault.jpg)](https://youtu.be/_q0A-LZM2FI)
+
 You want to deploy **[ggscout](https://docs.gitguardian.com/ggscout-docs/home)** in your Kubernetes cluster, but it doesn’t have access to the GitGuardian platform, preventing you from viewing the NHI inventory from the dashboard.
 
 `ggbridge` can help you establish a secure and mTLS-authenticated gateway between your network and the GitGuardian platform, allowing ggscout to communicate with the GitGuardian public API, and thus, transmit the inventory.
