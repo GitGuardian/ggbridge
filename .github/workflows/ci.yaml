@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set GitHub vars
         id: github
@@ -95,7 +95,7 @@ jobs:
       - uses: sigstore/cosign-installer@v3
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set GitHub vars
         id: github
@@ -111,13 +111,13 @@ jobs:
           echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa.pub
 
       - name: Download aarch64 packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: packages-aarch64
           path: ${{ github.workspace }}/packages/aarch64
 
       - name: Download x86_64 packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: packages-x86_64
           path: ${{ github.workspace }}/packages/x86_64
@@ -153,10 +153,10 @@ jobs:
     needs: [publish]
     runs-on: ubuntu-24.04
     steps:
-      - uses: azure/setup-helm@v4.3.0
+      - uses: azure/setup-helm@v4.3.1
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set GitHub vars
         id: github
