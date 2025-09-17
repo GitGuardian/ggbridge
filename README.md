@@ -19,8 +19,7 @@ Once the tunnel is established, a proxy server is deployed on the GitGuardian si
 
 ## Install and configure
 
-For GGBridge configuration instructions, please refer to our public documentation:
-- https://docs.gitguardian.com/platform/enterprise-administration/ggbridge
+For GGBridge configuration instructions, please refer to our [public documentation](https://docs.gitguardian.com/platform/enterprise-administration/ggbridge).
 
 **ggbridge** is distributed as a Distroless Docker image based on Wolfi OS, ensuring minimal dependencies and enhanced security.
 Additionaly, a **shell** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
