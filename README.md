@@ -23,11 +23,11 @@ For detailed GGBridge configuration instructions on the GitGuardian platform, pl
 
 In summary, the setup process involves the following steps:
 
-1. **Request Bridge Access**  
-2. **Create Your Bridge**  
-3. **Configure the Bridge Client**  
-4. **Configure URL Mapping** (if not done during creation)  
-5. **Configure Your Integrations**
+1. Request Bridge Access
+2. Create Your Bridge
+3. Configure the Bridge Client
+4. Configure URL Mapping
+5. Configure Your Integrations
 
 **ggbridge** is distributed as a Distroless Docker image based on Wolfi OS, ensuring minimal dependencies and enhanced security.
 Additionaly, a **shell** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
@@ -39,9 +39,22 @@ The project offers two deployment methods:
 
 ### Docker deployment
 
+> [!WARNING]  
+> Please consider that [Docker deployment](#docker-deployment) mode is intended for testing purposes. We highly recommend using [Helm deployment](#helm-deployment) mode.
+
 Deploy the ggbridge client via Docker Compose by performing the following actions:
 
 - Create `docker-compose.yml` file
+
+> [!IMPORTANT]  
+> GGBridge is designed by default to work as HA, so it needs `3` client deployments to work properly. Ensure `replicas: 3` in your `docker-compose.yml` file.
+>
+> ```yaml
+> services:
+>   client:
+>     deploy:
+>       replicas: 3
+> ```
 
 ```yaml
 name: ggbridge
@@ -52,6 +65,8 @@ services:
     environment:
       SERVER_ADDRESS: <my-subdomain>.ggbridge.gitguardian.com
       TLS_ENABLED: 'true'
+    deploy:
+      replicas: 3
     volumes:
       - ./tls/ca.crt:/etc/ggbridge/tls/ca.crt:ro
       - ./tls/tls.crt:/etc/ggbridge/tls/client.crt:ro
@@ -63,7 +78,7 @@ services:
 - Run `docker-compose`
 
 ```shell
-docker compose up
+docker compose up -d
 ```
 
 ### Helm deployment
@@ -96,10 +111,21 @@ kubectl -n ggbridge create secret generic ggbridge-client-crt \
 
 4. Configure your Helm values.yaml
 
-Edit your Helm values file to point to your bridge server and the secret created above:
+Edit your Helm values file to point to your bridge server and the secret created above  
+(see the [Helm chart values documentation](./helm/ggbridge) for all available configuration options):
+
+> [!IMPORTANT]  
+> GGBridge is designed by default to work as HA, so it needs `3` client deployments to work properly. Leave it blank or ensure `deploymentCount: 3` in your `values.yaml` file.
+>
+> ```yaml
+> deploymentCount: 3
+> ```
 
 ```yaml
 hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+image:
+  tag: latest
 
 tls:
   enabled: true
@@ -109,6 +135,15 @@ tls:
     crt: tls.crt
     key: tls.key
 ```
+
+> [!TIP]
+> If you need to debug the deployment, you can use the image `latest-shell` instead of `latest`. This image comes with embedded tooling for debugging purposes. :
+>
+> ```yaml
+> image:
+>   tag: latest-shell
+> ```
+
 
 For **OpenShift** deployment, use the following values:
 
