@@ -23,11 +23,11 @@ For detailed GGBridge configuration instructions on the GitGuardian platform, pl
 
 In summary, the setup process involves the following steps:
 
-1. **Request Bridge Access**  
-2. **Create Your Bridge**  
-3. **Configure the Bridge Client**  
-4. **Configure URL Mapping** (if not done during creation)  
-5. **Configure Your Integrations**
+1. Request Bridge Access
+2. Create Your Bridge
+3. Configure the Bridge Client
+4. Configure URL Mapping
+5. Configure Your Integrations
 
 **ggbridge** is distributed as a Distroless Docker image based on Wolfi OS, ensuring minimal dependencies and enhanced security.
 Additionaly, a **shell** variant of the Docker image is available, this version includes additional tools and allows you to connect to the container via a shell, facilitating troubleshooting and debugging during development or integration.
@@ -52,6 +52,9 @@ services:
     environment:
       SERVER_ADDRESS: <my-subdomain>.ggbridge.gitguardian.com
       TLS_ENABLED: 'true'
+    deploy:
+      mode: replicated
+      replicas: 3
     volumes:
       - ./tls/ca.crt:/etc/ggbridge/tls/ca.crt:ro
       - ./tls/tls.crt:/etc/ggbridge/tls/client.crt:ro
@@ -63,7 +66,7 @@ services:
 - Run `docker-compose`
 
 ```shell
-docker compose up
+docker compose up -d
 ```
 
 ### Helm deployment
@@ -96,10 +99,14 @@ kubectl -n ggbridge create secret generic ggbridge-client-crt \
 
 4. Configure your Helm values.yaml
 
-Edit your Helm values file to point to your bridge server and the secret created above:
+Edit your Helm values file to point to your bridge server and the secret created above  
+(see the [Helm chart values documentation](./helm/ggbridge) for all available configuration options):
 
 ```yaml
 hostname: <my-subdomain>.ggbridge.gitguardian.com
+
+image:
+  tag: latest-shell
 
 tls:
   enabled: true
