@@ -178,6 +178,9 @@ A Helm chart for installing ggbridge
 | proxy.updateStrategy.rollingUpdate.maxSurge | int | `1` |  |
 | proxy.updateStrategy.rollingUpdate.maxUnavailable | int | `0` |  |
 | proxy.updateStrategy.type | string | `"RollingUpdate"` | Customize updateStrategy |
+| proxy.upstream | object | `{"failTimeout":"5s","maxFails":1}` | Nginx upstream configuration |
+| proxy.upstream.failTimeout | string | `"5s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.upstream.maxFails | int | `1` | Maximum number of unsuccessful attempts to communicate with the server |
 | proxyProtocol.enabled | bool | `true` | When true, enables proxy protocol v2 for web/tls tunnels |
 | replicaCount | int | `1` | Number of pods for each deployment |
 | resources.limits | object | `{}` | Set container limits |
