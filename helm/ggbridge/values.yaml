@@ -379,6 +379,8 @@ server:
     annotations: {}
 
 proxy:
+  # -- Set nginx sidecar container and proxy pod log level (default: notice)
+  logLevel: notice
   # -- Number of pods for each deployment
   replicaCount: 1
   updateStrategy:

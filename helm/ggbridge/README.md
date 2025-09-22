@@ -76,6 +76,7 @@ A Helm chart for installing ggbridge
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
 | proxy.labels | object | `{}` | Set proxy labels |
+| proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |
 | proxy.networkPolicy.allowExternal | bool | `true` | When true, server will accept connections from any source |
 | proxy.networkPolicy.enabled | bool | `true` | Specifies whether a NetworkPolicy should be created |
 | proxy.networkPolicy.extraEgress | list | `[]` | Add extra egress rules to the NetworkPolicy |
