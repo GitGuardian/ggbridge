@@ -128,7 +128,7 @@ jobs:
 
       - name: Scan image
         id: scan
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         with:
           image: 'ghcr.io/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.version }}${{ matrix.tag-suffix }}'
           cache-db: true
