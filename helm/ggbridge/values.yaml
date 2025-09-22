@@ -395,12 +395,20 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
-  # -- Nginx upstream configuration
-  upstream:
-    # -- Maximum number of unsuccessful attempts to communicate with the server
-    maxFails: 1
-    # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
-    failTimeout: 5s
+  # -- Nginx configuration
+  config:
+    # -- Nginx server configuration
+    server:
+      # -- Nginx proxy timeout for data exchange
+      proxyTimeout: 600s
+      # -- Nginx proxy timeout for TCP handshake
+      proxyConnectTimeout: 10s
+    # -- Nginx upstream configuration
+    upstream:
+      # -- Maximum number of unsuccessful attempts to communicate with the server
+      maxFails: 1
+      # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
+      failTimeout: 10s
 
   # -- Set the Proxy DNS resolver
   resolver: kube-dns.kube-system.svc.cluster.local
