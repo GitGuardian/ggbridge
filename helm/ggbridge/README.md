@@ -25,9 +25,9 @@ A Helm chart for installing ggbridge
 | client.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |
 | client.readinessProbe.exec.command[2] | string | `"-grace-period=60"` |  |
 | client.readinessProbe.exec.command[3] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| client.readinessProbe.failureThreshold | int | `1` |  |
+| client.readinessProbe.failureThreshold | int | `3` |  |
 | client.readinessProbe.initialDelaySeconds | int | `10` |  |
-| client.readinessProbe.periodSeconds | int | `15` |  |
+| client.readinessProbe.periodSeconds | int | `6` |  |
 | client.readinessProbe.successThreshold | int | `1` |  |
 | client.readinessProbe.timeoutSeconds | int | `5` |  |
 | client.reverseTunnels.health.enabled | bool | `true` | Enable server to client health tunnel |
@@ -75,12 +75,12 @@ A Helm chart for installing ggbridge
 | podSecurityContext.enabled | bool | `true` | Enable Pod security Context in deployments |
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
-| proxy.config | object | `{"server":{"proxyConnectTimeout":"10s","proxyTimeout":"600s"},"upstream":{"failTimeout":"10s","maxFails":1}}` | Nginx configuration |
+| proxy.config | object | `{"server":{"proxyConnectTimeout":"10s","proxyTimeout":"600s"},"upstream":{"failTimeout":"60s","maxFails":1}}` | Nginx configuration |
 | proxy.config.server | object | `{"proxyConnectTimeout":"10s","proxyTimeout":"600s"}` | Nginx server configuration |
 | proxy.config.server.proxyConnectTimeout | string | `"10s"` | Nginx proxy timeout for TCP handshake |
 | proxy.config.server.proxyTimeout | string | `"600s"` | Nginx proxy timeout for data exchange |
-| proxy.config.upstream | object | `{"failTimeout":"10s","maxFails":1}` | Nginx upstream configuration |
-| proxy.config.upstream.failTimeout | string | `"10s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.config.upstream | object | `{"failTimeout":"60s","maxFails":1}` | Nginx upstream configuration |
+| proxy.config.upstream.failTimeout | string | `"60s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
 | proxy.config.upstream.maxFails | int | `1` | Maximum number of unsuccessful attempts to communicate with the server |
 | proxy.labels | object | `{}` | Set proxy labels |
 | proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |
@@ -97,9 +97,9 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.exec.command[2] | string | `"-pid-file=/var/run/nginx.pid"` |  |
 | proxy.readinessProbe.exec.command[3] | string | `"-grace-period=60"` |  |
 | proxy.readinessProbe.exec.command[4] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| proxy.readinessProbe.failureThreshold | int | `1` |  |
+| proxy.readinessProbe.failureThreshold | int | `3` |  |
 | proxy.readinessProbe.initialDelaySeconds | int | `10` |  |
-| proxy.readinessProbe.periodSeconds | int | `15` |  |
+| proxy.readinessProbe.periodSeconds | int | `6` |  |
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
