@@ -300,10 +300,10 @@ client:
         - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
-    periodSeconds: 15
+    periodSeconds: 6
     timeoutSeconds: 5
     successThreshold: 1
-    failureThreshold: 1
+    failureThreshold: 3
 
 server:
   # -- Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server
@@ -408,7 +408,7 @@ proxy:
       # -- Maximum number of unsuccessful attempts to communicate with the server
       maxFails: 1
       # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
-      failTimeout: 10s
+      failTimeout: 60s
 
   # -- Set the Proxy DNS resolver
   resolver: kube-dns.kube-system.svc.cluster.local
@@ -676,10 +676,10 @@ proxy:
         - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
-    periodSeconds: 15
+    periodSeconds: 6
     timeoutSeconds: 5
     successThreshold: 1
-    failureThreshold: 1
+    failureThreshold: 3
 
   networkPolicy:
     # -- Specifies whether a NetworkPolicy should be created
