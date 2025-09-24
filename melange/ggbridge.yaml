@@ -10,6 +10,7 @@ package:
     runtime:
       - nginx
       - nginx-mod-stream
+      - lua-resty-core
       - wstunnel
   target-architecture:
     - aarch64
@@ -39,4 +40,5 @@ pipeline:
       install -dm755 "${{targets.destdir}}"/etc/ggbridge/tls
       install -m755 docker/scripts/run.sh "${{targets.destdir}}"/opt/ggbridge/run.sh
       install -m644 docker/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
+      install -m644 docker/nginx/prometheus.lua "${{targets.destdir}}"/etc/ggbridge/prometheus.lua
   - uses: strip
