@@ -74,6 +74,21 @@ paths:
     permissions: 0o777
     uid: 65532
     gid: 65532
+  - path: /var/run/openresty
+    type: directory
+    permissions: 0o777
+    uid: 65532
+    gid: 65532
+  - path: /var/cache/openresty
+    type: directory
+    permissions: 0o777
+    uid: 65532
+    gid: 65532
+  - path: /var/log/openresty
+    type: directory
+    permissions: 0o777
+    uid: 65532
+    gid: 65532
 
 archs:
   - aarch64
