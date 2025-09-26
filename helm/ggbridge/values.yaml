@@ -402,13 +402,28 @@ proxy:
       # -- Nginx proxy timeout for data exchange
       proxyTimeout: 600s
       # -- Nginx proxy timeout for TCP handshake
-      proxyConnectTimeout: 10s
+      proxyConnectTimeout: 5s
+      # -- custom parameters to add to the 'server' section of nginx.conf
+      # you need to choose which section it applies to
+      # can be "health", "socks", "web" or "tls"
+      customDirectives: []
+        # - directives:
+        #     - "proxy_responses 1;"
+        #     - "proxy_bind $remote_addr transparent;"
+        #   applyTo: ["health", "socks", "web", "tls"]
+        # - directives:
+        #     - "proxy_protocol on;"
+        #     - "proxy_socket_keepalive on;"
+        #   applyTo: ["tls"]
+
     # -- Nginx upstream configuration
     upstream:
       # -- Maximum number of unsuccessful attempts to communicate with the server
       maxFails: 1
       # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
-      failTimeout: 10s
+      failTimeout: 60s
+      # -- Enable load balancing for health upstream (when false, only use the server with weight 100)
+      healthLoadBalancing: true
 
   # -- Set the Proxy DNS resolver
   resolver: kube-dns.kube-system.svc.cluster.local

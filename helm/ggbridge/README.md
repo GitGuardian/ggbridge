@@ -75,12 +75,14 @@ A Helm chart for installing ggbridge
 | podSecurityContext.enabled | bool | `true` | Enable Pod security Context in deployments |
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
-| proxy.config | object | `{"server":{"proxyConnectTimeout":"10s","proxyTimeout":"600s"},"upstream":{"failTimeout":"10s","maxFails":1}}` | Nginx configuration |
-| proxy.config.server | object | `{"proxyConnectTimeout":"10s","proxyTimeout":"600s"}` | Nginx server configuration |
-| proxy.config.server.proxyConnectTimeout | string | `"10s"` | Nginx proxy timeout for TCP handshake |
+| proxy.config | object | `{"server":{"customDirectives":[],"proxyConnectTimeout":"5s","proxyTimeout":"600s"},"upstream":{"failTimeout":"60s","healthLoadBalancing":true,"maxFails":1}}` | Nginx configuration |
+| proxy.config.server | object | `{"customDirectives":[],"proxyConnectTimeout":"5s","proxyTimeout":"600s"}` | Nginx server configuration |
+| proxy.config.server.customDirectives | list | `[]` | custom parameters to add to the 'server' section of nginx.conf you need to choose which section it applies to can be "health", "socks", "web" or "tls" |
+| proxy.config.server.proxyConnectTimeout | string | `"5s"` | Nginx proxy timeout for TCP handshake |
 | proxy.config.server.proxyTimeout | string | `"600s"` | Nginx proxy timeout for data exchange |
-| proxy.config.upstream | object | `{"failTimeout":"10s","maxFails":1}` | Nginx upstream configuration |
-| proxy.config.upstream.failTimeout | string | `"10s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.config.upstream | object | `{"failTimeout":"60s","healthLoadBalancing":true,"maxFails":1}` | Nginx upstream configuration |
+| proxy.config.upstream.failTimeout | string | `"60s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.config.upstream.healthLoadBalancing | bool | `true` | Enable load balancing for health upstream (when false, only use the server with weight 100) |
 | proxy.config.upstream.maxFails | int | `1` | Maximum number of unsuccessful attempts to communicate with the server |
 | proxy.labels | object | `{}` | Set proxy labels |
 | proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |

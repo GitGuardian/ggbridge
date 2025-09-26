@@ -187,3 +187,66 @@ Here, you will find various usage examples of ggbridge, each example provides a 
 | --------------------------------------------- | --------------------------------------------- |
 | [2-way-tunneling](./examples/2-way-tunneling) | Enable client-to-server tunnels               |
 | [ggscout](./examples/ggscout)                 | Connect ggscout with the GitGuardian platform |
+
+## Troubleshooting
+### Useful commands
+
+You can test Socks proxy and remote DNS resolution with this command :
+```bash
+curl -skL -o /dev/null -w "%{http_code}" \
+                      --connect-timeout 60 \
+                      --proxy "socks5h://${PROXY_HOST}:${PROXY_PORT}" "${VCS_URL}"
+```
+or more verbose :
+
+```bash
+curl -sIkL --connect-timeout 60 \
+           --proxy "socks5h://${PROXY_HOST}:${PROXY_PORT}" "${VCS_URL}"
+```
+example:
+```bash
+curl -sIkL --connect-timeout 60 --proxy socks5h://<uid>-proxy-socks:1080 https://gitlab.internal.local
+```
+
+### Server side - Proxy
+#### Log Health Check
+Port `8081` is tagged for healthcheck.
+
+```
+127.0.0.1 [24/Sep/2025:09:46:28 +0000] TCP 200 150 102 0.077 "172.20.167.124:8081" "102" "150" "0.000"
+```
+
+| Position | Valeur | Variable nginx | Description | Unité |
+|----------|--------|----------------|-------------|-------|
+| 1 | `127.0.0.1` | `$remote_addr` | Local client(health check) | IP |
+| 2 | `[24/Sep/2025:09:46:28 +0000]` | `[$time_local]` | Connection timestamp | Date |
+| 3 | `TCP` | `$protocol` | Transport protocol | Protocol |
+| 4 | `200` | `$status` | Status code | Code |
+| 5 | `150` | `$bytes_sent` | Bytes sent by nginx → client | Bytes |
+| 6 | `102` | `$bytes_received` | Bytes received by nginx ← client | Bytes |
+| 7 | `0.077` | `$session_time` | Session duration | Seconds |
+| 8 | `"172.20.167.124:8081"` | `"$upstream_addr"` | Healthcheck backend server | IP:Port |
+| 9 | `"102"` | `"$upstream_bytes_sent"` | Data sent nginx → backend | Bytes |
+| 10 | `"150"` | `"$upstream_bytes_received"` | Data received nginx ← backend | Bytes |
+| 11 | `"0.000"` | `"$upstream_connect_time"` | Connection time | Seconds |
+
+#### Log Socks
+Port `1080` is tagged for socks.
+
+```
+100.68.83.105 [24/Sep/2025:09:46:37 +0000] TCP 200 9480 5917 589.730 "172.20.167.124:1080" "5917" "9480" "0.000"
+```
+
+| Position | Valeur | Variable nginx | Description | Unité |
+|----------|--------|----------------|-------------|-------|
+| 1 | `100.68.83.105` | `$remote_addr` | Client IP address | IP |
+| 2 | `[24/Sep/2025:09:46:37 +0000]` | `[$time_local]` | Connection timestamp | Date/Heure |
+| 3 | `TCP` | `$protocol` | Transport protocol | Protocol |
+| 4 | `200` | `$status` | Status code | Code |
+| 5 | `9480` | `$bytes_sent` | Bytes sent by nginx → client | Bytes |
+| 6 | `5917` | `$bytes_received` | Bytes received by nginx ← client | Bytes |
+| 7 | `589.730` | `$session_time` | Session duration | Seconds |
+| 8 | `"172.20.167.124:1080"` | `"$upstream_addr"` | Socks backend server | IP:Port |
+| 9 | `"5917"` | `"$upstream_bytes_sent"` | Data sent nginx → backend | Bytes |
+| 10 | `"9480"` | `"$upstream_bytes_received"` | Data received nginx ← backend | Bytes |
+| 11 | `"0.000"` | `"$upstream_connect_time"` | Connection time | Seconds |
