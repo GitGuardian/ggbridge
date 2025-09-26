@@ -25,9 +25,9 @@ A Helm chart for installing ggbridge
 | client.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |
 | client.readinessProbe.exec.command[2] | string | `"-grace-period=60"` |  |
 | client.readinessProbe.exec.command[3] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| client.readinessProbe.failureThreshold | int | `1` |  |
+| client.readinessProbe.failureThreshold | int | `3` |  |
 | client.readinessProbe.initialDelaySeconds | int | `10` |  |
-| client.readinessProbe.periodSeconds | int | `15` |  |
+| client.readinessProbe.periodSeconds | int | `6` |  |
 | client.readinessProbe.successThreshold | int | `1` |  |
 | client.readinessProbe.timeoutSeconds | int | `5` |  |
 | client.reverseTunnels.health.enabled | bool | `true` | Enable server to client health tunnel |
@@ -99,9 +99,9 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.exec.command[2] | string | `"-pid-file=/var/run/nginx.pid"` |  |
 | proxy.readinessProbe.exec.command[3] | string | `"-grace-period=60"` |  |
 | proxy.readinessProbe.exec.command[4] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| proxy.readinessProbe.failureThreshold | int | `1` |  |
+| proxy.readinessProbe.failureThreshold | int | `3` |  |
 | proxy.readinessProbe.initialDelaySeconds | int | `10` |  |
-| proxy.readinessProbe.periodSeconds | int | `15` |  |
+| proxy.readinessProbe.periodSeconds | int | `6` |  |
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
