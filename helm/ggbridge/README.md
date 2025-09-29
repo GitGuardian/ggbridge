@@ -25,9 +25,9 @@ A Helm chart for installing ggbridge
 | client.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |
 | client.readinessProbe.exec.command[2] | string | `"-grace-period=60"` |  |
 | client.readinessProbe.exec.command[3] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| client.readinessProbe.failureThreshold | int | `1` |  |
+| client.readinessProbe.failureThreshold | int | `3` |  |
 | client.readinessProbe.initialDelaySeconds | int | `10` |  |
-| client.readinessProbe.periodSeconds | int | `15` |  |
+| client.readinessProbe.periodSeconds | int | `7` |  |
 | client.readinessProbe.successThreshold | int | `1` |  |
 | client.readinessProbe.timeoutSeconds | int | `5` |  |
 | client.reverseTunnels.health.enabled | bool | `true` | Enable server to client health tunnel |
@@ -75,15 +75,17 @@ A Helm chart for installing ggbridge
 | podSecurityContext.enabled | bool | `true` | Enable Pod security Context in deployments |
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
-| proxy.config | object | `{"server":{"customDirectives":[],"proxyConnectTimeout":"5s","proxyTimeout":"600s"},"upstream":{"failTimeout":"60s","healthLoadBalancing":true,"maxFails":1}}` | Nginx configuration |
-| proxy.config.server | object | `{"customDirectives":[],"proxyConnectTimeout":"5s","proxyTimeout":"600s"}` | Nginx server configuration |
+| proxy.config | object | `{"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":true,"maxFails":2}}` | Nginx configuration |
+| proxy.config.server | object | `{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"}` | Nginx server section configuration |
 | proxy.config.server.customDirectives | list | `[]` | custom parameters to add to the 'server' section of nginx.conf you need to choose which section it applies to can be "health", "socks", "web" or "tls" |
-| proxy.config.server.proxyConnectTimeout | string | `"5s"` | Nginx proxy timeout for TCP handshake |
-| proxy.config.server.proxyTimeout | string | `"600s"` | Nginx proxy timeout for data exchange |
-| proxy.config.upstream | object | `{"failTimeout":"60s","healthLoadBalancing":true,"maxFails":1}` | Nginx upstream configuration |
-| proxy.config.upstream.failTimeout | string | `"60s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.config.server.proxyConnectTimeout | string | `"30s"` | Nginx connection proxy timeout |
+| proxy.config.server.proxyTimeout | string | `"1800s"` | Nginx global proxy timeout |
+| proxy.config.upstream | object | `{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":true,"maxFails":2}` | Nginx upstream configuration |
+| proxy.config.upstream.backupMode | bool | `false` | Enable backup mode, will switch from round robin to backup setting for upstream servers |
+| proxy.config.upstream.downServers | list | `[]` | List of server proxy to disable in nginx conf For example [1,2] will mark proxy-1 and proxy-2 as down |
+| proxy.config.upstream.failTimeout | string | `"120s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
 | proxy.config.upstream.healthLoadBalancing | bool | `true` | Enable load balancing for health upstream (when false, only use the server with weight 100) |
-| proxy.config.upstream.maxFails | int | `1` | Maximum number of unsuccessful attempts to communicate with the server |
+| proxy.config.upstream.maxFails | int | `2` | Maximum number of unsuccessful attempts to communicate with the server |
 | proxy.labels | object | `{}` | Set proxy labels |
 | proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |
 | proxy.networkPolicy.allowExternal | bool | `true` | When true, server will accept connections from any source |
@@ -99,9 +101,9 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.exec.command[2] | string | `"-pid-file=/var/run/nginx.pid"` |  |
 | proxy.readinessProbe.exec.command[3] | string | `"-grace-period=60"` |  |
 | proxy.readinessProbe.exec.command[4] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| proxy.readinessProbe.failureThreshold | int | `1` |  |
+| proxy.readinessProbe.failureThreshold | int | `3` |  |
 | proxy.readinessProbe.initialDelaySeconds | int | `10` |  |
-| proxy.readinessProbe.periodSeconds | int | `15` |  |
+| proxy.readinessProbe.periodSeconds | int | `7` |  |
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
