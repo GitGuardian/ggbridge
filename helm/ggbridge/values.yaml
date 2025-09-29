@@ -300,7 +300,7 @@ client:
         - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
-    periodSeconds: 6
+    periodSeconds: 7
     timeoutSeconds: 5
     successThreshold: 1
     failureThreshold: 3
@@ -397,18 +397,38 @@ proxy:
 
   # -- Nginx configuration
   config:
-    # -- Nginx server configuration
+    # -- Nginx server section configuration
     server:
-      # -- Nginx proxy timeout for data exchange
-      proxyTimeout: 600s
-      # -- Nginx proxy timeout for TCP handshake
-      proxyConnectTimeout: 10s
+      # -- Nginx global proxy timeout
+      proxyTimeout: 1800s
+      # -- Nginx connection proxy timeout
+      proxyConnectTimeout: 30s
+      # -- custom parameters to add to the 'server' section of nginx.conf
+      # you need to choose which section it applies to
+      # can be "health", "socks", "web" or "tls"
+      customDirectives: []
+        # - directives:
+        #     - "proxy_responses 1;"
+        #     - "proxy_bind $remote_addr transparent;"
+        #   applyTo: ["health", "socks", "web", "tls"]
+        # - directives:
+        #     - "proxy_protocol on;"
+        #     - "proxy_socket_keepalive on;"
+        #   applyTo: ["tls"]
+
     # -- Nginx upstream configuration
     upstream:
       # -- Maximum number of unsuccessful attempts to communicate with the server
-      maxFails: 1
+      maxFails: 2
       # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
-      failTimeout: 60s
+      failTimeout: 120s
+      # -- Enable load balancing for health upstream (when false, only use the server with weight 100)
+      healthLoadBalancing: true
+      # -- List of server proxy to disable in nginx conf
+      # For example [1,2] will mark proxy-1 and proxy-2 as down
+      downServers: []
+      # -- Enable backup mode, will switch from round robin to backup setting for upstream servers
+      backupMode: false
 
   # -- Set the Proxy DNS resolver
   resolver: kube-dns.kube-system.svc.cluster.local
@@ -676,7 +696,7 @@ proxy:
         - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
-    periodSeconds: 6
+    periodSeconds: 7
     timeoutSeconds: 5
     successThreshold: 1
     failureThreshold: 3
