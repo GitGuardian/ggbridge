@@ -134,7 +134,7 @@ jobs:
 
       - name: Scan image
         id: scan
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         with:
           image: 'ttl.sh/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
           cache-db: true
