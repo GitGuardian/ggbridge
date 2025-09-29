@@ -422,8 +422,8 @@ proxy:
       maxFails: 2
       # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
       failTimeout: 120s
-      # -- Enable load balancing for health upstream (when false, only use the server with weight 100)
-      healthLoadBalancing: true
+      # -- Enable load balancing for health upstream (when true will set load-balancing upstream for healthcheck)
+      healthLoadBalancing: false
       # -- List of server proxy to disable in nginx conf
       # For example [1,2] will mark proxy-1 and proxy-2 as down
       downServers: []
