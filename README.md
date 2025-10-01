@@ -47,7 +47,7 @@ Deploy the ggbridge client via Docker Compose by performing the following action
 - Create `docker-compose.yml` file
 
 > [!IMPORTANT]  
-> GGBridge is designed by default to work as HA, so it needs `3` client deployments to work properly. Ensure `replicas: 3` in your `docker-compose.yml` file.
+> GGBridge is designed by default to work as HA, so it needs `3` client deployments to work properly. Ensure `replicas: 3` in your `docker-compose.yml` file. If you lower the replica count, it may result in an unstable bridge.
 >
 > ```yaml
 > services:
@@ -179,6 +179,15 @@ helm -n ggbridge upgrade --install --create-namespace \
   -f values.yaml
 ```
 
+> [!TIP]
+> If you need to upgrade your current installation with new parameters, please update your `values.yaml` file with correct key/value and then run the following command :
+> ```bash
+> helm -n ggbridge upgrade -i \
+>         gbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
+>         -f values.yaml
+> ```
+> We recommend you to store the `values.yaml` file somewhere safe such as in a git repository.
+
 ## Examples
 
 Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your self-hosted services and the GitGuardian platform.
@@ -187,3 +196,7 @@ Here, you will find various usage examples of ggbridge, each example provides a 
 | --------------------------------------------- | --------------------------------------------- |
 | [2-way-tunneling](./examples/2-way-tunneling) | Enable client-to-server tunnels               |
 | [ggscout](./examples/ggscout)                 | Connect ggscout with the GitGuardian platform |
+
+## Troubleshooting
+
+For troubleshooting guidance, please refer to the related [documentation](./docs/troubleshoot.md)

@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <uid>-git-proxy-test-config
+data:
+  CONNECT_TIMEOUT: "30"
+  PROXY_HOST: <uid>.ggbridge.svc.cluster.local
+  REPO_URL: ""
+  USER: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-secret
+type: Opaque
+data:
+  token: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: <uid>-git-proxy-test
+spec:
+  schedule: '*/1 * * * *'
+  concurrencyPolicy: Allow
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  suspend: false
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 90
+          containers:
+            - name: git-test
+              image: alpine/git:latest
+              imagePullPolicy: Always
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - |
+                  echo "$(date): Testing Git connection via SOCKS proxy"
+                  echo "Proxy: socks5h://${PROXY_HOST}"
+                  echo "Repository: ${REPO_URL}"
+                  
+                  REPO_URL_WITH_AUTH=$(echo "${REPO_URL}" | sed "s|https://|https://${USER}:${TOKEN}@|")
+                  START_TIME=$(date +%s)
+                  
+                  (
+                    while true; do
+                      sleep 10
+                      CURRENT_TIME=$(date +%s)
+                      ELAPSED=$((CURRENT_TIME - START_TIME))
+                      echo "⏱️  ${ELAPSED} seconds elapsed..."
+                    done
+                  ) &
+                  TIMER_PID=$!
+                  
+                  echo "Testing git ls-remote..."
+                  git \
+                    -c http.proxy="socks5h://${PROXY_HOST}" \
+                    -c http.sslVerify=false \
+                    -c http.timeout=30 \
+                    ls-remote --heads "${REPO_URL_WITH_AUTH}"
+                  
+                  EXIT_CODE=$?
+                  kill $TIMER_PID 2>/dev/null || true
+                  echo "$(date): Git ls-remote completed with exit code: ${EXIT_CODE}"
+                  END_TIME=$(date +%s)
+                  TOTAL_TIME=$((END_TIME - START_TIME))
+                  echo "Total execution time: ${TOTAL_TIME} seconds"
+                  
+                  if [ ${EXIT_CODE} -eq 0 ]; then
+                    echo "✓ Repository accessible via SOCKS proxy"
+                  else
+                    echo "✗ Failed to access repository"
+                  fi
+                  
+                  exit ${EXIT_CODE}
+              env:
+                - name: TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: git-secret
+                      key: token
+              envFrom:
+                - configMapRef:
+                    name: <uid>-git-proxy-test-config
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
