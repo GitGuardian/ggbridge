@@ -1,0 +1,60 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <uid>-proxy-test-config
+data:
+  CONNECT_TIMEOUT: "30"
+  PROXY_HOST: <uid>-proxy-socks
+  PROXY_PORT: "1080"
+  TARGET_URL: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: <uid>-socks-proxy-test
+spec:
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          containers:
+            - command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "$(date): Testing connection to ${TARGET_URL} via socks5h://${PROXY_HOST}:${PROXY_PORT}"
+
+                  http_code=$(curl -s -o /dev/null -w "%{http_code}" -k \
+                       --connect-timeout "${CONNECT_TIMEOUT}" \
+                       --proxy "socks5h://${PROXY_HOST}:${PROXY_PORT}" \
+                       "${TARGET_URL}")
+                  exit_code=$?
+
+                  if [ $exit_code -ne 0 ]; then
+                    echo "$(date): Test failed with exit code: $exit_code (HTTP $http_code)"
+                    exit 1
+                  fi
+
+                  echo "$(date): Test completed with exit code: $? (HTTP $http_code)"
+              envFrom:
+                - configMapRef:
+                    name: <uid>-proxy-test-config
+              image: curlimages/curl:latest
+              imagePullPolicy: Always
+              name: curl-test
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+  schedule: '*/1 * * * *'
+  successfulJobsHistoryLimit: 3
+  suspend: false
