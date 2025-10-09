@@ -19,7 +19,7 @@ Once the tunnel is established, a proxy server is deployed on the GitGuardian si
 
 ## Install and configure
 
-For detailed GGBridge configuration instructions on the GitGuardian platform, please refer to our [public documentation](https://docs.gitguardian.com/platform/enterprise-administration/ggbridge).
+For detailed GGBridge configuration instructions on the GitGuardian platform, please refer to our [public documentation](https://docs.gitguardian.com/platform/deployment-model/ggbridge).
 
 In summary, the setup process involves the following steps:
 
