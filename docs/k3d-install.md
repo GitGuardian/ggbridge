@@ -2,7 +2,12 @@
 
 This guide will help you deploy and manage local Kubernetes clusters using k3d for GGBridge deployment.
 
-## 📋 Prerequisites
+> [!WARNING]  
+> This setup is not recommended for production due to single point of failure and lack of high availability.
+>
+> **For production setup**, we recommend deploying on a multi-node Kubernetes cluster across multiple AZs with proper redundancy and monitoring.
+
+## 🔧 Prerequisites
 For this installation method, you will need a single server (VM, bare metal...) and install following components:
 
 - [Docker](https://docs.docker.com/get-docker/) installed and running
@@ -10,8 +15,13 @@ For this installation method, you will need a single server (VM, bare metal...) 
 - [helm](https://helm.sh/docs/intro/install/) to install GGBridge in the k3d cluster
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) to interact with the cluster
 
-## Quick Start
-### Basic CLI installation
+## ⚡ Quick Start
+
+> [!IMPORTANT]  
+> There are two methods for installing GGBridge on k3d, the [Basic CLI installation](#-basic-cli-installation), and [using config files](#-config-file-installation). While the basic CLI works, we recommend the second one for a long-term and maintainable lifecycle.
+
+
+### 💻 Basic CLI installation
 
 > [!NOTE]  
 > Single node cluster here is minimal installation and low footprint
@@ -27,7 +37,7 @@ k3d cluster create ggbridge --agents 0 \
                             --k3s-arg "--disable=servicelb@server:*" \
                             --k3s-node-label "project=ggbridge@server:*" \
                             --api-port 0.0.0.0:6445 \
-                            --image rancher/k3s:v1.34.1-k3s1 \
+                            --image rancher/k3s:v1.33.5-k3s1 \
                             --timeout 3m0s
 ```
 2. Create the GGBridge namespace
@@ -46,13 +56,12 @@ kubectl create secret generic ggbridge-client-crt -n ggbridge --from-file=tls.cr
 
 4. Install GGBridge client
 
-> [!IMPORTANT]  
-> Replace `$uid` here with the Bridge UID
+Replace `$uid` here with the Bridge UID
 
 ```bash
 helm -n ggbridge upgrade -i ggbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
                          --set hostname="$uid.ggbridge.gitguardian.com" \
-                         --set tls.enable=true \
+                         --set tls.enabled=true \
                          --set tls.existingSecret="ggbridge-client-crt" \
                          --set tls.existingSecretKeys.caCrt="ca.crt" \
                          --set tls.existingSecretKeys.crt="tls.crt" \
@@ -75,10 +84,10 @@ ggbridge-client-1-75f69cdb75-5gpsv   2/2     Running   0          22s
 ggbridge-client-2-76b98c699b-bk2q5   2/2     Running   0          22s
 ```
 
-### Config file installation
+### 📝 Config file installation
 
 > [!NOTE]  
-> This installation is using declarative approach with explicit yaml files to describe cluster and Helm installation. It brings several advantages upon [basic CLI installation](#basic-cli-installation). We recommend using this method if you are familiar with Kubernetes.
+> This installation is using declarative approach with explicit yaml files to describe cluster and Helm installation. It brings several advantages upon [basic CLI installation](#-basic-cli-installation). We recommend using this method if you are familiar with Kubernetes.
 > 
 > | Advantage             | Config File installation           | Basic CLI installation             |
 > |-----------------------|------------------------------------|------------------------------------|
@@ -112,7 +121,7 @@ kubectl create secret generic ggbridge-client-crt -n ggbridge --from-file=tls.cr
 Edit the helm [install file](../k3d/helm-ggbridge.yaml) with your Bridge UID
 ```yaml
   valuesContent: |-
-    hostname: $uid.ggbridge.gitguardian.tech
+    hostname: $uid.ggbridge.gitguardian.com
 ```
 Install GGBridge
 ```bash

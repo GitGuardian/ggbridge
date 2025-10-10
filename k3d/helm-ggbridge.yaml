@@ -8,7 +8,7 @@ spec:
   chart: oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge
   targetNamespace: ggbridge
   valuesContent: |-
-    hostname: $uid.ggbridge.gitguardian.tech
+    hostname: $uid.ggbridge.gitguardian.com
     image:
       tag: latest
     tls:

@@ -10,7 +10,7 @@ agents: 0
 kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6445"
-image: rancher/k3s:v1.34.1-k3s1
+image: rancher/k3s:v1.33.5-k3s1
 files:
   - description: 'GGbridge namespace'
     source: |
