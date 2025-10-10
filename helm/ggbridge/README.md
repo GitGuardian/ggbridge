@@ -88,6 +88,8 @@ A Helm chart for installing ggbridge
 | proxy.config.upstream.maxFails | int | `2` | Maximum number of unsuccessful attempts to communicate with the server |
 | proxy.labels | object | `{}` | Set proxy labels |
 | proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |
+| proxy.metrics.enabled | bool | `true` |  |
+| proxy.metrics.service.annotations | object | `{}` |  |
 | proxy.networkPolicy.allowExternal | bool | `true` | When true, server will accept connections from any source |
 | proxy.networkPolicy.enabled | bool | `true` | Specifies whether a NetworkPolicy should be created |
 | proxy.networkPolicy.extraEgress | list | `[]` | Add extra egress rules to the NetworkPolicy |
@@ -95,6 +97,7 @@ A Helm chart for installing ggbridge
 | proxy.networkPolicy.ingressNSMatchLabels | object | `{}` | Labels to match to allow traffic to the proxy server from other namespaces |
 | proxy.networkPolicy.ingressNSPodMatchLabels | object | `{}` | Pod labels to match to allow traffic to the proxy server from other namespaces |
 | proxy.nodeSelector | object | `{}` | Node labels for pod assignment |
+| proxy.openresty | object | `{"enabled":true}` | OpenResty config |
 | proxy.readinessProbe.enabled | bool | `true` | Whether to enable readiness probe for proxy |
 | proxy.readinessProbe.exec.command[0] | string | `"ggbridge"` |  |
 | proxy.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |

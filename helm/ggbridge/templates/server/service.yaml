@@ -89,5 +89,37 @@ spec:
     {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
     {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
     index: {{ $index | quote }}
+{{- if $.Values.proxy.metrics.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $indexServerProxyFullname }}-metrics
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+    {{- include "ggbridge.server.labels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+    service-type: metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+    {{- if or $.Values.commonAnnotations $.Values.proxy.metrics.service.annotations }}
+    {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.metrics.service.annotations $.Values.commonAnnotations ) "context" . ) }}
+    {{- include "ggbridge.tplvalues.render" (dict "value" $annotations "context" .) | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 8081
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "ggbridge.selectorLabels" $ | nindent 4 }}
+    {{- include "ggbridge.server.selectorLabels" $ | nindent 4 }}
+    index: {{ $index | quote }}
+{{- end }}
   {{- end }}
 {{- end }}
