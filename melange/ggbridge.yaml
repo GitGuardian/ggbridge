@@ -8,9 +8,9 @@ package:
     - license: MIT
   dependencies:
     runtime:
-      - nginx
       - nginx-mod-stream
       - wstunnel
+      - openresty
   target-architecture:
     - aarch64
     - x86_64
@@ -20,6 +20,8 @@ environment:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     repositories:
       - https://packages.wolfi.dev/os
+    packages:
+      - wget
   environment:
     CGO_ENABLED: "0"
 pipeline:
@@ -37,6 +39,12 @@ pipeline:
       install -dm775 "${{targets.destdir}}"/etc/ggbridge/ssl/certs
       install -dm775 "${{targets.destdir}}"/etc/ggbridge/ssl/private
       install -dm755 "${{targets.destdir}}"/etc/ggbridge/tls
+
+      install -dm777 "${{targets.destdir}}"/var/run/openresty
+      install -dm777 "${{targets.destdir}}"/var/run/openresty/nginx-client-body
+      install -dm777 "${{targets.destdir}}"/var/cache/openresty
+      install -dm777 "${{targets.destdir}}"/var/log/openresty
+
       install -m755 docker/scripts/run.sh "${{targets.destdir}}"/opt/ggbridge/run.sh
       install -m644 docker/nginx/nginx.conf "${{targets.destdir}}"/etc/ggbridge/nginx.conf
   - uses: strip

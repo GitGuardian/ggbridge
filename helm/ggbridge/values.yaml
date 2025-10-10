@@ -395,6 +395,14 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
+  # -- OpenResty config
+  openresty:
+    enabled: true
+  metrics:
+    enabled: true
+    service:
+      annotations: {}
+
   # -- Nginx configuration
   config:
     # -- Nginx server section configuration

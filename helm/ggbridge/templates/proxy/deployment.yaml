@@ -64,6 +64,11 @@ spec:
               containerPort: {{ $value.containerPort }}
               protocol: TCP
             {{- end }}
+            {{- if $.Values.proxy.metrics.enabled }}
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
+            {{- end }}
           {{- if $.Values.proxy.readinessProbe.enabled }}
           readinessProbe:
             {{- toYaml (omit $.Values.proxy.readinessProbe "enabled") | nindent 12 }}
