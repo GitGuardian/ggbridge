@@ -34,6 +34,9 @@ Additionaly, a **shell** variant of the Docker image is available, this version 
 
 The project can be deployed on Kubernetes-like infrastructure (k0s, k3s, Talos, EKS, GKE, AKS...). GGBridge leverages **Helm Chart Deployment** which is an industry standard method for production environements, offering enhanced configurability and scalability for Kubernetes setups.
 
+- If you already have a Kubernetes cluster, please follow the [below documentation](#helm-deployment). 
+- If you do not have a dedicated Kubernetes cluster, you can deploy GGBridge with a `k3d` cluster on a single VM. Please follow the [k3d installation documentation](./docs/k3d-install.md)
+
 ### Helm deployment
 
 To deploy the ggbridge client in your Kubernetes cluster using Helm, follow these steps:
