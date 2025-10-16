@@ -17,8 +17,8 @@ metadata:
   {{- end }}
 spec:
   routes:
-    {{- range $ingress.hostnames }}
-    - match: {{ printf "HostSNI(`%s`)" . }}
+    {{- range $ingress.listeners }}
+    - match: {{ printf "HostSNI(`%s`)" .hostname }}
       services:
         - name: {{ printf "%s-tls" $proxyFullname }}
           port: {{ $.Values.proxy.tunnels.tls.service.ports.tls.port }}

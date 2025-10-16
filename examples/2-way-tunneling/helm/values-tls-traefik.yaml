@@ -11,12 +11,12 @@ tls:
 
 client:
   tunnels:
-    web:
+    tls:
       enabled: true
 
 proxy:
   tunnels:
-    web:
+    tls:
       ingress:
         enabled: true
-        className: ""
+        controller: "traefik"
