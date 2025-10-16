@@ -12,6 +12,25 @@ GGBridge provides two types of images for different use cases:
 - **Docker Compose**: Update the image tag in `docker-compose.yaml`
 - **Helm**: Update the image tag in `values.yaml`
 
+### Basic checks
+
+Some very basic commands can be executed to check deployment healthiness before going further into debugging.
+
+Check pods status:
+```bash
+kubectl get pods -n ggbridge -o wide
+```
+
+You should be looking for `Running` status, Ready column showing `1/1` (or `2/2`), and low restart count.
+
+Check pods details:
+```bash
+kubectl describe pod $pod_name -n ggbridge 
+```
+
+Have a look at the `Events` section for suspicious warnings or errors.
+
+
 ### Connectivity Tests
 
 #### 1. Client-Side Healthcheck
@@ -107,29 +126,93 @@ Expected output: List of Git branches and their commit hashes
 > [!TIP]
 > Please consider using the `CronJob` probes available [here](../tests/) if you want a permanent check.
 
-### Log Analysis
+#### 4. Reverse tunneling
 
-#### Client/Server Health Logs.
-Check nginx sidecar logs for connectivity issues:
+When reverse tunneling is enabled on client side, you can check if you are able to connect to `api.gitguardian.com`. Execute this command on the customer's cluster:
 
 ```bash
-# Check specific pod logs
-kubectl logs -l tenant=$uid,index=$index -c nginx -n ggbridge
-
-# Check all pods for a tenant
-kubectl logs -l tenant=$uid -c nginx -n ggbridge --tail=50
+kubectl run debug -it --rm \
+                      --restart=Never \
+                      -n ggbridge \
+                      --image=nicolaka/netshoot \
+                      -- zsh -c "curl -IL --resolve api.gitguardian.com:443:$(kubectl get svc ggbridge-proxy-tls -n ggbridge -o jsonpath='{.spec.clusterIP}') https://api.gitguardian.com"
 ```
-Healthy connection log example:
+
+Check that DNS resolution on customer's environment properly resolve to the custom Kubernetes endpoint (implentation specific) instead of the public IP address of `hook.gitguardian.com`/`api.gitguardian.com`. Execute following commands from the customer's VCS server for example:
+
+```bash
+dig hook.gitguardian.com
+dig api.gitguardian.com
+```
+
+```bash
+traceroute hook.gitguardian.com
+traceroute api.gitguardian.com
+```
+
+### Log Analysis
+
+> [!TIP]
+> To collect and package **client side** logs in a `.tgz` archive, you can use the [dedicated script](./client-log-fetcher.sh)
+
+#### 1. Client/Server Healthcheck Logs
+Check nginx sidecar logs for connectivity issues :
+
+Server side:
+```bash
+# Check ggbridge server nginx container logs for a specific tenant and index
+kubectl logs -l tenant=$uid,index=$index,app.kubernetes.io/component=server -c nginx -n ggbridge
+```
+Client side:
+```bash
+# Check ggbridge client nginx container logs for a specific index
+kubectl logs -l index=$index,app.kubernetes.io/instance=ggbridge -c nginx -n ggbridge
+```
+
+Healthy connection log example for the Healthcheck probe (nginx container for server/client pod):
 ```console
 health 127.0.0.1 [30/Sep/2025:12:04:38 +0000] 127.0.0.1 "GET /healthz HTTP/1.1" 200 3 "-" "Go-http-client/1.1"
 ```
 No logs = No connectivity from the other tunnel endpoint.
 
-#### Server-Side Proxy Logs
+#### 2. Client/Server tunnel Logs
+
+Server side:
+```bash
+# Check ggbridge server main container logs for a specific tenant and index
+kubectl logs -l tenant=$uid,index=$index,app.kubernetes.io/component=server -c ggbridge -n ggbridge
+```
+Client side:
+```bash
+# Check ggbridge client main container logs for a specific index
+kubectl logs -l index=$index,app.kubernetes.io/instance=ggbridge -c ggbridge -n ggbridge
+```
+
+You should see `INFO` logs mentionning opened/closed connections:
+```console
+2025-10-16T08:21:06.156024Z  INFO wstunnel::protocols::tls::server: Doing TLS handshake using SNI DnsName("jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com") with the server jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com:443
+2025-10-16T08:21:06.570872Z  INFO tunnel{id="0199ec1b-c14b-7f41-9492-e538c7a90f97" remote="127.0.0.1:8081"}: wstunnel::tunnel::transport::io: Closing local => remote tunnel
+2025-10-16T08:21:06.571213Z  INFO tunnel{id="0199ec1b-c14b-7f41-9492-e538c7a90f97" remote="127.0.0.1:8081"}: wstunnel::tunnel::transport::io: Closing local <= remote tunnel
+2025-10-16T08:21:08.489704Z  INFO tunnel{id="0199ec1b-af3c-70e3-8595-cd82aaf74cf4" remote="0.0.0.0:9081"}: wstunnel::tunnel::transport::io: Closing local => remote tunnel
+2025-10-16T08:21:08.738773Z  INFO wstunnel::protocols::tls::server: Doing TLS handshake using SNI DnsName("jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com") with the server jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com:443
+2025-10-16T08:21:10.693531Z  INFO tunnel{id="0199ec1b-b789-7362-b52a-5853e726c484" remote="0.0.0.0:9081"}: wstunnel::tunnel::transport::io: Closing local => remote tunnel
+2025-10-16T08:21:10.947501Z  INFO wstunnel::protocols::tls::server: Doing TLS handshake using SNI DnsName("jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com") with the server jpynh30wscp60zs4lbdf4m4p8qe9idgu.ggbridge.gitguardian.com:443
+```
+
+> [!NOTE]
+> Any log entries at `WARN` or `ERROR` level are worth highlighting if present.
+
+> [!NOTE]
+> You can also increase verbosity if needed, at `DEBUG` or `TRACE` level (default `INFO`):
+> ```yaml
+> logLevel: INFO # --> set de DEBUG or TRACE on server/client side values.yaml
+> ```
+
+#### 3. Server-Side Proxy Logs
 
 Monitor traffic through the SOCKS proxy:
 ```bash
-kubectl logs -l app.kubernetes.io/component=proxy,tenant=$uid -c nginx -n ggbridge --tail=100
+kubectl logs -l tenant=$uid,index=$index,app.kubernetes.io/component=proxy -n ggbridge
 ```
 
 Port meanings:
@@ -153,6 +236,9 @@ Log format explanation:
 | 9 | `"102"` | `"$upstream_bytes_sent"` | Data sent nginx → backend | Bytes |
 | 10 | `"150"` | `"$upstream_bytes_received"` | Data received nginx ← backend | Bytes |
 | 11 | `"0.000"` | `"$upstream_connect_time"` | Connection time | Seconds |
+
+> [!TIP]
+> If `Session duration` reach 5sec for healtcheck (port 8081), it means time out occured 
 
 ## Client Monitoring/Alerting Guidelines
 ### Overview

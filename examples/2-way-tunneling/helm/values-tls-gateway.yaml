@@ -19,6 +19,8 @@ proxy:
     tls:
       gateway:
         enabled: true
-        # This will create the gateway resource, you can disable it if you want to mange it on you own.
-        create: true
-        className: ""
+        gateway:
+          # This will create the gateway resource, you can disable it if you want to mange it on you own.
+          create: true
+          # This will set the gatewayClass of the Gateway
+          className: "my-gateway-class"
