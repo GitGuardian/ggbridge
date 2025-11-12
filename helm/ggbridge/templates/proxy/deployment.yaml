@@ -12,8 +12,12 @@ metadata:
   labels:
     {{- include "ggbridge.labels" $ | nindent 4 }}
     {{- include "ggbridge.proxy.labels" $ | nindent 4 }}
-  {{- if or $.Values.commonAnnotations $.Values.proxy.annotations }}
-  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.annotations $.Values.commonAnnotations ) "context" $ ) }}
+  {{- $argocdAnnotation := dict }}
+  {{- if $.Values.proxy.argocd.ignoreHealthcheck }}
+    {{- $_ := set $argocdAnnotation "argocd.argoproj.io/ignore-healthcheck" "true" }}
+  {{- end }}
+  {{- $annotations := include "ggbridge.tplvalues.merge" ( dict "values" ( list $.Values.proxy.annotations $.Values.commonAnnotations $argocdAnnotation ) "context" $ ) }}
+  {{- if $annotations }}
   annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
   {{- end }}
 spec:

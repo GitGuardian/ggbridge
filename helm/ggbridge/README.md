@@ -75,6 +75,7 @@ A Helm chart for installing ggbridge
 | podSecurityContext.enabled | bool | `true` | Enable Pod security Context in deployments |
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
+| proxy.argocd.ignoreHealthcheck | bool | `true` | Ignore Deployment healthcheck during ArgoCD sync operations |
 | proxy.config | object | `{"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":false,"maxFails":2}}` | Nginx configuration |
 | proxy.config.server | object | `{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"}` | Nginx server section configuration |
 | proxy.config.server.customDirectives | list | `[]` | custom parameters to add to the 'server' section of nginx.conf you need to choose which section it applies to can be "health", "socks", "web" or "tls" |

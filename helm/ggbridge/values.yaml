@@ -395,6 +395,10 @@ proxy:
   # -- Set proxy labels
   labels: {}
 
+  argocd:
+    # -- Ignore Deployment healthcheck during ArgoCD sync operations
+    ignoreHealthcheck: true
+
   # -- Nginx configuration
   config:
     # -- Nginx server section configuration
