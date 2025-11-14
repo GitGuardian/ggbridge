@@ -187,6 +187,7 @@ jobs:
     name: Publish Helm Chart
     needs: [publish]
     runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'schedule' }}
     steps:
       - uses: azure/setup-helm@v4.3.1
 

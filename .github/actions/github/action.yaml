@@ -62,9 +62,14 @@ runs:
     - shell: bash
       id: version
       run: |
-        # Extract the tag, remove "v" prefix if it exists
-        RAW_VERSION=${GITHUB_REF##*/}
-        VERSION=${RAW_VERSION#v}
+        if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          LATEST_TAG=$(git describe --tags --abbrev=0 --match="[0-9]*.[0-9]*.[0-9]*" --match="v[0-9]*.[0-9]*.[0-9]*" 2>/dev/null || exit 1)
+          VERSION=${LATEST_TAG#v}
+          echo "Using version from latest tag: $VERSION"
+        else
+          RAW_VERSION=${GITHUB_REF##*/}
+          VERSION=${RAW_VERSION#v}
+        fi
         GA_VERSION=${VERSION%-*}
         echo "VERSION: $VERSION"
         echo "GA_VERSION: $GA_VERSION"
