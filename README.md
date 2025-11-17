@@ -149,6 +149,15 @@ helm -n ggbridge upgrade --install --create-namespace \
 > ```
 > We recommend you to store the `values.yaml` file somewhere safe such as in a git repository.
 
+> [!CAUTION]  
+> For customers using the `Istio` controller, particularly the **service mesh** feature, please disable **Istio sidecar injection** in the GGBridge client deployment. `Istio` sidecars are incompatible with the current GGBridge configuration and interfere with network flows, causing either non-functional traffic or network instabilities.
+> 
+> To disable `Istio` sidecars injection, refer to the [official documentation](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#controlling-the-injection-policy) and update your `values.yaml` file with the following values:
+> ```yaml
+> podAnnotations:
+>   sidecar.istio.io/inject: "false"
+> ```
+
 ## Examples
 
 Here, you will find various usage examples of ggbridge, each example provides a step-by-step guide on how to configure and use ggbridge to establish a secure, authenticated connection between your self-hosted services and the GitGuardian platform.
