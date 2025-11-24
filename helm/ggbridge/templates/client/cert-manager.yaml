@@ -1,4 +1,4 @@
-{{- if .Values.tls.certManager.enabled -}}
+{{- if and .Values.tls.certManager.enabled (and (not (empty .Values.tls.certManager.issuer.spec)) (not (hasKey .Values.tls.certManager.issuer.spec "vault"))) -}}
   {{- $fullname := include "ggbridge.fullname" . -}}
   {{- $namespace := ternary (default .Release.Namespace .Values.server.istio.gateway.namespace) .Release.Namespace .Values.server.istio.enabled -}}
   {{- $clientFullname := include "ggbridge.client.fullname" $ -}}
@@ -16,10 +16,11 @@ metadata:
   {{- end }}
 spec:
   secretName: {{ printf "%s-crt" $clientFullname }}
-  duration: 17520h # 2 years
+  duration: {{ .Values.tls.certManager.certificate.duration }}
+  renewBefore: {{ .Values.tls.certManager.certificate.renewBefore }}
   privateKey:
-    algorithm: RSA
-    size: 4096
+    algorithm: {{ .Values.tls.certManager.certificate.algorithm }}
+    size: {{ .Values.tls.certManager.certificate.size }}
   commonName: {{ include "ggbridge.hostname" . }}
   usages:
     - client auth

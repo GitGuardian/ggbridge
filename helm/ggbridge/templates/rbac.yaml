@@ -45,7 +45,21 @@ metadata:
   annotations:
     kubernetes.io/service-account.name: {{ printf "%s-issuer" $fullname }}
 type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-issuer" $fullname }}-token-reviewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: {{ printf "%s-issuer" $fullname }}
+    namespace: {{ .Release.Namespace }}
   {{- end }}
+  {{- if .Values.tls.certManager.rbac.subjects }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -79,7 +93,6 @@ rules:
       - 'list'
       - 'watch'
       - 'create'
-  {{- if .Values.tls.certManager.rbac.subjects }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

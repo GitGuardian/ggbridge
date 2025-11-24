@@ -16,10 +16,11 @@ metadata:
   {{- end }}
 spec:
   secretName: {{ printf "%s-crt" $serverFullname }}
-  duration: 17520h # 2 years
+  duration: {{ .Values.tls.certManager.certificate.duration }}
+  renewBefore: {{ .Values.tls.certManager.certificate.renewBefore }}
   privateKey:
-    algorithm: RSA
-    size: 4096
+    algorithm: {{ .Values.tls.certManager.certificate.algorithm }}
+    size: {{ .Values.tls.certManager.certificate.size }}
   commonName: {{ include "ggbridge.hostname" . }}
   dnsNames:
     - {{ include "ggbridge.hostname" . }}

@@ -1,6 +1,6 @@
-{{- if .Values.tls.certManager.enabled -}}
-  {{- $fullname := include "ggbridge.fullname" . -}}
-  {{- $namespace := ternary (default .Release.Namespace .Values.server.istio.gateway.namespace) .Release.Namespace .Values.server.istio.enabled -}}
+{{- $fullname := include "ggbridge.fullname" . -}}
+{{- $namespace := ternary (default .Release.Namespace .Values.server.istio.gateway.namespace) .Release.Namespace .Values.server.istio.enabled -}}
+{{- if and .Values.tls.certManager.enabled (not (hasKey .Values.tls.certManager.issuer.spec "vault")) -}}
   {{- if .Values.tls.certManager.issuer.spec }}
     {{- if hasKey .Values.tls.certManager.issuer.spec "selfSigned" -}}
 ---
@@ -68,4 +68,19 @@ spec:
   {{- include "ggbridge.certManager.issuer.spec" . | nindent 2 }}
     {{- end }}
   {{- end }}
+{{- end }}
+{{- if hasKey .Values.tls.certManager.issuer.spec "vault" }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ printf "%s-issuer" $fullname }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "ggbridge.labels" $ | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "ggbridge.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" . ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- include "ggbridge.certManager.issuer.spec" . | nindent 2 }}
 {{- end }}
