@@ -1,4 +1,5 @@
-{{- if (eq (include "ggbridge.proxy.enabled" .) "true") -}}
+{{- $deploymentCount := int (default 0 .Values.deploymentCount) -}}
+{{- if and (eq (include "ggbridge.proxy.enabled" .) "true") (gt $deploymentCount 0) -}}
   {{- $proxyFullname := include "ggbridge.proxy.fullname" . }}
   {{- $ports := include "ggbridge.proxy.service.ports" . | fromYaml -}}
   {{- if $ports -}}

@@ -1,4 +1,5 @@
-{{- if (eq .Values.mode "server") -}}
+{{- $deploymentCount := int (default 0 .Values.deploymentCount) -}}
+{{- if and (eq .Values.mode "server") (gt $deploymentCount 0) -}}
   {{- $fullname := include "ggbridge.fullname" $ }}
   {{- $serverFullname := include "ggbridge.server.fullname" $ }}
 ---

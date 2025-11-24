@@ -1,4 +1,5 @@
-{{- if and (eq .Values.mode "server") .Values.server.istio.enabled }}
+{{- $deploymentCount := int (default 0 .Values.deploymentCount) -}}
+{{- if and (eq .Values.mode "server") .Values.server.istio.enabled (gt $deploymentCount 0) }}
   {{- $serverFullname := include "ggbridge.server.fullname" . }}
 
 {{- if .Values.server.istio.gateway.create }}
