@@ -566,9 +566,17 @@ Returns cert-manager issuer spec for TLS config
 {{- $fullname := include "ggbridge.fullname" . -}}
 {{- $spec := dict -}}
 {{- if hasKey .Values.tls.certManager.issuer.spec "vault" -}}
-  {{- $spec = dict "vault" (dict "auth" (dict "kubernetes" (dict "secretRef" (dict "name" (printf "%s-issuer-token" $fullname) "key" "token")))) -}}
+  {{- $userKubernetesAuth := dig "vault" "auth" "kubernetes" dict .Values.tls.certManager.issuer.spec -}}
+  {{- $kubernetesAuth := dict -}}
+  
+  {{/* Only add secretRef if user hasn't provided secretRef OR serviceAccountRef */}}
+  {{- if and (not (hasKey $userKubernetesAuth "secretRef")) (not (hasKey $userKubernetesAuth "serviceAccountRef")) -}}
+    {{- $_ := set $kubernetesAuth "secretRef" (dict "name" (printf "%s-issuer-token" $fullname) "key" "token") -}}
+  {{- end -}}
+  
+  {{- $spec = dict "vault" (dict "auth" (dict "kubernetes" $kubernetesAuth)) -}}
 {{- end -}}
-{{- $spec = include "ggbridge.tplvalues.merge" ( dict "values" ( list .Values.tls.certManager.issuer.spec $spec ) "context" . ) | fromYaml -}}
+{{- $spec = include "ggbridge.tplvalues.merge" ( dict "values" ( list $spec .Values.tls.certManager.issuer.spec ) "context" . ) | fromYaml -}}
 {{ include "ggbridge.tplvalues.render" ( dict "value" $spec "context" .) }}
 {{- end -}}
 

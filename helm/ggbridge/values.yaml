@@ -180,6 +180,16 @@ tls:
       ##     name: gim
       ##     namespace: gim
       subjects: []
+    # -- certificate configuration
+    certificate:
+      # -- certificate total duration time
+      duration: 17520h
+      # -- certificate renewal time
+      renewBefore: 360h
+      # -- certificate algorithm for private key
+      algorithm: RSA
+      # -- certificate size for private key
+      size: 4096
     issuer:
       # -- Set Issuer to use
       name: ""
