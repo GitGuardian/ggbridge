@@ -411,6 +411,13 @@ proxy:
 
   # -- Nginx configuration
   config:
+    # -- Nginx resolver configuration
+    resolver:
+      # -- Enable DNS resolver in nginx configuration
+      enabled: true
+      # -- Resolver timeout value
+      timeout: 5s
+
     # -- Nginx server section configuration
     server:
       # -- Nginx global proxy timeout
