@@ -415,6 +415,8 @@ proxy:
     resolver:
       # -- Enable DNS resolver in nginx configuration
       enabled: true
+      # -- DNS resolver name
+      dns: kube-dns.kube-system.svc.cluster.local
       # -- Resolver timeout value
       timeout: 5s
 
