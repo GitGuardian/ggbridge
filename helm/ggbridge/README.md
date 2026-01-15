@@ -108,7 +108,9 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
-| proxy.resolver | string | `"kube-dns.kube-system.svc.cluster.local"` | Set the Proxy DNS resolver |
+| proxy.config.resolver.enabled | bool | `true` | Enable or disable the Proxy DNS resolver |
+| proxy.config.resolver.dns | string | `"kube-dns.kube-system.svc.cluster.local"` | Set the Proxy DNS resolver name |
+| proxy.config.resolver.timeout | string | `"5s"` | Set the Proxy DNS resolver timeout value |
 | proxy.resources.limits | object | `{}` | Set proxy container limits |
 | proxy.resources.requests | object | `{"cpu":"50m","memory":"64Mi"}` | Set proxy container requests |
 | proxy.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Set proxy service annotations |
