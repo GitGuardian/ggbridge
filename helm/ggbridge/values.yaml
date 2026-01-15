@@ -453,9 +453,6 @@ proxy:
       # -- Enable backup mode, will switch from round robin to backup setting for upstream servers
       backupMode: false
 
-  # -- Set the Proxy DNS resolver
-  resolver: kube-dns.kube-system.svc.cluster.local
-
   service:
     # --- Set the proxy service name
     name: ""
