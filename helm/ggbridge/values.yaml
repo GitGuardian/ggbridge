@@ -411,6 +411,15 @@ proxy:
 
   # -- Nginx configuration
   config:
+    # -- Nginx resolver configuration
+    resolver:
+      # -- Enable DNS resolver in nginx configuration
+      enabled: true
+      # -- DNS resolver name
+      dns: kube-dns.kube-system.svc.cluster.local
+      # -- Resolver timeout value
+      timeout: 5s
+
     # -- Nginx server section configuration
     server:
       # -- Nginx global proxy timeout
@@ -443,9 +452,6 @@ proxy:
       downServers: []
       # -- Enable backup mode, will switch from round robin to backup setting for upstream servers
       backupMode: false
-
-  # -- Set the Proxy DNS resolver
-  resolver: kube-dns.kube-system.svc.cluster.local
 
   service:
     # --- Set the proxy service name
