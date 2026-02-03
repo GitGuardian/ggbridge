@@ -33,7 +33,7 @@ runs:
         OUTPUT_DIR="${{ inputs.output-dir }}"
         mkdir -p "$OUTPUT_DIR"
 
-    - uses: chainguard-dev/actions/setup-melange@v1.5.10
+    - uses: chainguard-dev/actions/setup-melange@v1.5.14
       with:
         version: ${{ inputs.melange-version }}
 
@@ -45,7 +45,7 @@ runs:
           ${{ inputs.version }}
 
     - name: Build wstunnel
-      uses: chainguard-dev/actions/melange-build-pkg@v1.5.10
+      uses: chainguard-dev/actions/melange-build-pkg@v1.5.14
       with:
         config: ${{ github.workspace }}/melange/wstunnel.yaml
         archs: ${{ inputs.arch }}
@@ -54,7 +54,7 @@ runs:
         repository-path: ${{ inputs.output-dir }}
 
     - name: Build ggbridge
-      uses: chainguard-dev/actions/melange-build-pkg@v1.5.10
+      uses: chainguard-dev/actions/melange-build-pkg@v1.5.14
       with:
         config: ${{ github.workspace }}/melange/ggbridge.yaml
         archs: ${{ inputs.arch }}
