@@ -19,6 +19,7 @@ A Helm chart for installing ggbridge
 | caBundle.image.registry | string | `"ghcr.io"` | Image registry |
 | caBundle.image.repository | string | `"gitguardian/ggbridge"` | Image repository |
 | caBundle.image.tag | string | `""` | Image tag |
+| caBundle.resources | object | `{}` | Set CA init container resources # e.g: # resources: #   requests: #     cpu: 50m #     memory: 32Mi #   limits: #     cpu: 100m #     memory: 64Mi |
 | client.connectionMinIdle | int | `0` | Pool of open connection to the server, in order to speed up the connection process |
 | client.readinessProbe.enabled | bool | `true` | Enable Client Readiness Probe |
 | client.readinessProbe.exec.command[0] | string | `"ggbridge"` |  |
@@ -76,7 +77,11 @@ A Helm chart for installing ggbridge
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
 | proxy.argocd.ignoreHealthcheck | bool | `true` | Ignore Deployment healthcheck during ArgoCD sync operations |
-| proxy.config | object | `{"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":false,"maxFails":2}}` | Nginx configuration |
+| proxy.config | object | `{"resolver":{"dns":"kube-dns.kube-system.svc.cluster.local","enabled":true,"timeout":"5s"},"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":false,"maxFails":2}}` | Nginx configuration |
+| proxy.config.resolver | object | `{"dns":"kube-dns.kube-system.svc.cluster.local","enabled":true,"timeout":"5s"}` | Nginx resolver configuration |
+| proxy.config.resolver.dns | string | `"kube-dns.kube-system.svc.cluster.local"` | DNS resolver name |
+| proxy.config.resolver.enabled | bool | `true` | Enable DNS resolver in nginx configuration |
+| proxy.config.resolver.timeout | string | `"5s"` | Resolver timeout value |
 | proxy.config.server | object | `{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"}` | Nginx server section configuration |
 | proxy.config.server.customDirectives | list | `[]` | custom parameters to add to the 'server' section of nginx.conf you need to choose which section it applies to can be "health", "socks", "web" or "tls" |
 | proxy.config.server.proxyConnectTimeout | string | `"30s"` | Nginx connection proxy timeout |
@@ -108,9 +113,6 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.successThreshold | int | `1` |  |
 | proxy.readinessProbe.timeoutSeconds | int | `5` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
-| proxy.config.resolver.enabled | bool | `true` | Enable or disable the Proxy DNS resolver |
-| proxy.config.resolver.dns | string | `"kube-dns.kube-system.svc.cluster.local"` | Set the Proxy DNS resolver name |
-| proxy.config.resolver.timeout | string | `"5s"` | Set the Proxy DNS resolver timeout value |
 | proxy.resources.limits | object | `{}` | Set proxy container limits |
 | proxy.resources.requests | object | `{"cpu":"50m","memory":"64Mi"}` | Set proxy container requests |
 | proxy.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Set proxy service annotations |

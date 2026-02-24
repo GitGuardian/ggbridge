@@ -140,6 +140,16 @@ caBundle:
   existingSecret: ""
   # -- Specify secret key under the CA certificated is stored
   existingSecretKey: ca.crt
+  # -- Set CA init container resources
+  ## e.g:
+  ## resources:
+  ##   requests:
+  ##     cpu: 50m
+  ##     memory: 32Mi
+  ##   limits:
+  ##     cpu: 100m
+  ##     memory: 64Mi
+  resources: {}
   image:
     # -- Image registry
     registry: ghcr.io
