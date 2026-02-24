@@ -40,7 +40,7 @@ runs:
     - if: ${{ inputs.publish == 'false' }}
       name: Build OCI image
       id: build
-      uses: chainguard-images/actions/apko-build@v1.0.12
+      uses: chainguard-images/actions/apko-build@v1.0.17
       with:
         config: ${{ inputs.config }}
         tag: ${{ inputs.tag }}
@@ -52,7 +52,7 @@ runs:
     - if: ${{ inputs.publish == 'true' }}
       name: Publish image
       id: publish
-      uses: chainguard-images/actions/apko-publish@v1.0.12
+      uses: chainguard-images/actions/apko-publish@v1.0.17
       with:
         config: ${{ inputs.config }}
         tag: ${{ inputs.tag }}
