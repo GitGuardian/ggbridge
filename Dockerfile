@@ -1,9 +1,7 @@
 # syntax=docker/dockerfile:1
 
-ARG REGISTRY="cgr.dev"
-
 ### Base
-FROM --platform=$BUILDPLATFORM ${REGISTRY}/chainguard/wolfi-base:latest AS base
+FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/wolfi-base:latest AS base
 
 LABEL org.opencontainers.image.authors="GitGuardian SRE Team <support@gitguardian.com>"
 LABEL org.opencontainers.image.title="GGBridge"
