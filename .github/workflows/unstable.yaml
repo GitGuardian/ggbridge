@@ -72,7 +72,7 @@ jobs:
           output-dir: ${{ github.workspace }}/packages
 
       - name: Upload packages
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: packages-${{ steps.github.outputs.arch }}
           path: ${{ github.workspace }}/packages/${{ steps.github.outputs.arch }}/
@@ -90,7 +90,7 @@ jobs:
     needs: [build-packages]
     runs-on: ubuntu-24.04
     steps:
-      - uses: imjasonh/setup-crane@v0.4
+      - uses: imjasonh/setup-crane@v0.5
       - uses: sigstore/cosign-installer@v3
 
       - name: Checkout
@@ -125,13 +125,13 @@ jobs:
           echo -n "$PUBLIC_KEY_BASE64" | base64 -d > ${{ github.workspace }}/packages/melange.rsa.pub
 
       - name: Download aarch64 packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: packages-aarch64
           path: ${{ github.workspace }}/packages/aarch64
 
       - name: Download x86_64 packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: packages-x86_64
           path: ${{ github.workspace }}/packages/x86_64

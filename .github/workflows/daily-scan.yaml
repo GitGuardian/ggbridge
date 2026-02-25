@@ -29,7 +29,7 @@ jobs:
 
       - name: Get previous tag
         id: previous-tag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
 
       - name: Format version
         id: version
