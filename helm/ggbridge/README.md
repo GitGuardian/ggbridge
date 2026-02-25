@@ -19,7 +19,8 @@ A Helm chart for installing ggbridge
 | caBundle.image.registry | string | `"ghcr.io"` | Image registry |
 | caBundle.image.repository | string | `"gitguardian/ggbridge"` | Image repository |
 | caBundle.image.tag | string | `""` | Image tag |
-| caBundle.resources | object | `{}` | Set CA init container resources # e.g: # resources: #   requests: #     cpu: 50m #     memory: 32Mi #   limits: #     cpu: 100m #     memory: 64Mi |
+| caBundle.resources.limits | object | `{"memory":"32Mi"}` | Set CA init container limits |
+| caBundle.resources.requests | object | `{"cpu":"10m","memory":"16Mi"}` | Set CA init container requests |
 | client.connectionMinIdle | int | `0` | Pool of open connection to the server, in order to speed up the connection process |
 | client.readinessProbe.enabled | bool | `true` | Enable Client Readiness Probe |
 | client.readinessProbe.exec.command[0] | string | `"ggbridge"` |  |
