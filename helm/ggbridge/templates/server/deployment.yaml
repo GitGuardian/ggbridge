@@ -68,6 +68,10 @@ spec:
               if [[ -s /etc/ggbridge/ssl/private/ca-bundle.crt ]]; then
                 cat /etc/ggbridge/ssl/private/ca-bundle.crt >>/etc/ggbridge/ssl/certs/ca-bundle.crt
               fi
+          {{- with $.Values.caBundle.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ggbridge/ssl/certs
