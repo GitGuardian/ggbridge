@@ -127,7 +127,9 @@ containerSecurityContext:
 
 proxy:
   # DNS used to resolve GitGuardian domain names (e.g.: hook.gitguardian.com)
-  resolver: dns-default.openshift-dns.svc.cluster.local
+  config:
+    resolver:
+      dns: dns-default.openshift-dns.svc.cluster.local
 ```
 
 5. Deploy with Helm
