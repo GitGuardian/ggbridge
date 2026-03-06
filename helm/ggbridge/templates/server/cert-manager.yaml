@@ -22,7 +22,9 @@ spec:
   privateKey:
     algorithm: {{ .Values.tls.certManager.certificate.algorithm }}
     size: {{ .Values.tls.certManager.certificate.size }}
+  {{- if not .Values.tls.certManager.certificate.omitCommonName }}
   commonName: {{ include "ggbridge.hostname" . }}
+  {{- end }}
   dnsNames:
     - {{ include "ggbridge.hostname" . }}
   usages:
