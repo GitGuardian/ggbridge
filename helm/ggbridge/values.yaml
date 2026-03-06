@@ -198,6 +198,8 @@ tls:
       algorithm: RSA
       # -- certificate size for private key
       size: 4096
+      # -- Omit commonName from the certificate spec (required when hostname exceeds the 64-byte X.509 limit)
+      omitCommonName: false
     issuer:
       # -- Set Issuer to use
       name: ""
