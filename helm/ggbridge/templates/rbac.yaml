@@ -92,6 +92,7 @@ rules:
       - 'get'
       - 'list'
       - 'watch'
+      - 'delete'
   - apiGroups:
       - 'cert-manager.io'
     resources:
@@ -101,6 +102,7 @@ rules:
       - 'list'
       - 'watch'
       - 'create'
+      - 'delete'
   - apiGroups:
       - 'cert-manager.io'
     resources:
@@ -110,6 +112,7 @@ rules:
       - 'list'
       - 'watch'
       - 'create'
+      - 'delete'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -126,6 +129,5 @@ roleRef:
 subjects:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-
   {{- end }}
 {{- end }}
