@@ -126,6 +126,12 @@ hostname: ""
 # -- Set log level
 logLevel: INFO
 
+# -- WebSocket ping frequency in seconds (applies to both client and server).
+# wstunnel sends a ping frame at this interval to detect dead connections.
+# After 3 missed pings, the connection is declared dead.
+# Lower values improve detection speed but increase WebSocket frame overhead.
+pingFrequency: 20
+
 # -- Dns resolver to use to lookup ips of domain name
 dnsResolver: ""
 
@@ -279,8 +285,10 @@ networkPolicy:
   ingressNSPodMatchLabels: {}
 
 client:
-  # -- Pool of open connection to the server, in order to speed up the connection process
-  connectionMinIdle: 0
+  # -- Pool of open connection to the server, in order to speed up the connection process.
+  # Keeping at least 1 idle connection pre-establishes the TCP+TLS handshake,
+  # reducing the gap between consecutive reverse tunnel WebSocket handlers.
+  connectionMinIdle: 3
 
   tunnels:
     health:
@@ -300,9 +308,20 @@ client:
     health:
       # -- Enable server to client health tunnel
       enabled: true
+      # -- Number of concurrent WebSocket handlers (run_reverse_tunnel loops) for the health tunnel.
+      # Each handler is an independent loop that pre-opens a WebSocket and waits for a connection.
+      # With handlers=1 (default), there is a brief gap between handlers where the idle timer may fire.
+      # With handlers=2, a second handler is always waiting, preventing the idle timer from closing the listener.
+      # Values > 2 provide diminishing returns for health (1 probe every 7s).
+      handlers: 1
     socks:
       # -- Enable server to client socks tunnel
       enabled: true
+      # -- Number of concurrent WebSocket handlers for the SOCKS tunnel.
+      # Higher values reduce dispatch latency when multiple SOCKS connections arrive simultaneously.
+      # With handlers=1, concurrent requests are dispatched sequentially (one WS creation time per request).
+      # With handlers=N, the first N requests are dispatched instantly.
+      handlers: 1
     tls:
       # -- Enable server to client tls tunnel
       enabled: false
@@ -326,8 +345,11 @@ client:
     failureThreshold: 3
 
 server:
-  # -- Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server
-  idleTimeout: 30
+  # -- Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server.
+  # A higher value reduces the chance of the reverse tunnel listener closing during
+  # the gap between consecutive WebSocket handlers (the 1:1 WebSocket:connection model
+  # creates a brief gap every ~7s when a health probe is consumed).
+  idleTimeout: 120
 
   service:
     # -- Specify server serivce annottions
@@ -451,10 +473,14 @@ proxy:
 
     # -- Nginx upstream configuration
     upstream:
-      # -- Maximum number of unsuccessful attempts to communicate with the server
-      maxFails: 2
-      # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable
-      failTimeout: 120s
+      # -- Maximum number of unsuccessful attempts to communicate with the server.
+      # Aligned with the Kubernetes readiness probe failureThreshold (3) to avoid
+      # marking the upstream down too early on transient failures.
+      maxFails: 3
+      # -- Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable.
+      # After max_fails is reached, nginx stops retrying the upstream for this duration.
+      # A lower value allows faster recovery when the reverse tunnel listener re-opens.
+      failTimeout: 15s
       # -- Enable load balancing for health upstream (when true will set load-balancing upstream for healthcheck)
       healthLoadBalancing: false
       # -- List of server proxy to disable in nginx conf

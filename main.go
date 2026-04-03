@@ -118,6 +118,14 @@ func buildClientCommand() []string {
 	serverPathPrefix := os.Getenv("SERVER_PATH_PREFIX")
 	pingFrequency := getEnv("PING_FREQUENCY", strconv.Itoa(DefaultPingFrequency))
 	connectionMinIdle := getEnv("CONNECTION_MIN_IDLE", "0")
+	healthHandlers, _ := strconv.Atoi(getEnv("REVERSE_TUNNEL_HEALTH_HANDLERS", "1"))
+	if healthHandlers < 1 {
+		healthHandlers = 1
+	}
+	socksHandlers, _ := strconv.Atoi(getEnv("REVERSE_TUNNEL_SOCKS_HANDLERS", "1"))
+	if socksHandlers < 1 {
+		socksHandlers = 1
+	}
 	dnsResolver := os.Getenv("DNS_RESOLVER")
 	tlsEnabled, err := strconv.ParseBool(getEnv("TLS_ENABLED", "false"))
 	proxyProtocolEnabled, err := strconv.ParseBool(getEnv("PROXY_PROTOCOL_ENABLED", "true"))
@@ -181,9 +189,16 @@ func buildClientCommand() []string {
 		serverUrl,
 		"--websocket-ping-frequency-sec", pingFrequency,
 		"--connection-min-idle", connectionMinIdle,
-		// Healthcheck tunnel
+		// Healthcheck tunnel (local-to-remote)
 		"--local-to-remote", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelHealthPort, tunnelHealthRemotePort),
-		"--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelHealthPort, tunnelHealthRemotePort),
+	}
+
+	// Healthcheck reverse tunnel (remote-to-local) with configurable handler count.
+	// Each --remote-to-local flag spawns an independent run_reverse_tunnel loop in wstunnel.
+	// With handlers > 1, multiple handlers wait on the same server listener, keeping
+	// receiver_count high enough to prevent the idle timer from closing the listener.
+	for i := 0; i < healthHandlers; i++ {
+		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("tcp://0.0.0.0:%s:127.0.0.1:%s", tunnelHealthPort, tunnelHealthRemotePort))
 	}
 
 	// Use a specific prefix that will show up in the http path during the upgrade request
@@ -234,9 +249,11 @@ func buildClientCommand() []string {
 		cmd = append(cmd, "--local-to-remote", target)
 	}
 
-	// Enables server to client proxy tunnel
+	// Enables server to client proxy tunnel with configurable handler count.
 	if reverseTunnelSocksEnabled {
-		cmd = append(cmd, "--remote-to-local", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
+		for i := 0; i < socksHandlers; i++ {
+			cmd = append(cmd, "--remote-to-local", fmt.Sprintf("socks5://0.0.0.0:%s", tunnelSocksPort))
+		}
 	}
 
 	// Enables server to client tcp tunnel
