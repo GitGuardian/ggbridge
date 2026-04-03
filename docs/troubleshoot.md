@@ -240,6 +240,121 @@ Log format explanation:
 > [!TIP]
 > If `Session duration` reach 5sec for healtcheck (port 8081), it means time out occured 
 
+### Tunnel Disruption Analysis (Server-Side)
+
+When investigating mass bridge disconnections or tunnel outages, the wstunnel server logs provide key indicators about the disruption lifecycle. This section documents the log messages emitted by the wstunnel server process during a tunnel disruption and recovery, along with their source in the codebase and their meaning.
+
+#### Disruption sequence
+
+When a WebSocket tunnel is interrupted (e.g. ingress pod eviction, network disruption, Karpenter node consolidation), the server-side logs follow a predictable sequence:
+
+```
+error while writing to tx tunnel              <-- tunnel is dead
+error while handling pending operations       <-- ping/pong fails
+    |
+    v
+New reverse connection failed to be           <-- listener closing
+picked by client after 30s                        (connections arrive but
+                                                   nobody consumes them)
+No client connected to reverse tunnel         <-- listener closing
+server for 30s                                    (no traffic at all)
+    |
+    v
+Stopping listening reverse server             <-- port unbound
+    |
+    v
+connected to ReverseTcp                       <-- recovery
+```
+
+#### Tunnel disconnection indicators
+
+These logs appear when the WebSocket connection breaks. They occur on every normal connection close (~every 7s for health probes), but a disruption is identified when they appear **without** a subsequent `Accepting connection` within a few seconds.
+
+| Log message | Source | Meaning |
+|---|---|---|
+| `Closing local => remote tunnel` | [`io.rs:105`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/transport/io.rs#L105) | The local-to-remote forwarder exits (WebSocket writer errored or local reader closed) |
+| `Closing local <= remote tunnel` | [`io.rs:183`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/transport/io.rs#L183) | The remote-to-local forwarder exits |
+
+#### Error messages during disruption
+
+| Log message | Source | Meaning |
+|---|---|---|
+| `error while writing to tx tunnel {err}` | [`io.rs:166`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/transport/io.rs#L166) | Write error on the tunnel (broken pipe, connection reset) |
+| `error while handling pending operations {err}` | [`io.rs:138`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/transport/io.rs#L138) | Ping/pong handling failure (connection dead) |
+| `error while reading incoming bytes from local tx tunnel: {err}` | [`io.rs:159`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/transport/io.rs#L159) | Read error on the tunnel |
+| `Error while listening for incoming connections {err}` | [`reverse_tunnel.rs:91`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/reverse_tunnel.rs#L91) | TCP listener error on the reverse tunnel port |
+
+#### Reverse tunnel listener shutdown
+
+After the WebSocket handler dies, the reverse tunnel listener (port 9081) does not close immediately. It runs in a separate spawned task and checks periodically whether anyone is still consuming connections. There are two shutdown triggers:
+
+| Log message | Source | Meaning |
+|---|---|---|
+| `New reverse connection failed to be picked by client after {N}s. Closing reverse tunnel server` | [`reverse_tunnel.rs:96`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/reverse_tunnel.rs#L96) | A TCP connection arrived on the reverse tunnel port but no WebSocket handler picked it up within the idle timeout. This happens when nginx health probes keep arriving but the tunnel is dead. |
+| `No client connected to reverse tunnel server for {N}s. Closing reverse tunnel server` | [`reverse_tunnel.rs:107`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/reverse_tunnel.rs#L107) | Idle timeout with zero activity. No WebSocket handler is consuming the channel (`receiver_count <= 1`) and no new client has registered. This happens when nginx has already marked the upstream as down and stopped sending probes. |
+| `Stopping listening reverse server` | [`reverse_tunnel.rs:113`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/reverse_tunnel.rs#L113) | The TCP listener is dropped and the reverse tunnel port is unbound. From this point, any connection to the port returns `Connection refused`. |
+
+The idle timeout is controlled by `SERVER_IDLE_TIMEOUT` (default: 30 seconds). The listener closes between 0 and `SERVER_IDLE_TIMEOUT` seconds after the last WebSocket handler exits, depending on where in the timer interval the disconnect occurred.
+
+#### Recovery indicators
+
+| Log message | Source | Meaning |
+|---|---|---|
+| `Accepting connection` | [`server.rs:412`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/server.rs#L412) | New incoming TCP connection (client WebSocket arriving) |
+| `Tunnel accepted due to matched restriction: {name}` | [`server.rs:131`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/server.rs#L131) | Tunnel authorized by restriction rules |
+| `connected to {protocol} {host}:{port}` | [`server.rs:144`](https://github.com/erebe/wstunnel/blob/v10.4.3/wstunnel/src/tunnel/server/server.rs#L144) | Reverse tunnel re-established, the port is re-bound and accepting connections |
+
+#### Observability queries
+
+**Detect a mass tunnel disruption** (search in your log aggregator):
+```
+"Closing reverse tunnel server" OR "Stopping listening reverse server"
+```
+
+A spike in these messages across multiple bridges simultaneously indicates a mass disconnection event (e.g. ingress disruption, network outage).
+
+**Detect recovery**:
+```
+"connected to ReverseTcp"
+```
+
+A spike in `connected to ReverseTcp` messages following a disruption indicates clients are reconnecting.
+
+**Detect tunnel errors**:
+```
+"error while writing to tx tunnel" OR "error while handling pending operations"
+```
+
+These errors precede the listener shutdown and indicate the WebSocket connection is broken.
+
+**Example: Coralogix queries** (adapt to your log aggregator):
+
+Disruption detection (listener shutdown):
+```
+resource.attributes.k8s.namespace.name="ggbridge" AND resource.attributes.k8s.container.name="ggbridge" AND resource.attributes.k8s.deployment.name="*-server-*" AND (body:"Closing reverse tunnel server" OR body:"Stopping listening reverse server")
+```
+
+Tunnel errors (broken WebSocket):
+```
+resource.attributes.k8s.namespace.name="ggbridge" AND resource.attributes.k8s.container.name="ggbridge" AND resource.attributes.k8s.deployment.name="*-server-*" AND (body:"error while writing to tx tunnel" OR body:"error while handling pending operations")
+```
+
+Recovery detection (clients reconnecting):
+```
+resource.attributes.k8s.namespace.name="ggbridge" AND resource.attributes.k8s.container.name="ggbridge" AND resource.attributes.k8s.deployment.name="*-server-*" AND body:"connected to ReverseTcp"
+```
+
+Proxy-side connection refused (nginx container):
+```
+resource.attributes.k8s.namespace.name="ggbridge" AND resource.attributes.k8s.container.name="nginx" AND resource.attributes.k8s.deployment.name="*-proxy-*" AND body:"Connection refused"
+```
+
+> [!TIP]
+> During a disruption, correlate the timestamp of `Stopping listening reverse server` with the proxy nginx logs showing `Connection refused` to confirm the causal chain. The proxy starts seeing `Connection refused` within seconds of the listener shutting down.
+
+> [!NOTE]
+> The wstunnel server process itself does **not** crash during a tunnel disruption. It stays alive and continues accepting new WebSocket connections on the main port (9000). Only the reverse tunnel listener port (9081) is closed. When a client reconnects, the listener is automatically re-created.
+
 ## Client Monitoring/Alerting Guidelines
 ### Overview
 
