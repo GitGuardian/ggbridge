@@ -131,6 +131,10 @@ spec:
             - name: LOG_LEVEL
               value: {{ . | quote }}
             {{- end }}
+            {{- with $.Values.pingFrequency }}
+            - name: PING_FREQUENCY
+              value: {{ . | quote }}
+            {{- end }}
             - name: PROXY_PROTOCOL_ENABLED
               value: {{ $.Values.proxyProtocol.enabled | quote }}
             - name: TUNNEL_SOCKS_ENABLED
@@ -139,6 +143,10 @@ spec:
               value: {{ $.Values.client.tunnels.tls.enabled | quote }}
             - name: TUNNEL_WEB_ENABLED
               value: {{ $.Values.client.tunnels.web.enabled | quote }}
+            - name: REVERSE_TUNNEL_HEALTH_HANDLERS
+              value: {{ $.Values.client.reverseTunnels.health.handlers | default 1 | quote }}
+            - name: REVERSE_TUNNEL_SOCKS_HANDLERS
+              value: {{ $.Values.client.reverseTunnels.socks.handlers | default 1 | quote }}
             - name: REVERSE_TUNNEL_SOCKS_ENABLED
               value: {{ $.Values.client.reverseTunnels.socks.enabled | quote }}
             - name: REVERSE_TUNNEL_TLS_ENABLED
