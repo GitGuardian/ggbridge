@@ -5,7 +5,7 @@ on:
 
 jobs:
   call-org-workflow:
-    uses: my-org/.github/.github/workflows/ci.yml@main
+    uses: GitGuardian/.github/.github/workflows/ggscout.yml@main
     with:
       param: value
     secrets: inherit
