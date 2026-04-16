@@ -5,5 +5,5 @@ on:
 
 jobs:
   call-org-workflow:
-    uses: GitGuardian/.github/.github/workflows/ggscout.yml@main
+    uses: GitGuardian/.github/.github/workflows/ggscout.yml@fix/ggscout-secret-mapping
     secrets: inherit
