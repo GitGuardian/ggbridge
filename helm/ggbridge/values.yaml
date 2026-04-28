@@ -336,7 +336,6 @@ client:
       command:
         - ggbridge
         - healthcheck
-        - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
     periodSeconds: 7
@@ -749,7 +748,6 @@ proxy:
         - ggbridge
         - healthcheck
         - -pid-file=/var/run/nginx.pid
-        - -grace-period=60
         - http://127.0.0.1:9081/healthz
     initialDelaySeconds: 10
     periodSeconds: 7
