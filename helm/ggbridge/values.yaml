@@ -97,8 +97,8 @@ extraEnv: []
 resources:
   # -- Set container requests
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 10m
+    memory: 32Mi
   # -- Set container limits
   limits: {}
 
@@ -781,7 +781,7 @@ proxy:
   resources:
     # -- Set proxy container requests
     requests:
-      cpu: 50m
-      memory: 64Mi
+      cpu: 10m
+      memory: 16Mi
     # -- Set proxy container limits
     limits: {}
