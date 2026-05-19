@@ -337,11 +337,11 @@ client:
         - ggbridge
         - healthcheck
         - http://127.0.0.1:9081/healthz
-    initialDelaySeconds: 10
-    periodSeconds: 7
-    timeoutSeconds: 5
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
     successThreshold: 1
-    failureThreshold: 3
+    failureThreshold: 1
 
 server:
   # -- Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server.
@@ -749,11 +749,11 @@ proxy:
         - healthcheck
         - -pid-file=/var/run/nginx.pid
         - http://127.0.0.1:9081/healthz
-    initialDelaySeconds: 10
-    periodSeconds: 7
-    timeoutSeconds: 5
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
     successThreshold: 1
-    failureThreshold: 3
+    failureThreshold: 1
 
   networkPolicy:
     # -- Specifies whether a NetworkPolicy should be created
