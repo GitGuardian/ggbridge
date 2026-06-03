@@ -90,7 +90,7 @@ jobs:
     needs: [build-packages]
     runs-on: ubuntu-24.04
     steps:
-      - uses: imjasonh/setup-crane@v0.5
+      - uses: imjasonh/setup-crane@v0.6
       - uses: sigstore/cosign-installer@v3
 
       - name: Checkout
