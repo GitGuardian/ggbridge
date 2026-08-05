@@ -31,21 +31,13 @@ spec:
         certificateRefs:
           - kind: Secret
             group: ""
-          {{- if .Values.tls.existingSecret }}
-            name: {{ .Values.tls.existingSecret }}
-          {{- else }}
-            name: {{ printf "%s-crt" $serverFullname }}
-          {{- end }}
+            name: {{ include "ggbridge.server.tls.secretName" . }}
         {{- if (eq (lower .Values.tls.mode) "mutual") }}
         options:
           clientCertificateRef:
             kind: Secret
             group: ""
-            {{- if .Values.tls.existingSecret }}
-            name: {{ .Values.tls.existingSecret }}
-            {{- else }}
-            name: {{ printf "%s-crt" $serverFullname }}
-            {{- end }}
+            name: {{ include "ggbridge.server.tls.secretName" . }}
         {{- end }}
       {{- else }}
       name: http
