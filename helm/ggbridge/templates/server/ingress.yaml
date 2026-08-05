@@ -16,7 +16,7 @@ spec:
   {{- if eq (lower .Values.tls.mode) "mutual" }}
   clientAuth:
     secretNames:
-      - {{ printf "%s-crt" $serverFullname }}
+      - {{ include "ggbridge.server.tls.secretName" . }}
     clientAuthType: RequireAndVerifyClientCert
   {{- end }}
   minVersion: VersionTLS12
@@ -61,11 +61,7 @@ spec:
   tls:
     - hosts:
         - {{ include "ggbridge.hostname" . | quote }}
-      {{- if .Values.tls.existingSecret }}
-      secretName: {{ .Values.tls.existingSecret }}
-      {{- else }}
-      secretName: {{ printf "%s-crt" $serverFullname }}
-      {{- end }}
+      secretName: {{ include "ggbridge.server.tls.secretName" . }}
   {{- end }}
 
 {{- end }}

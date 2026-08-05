@@ -27,11 +27,7 @@ spec:
       tls:
         mode: {{ ternary "MUTUAL" "SIMPLE" (eq (lower .Values.tls.mode) "mutual") }}
         minProtocolVersion: {{ .Values.server.istio.gateway.tls.minProtocolVersion }}
-        {{- if .Values.tls.existingSecret }}
-        credentialName: {{ .Values.tls.existingSecret }}
-        {{- else }}
-        credentialName: {{ printf "%s-crt" $serverFullname }}
-        {{- end }}
+        credentialName: {{ include "ggbridge.server.tls.secretName" . }}
     {{- else }}
     - port:
         number: {{ .Values.server.istio.gateway.ports.http }}
