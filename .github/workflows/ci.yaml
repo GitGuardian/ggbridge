@@ -148,9 +148,29 @@ jobs:
         with:
           image: 'ttl.sh/${{ steps.github.outputs.repository }}:${{ steps.github.outputs.short-sha }}${{ matrix.tag-suffix }}'
 
+  test-chart:
+    name: Test Helm Chart
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: azure/setup-helm@v5.0.0
+        with:
+          version: v4.2.3
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version 1.0.3 --verify=false
+
+      - name: Lint Helm chart
+        run: helm lint --strict ${{ github.workspace }}/helm/ggbridge
+
+      - name: Run Helm chart unit tests
+        run: helm unittest ${{ github.workspace }}/helm/ggbridge
+
   publish-chart:
     name: Publish Helm Chart
-    needs: [publish]
+    needs: [publish, test-chart]
     runs-on: ubuntu-24.04
     steps:
       - uses: azure/setup-helm@v5.0.0
