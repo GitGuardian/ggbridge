@@ -1,0 +1,101 @@
+suite: supported configurations
+tests:
+  - it: renders the chart defaults
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/client/deployment.yaml
+
+  - it: renders a server behind istio
+    set:
+      mode: server
+      tls.enabled: true
+      server.istio.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/server/deployment.yaml
+      - hasDocuments:
+          count: 2
+        template: templates/server/istio.yaml
+
+  - it: renders a server behind the gateway api
+    set:
+      mode: server
+      tls.enabled: true
+      server.gateway.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/server/deployment.yaml
+      - hasDocuments:
+          count: 2
+        template: templates/server/gateway.yaml
+
+  - it: renders a server behind an ingress with a controller set
+    set:
+      mode: server
+      tls.enabled: true
+      server.ingress.enabled: true
+      server.ingress.controller: nginx
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/server/deployment.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/server/ingress.yaml
+
+  - it: renders a single replica on the direct-TLS path
+    set:
+      mode: server
+      deploymentCount: 1
+      tls.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: templates/server/deployment.yaml
+
+  - it: renders an issuer-only release with deploymentCount zero
+    set:
+      mode: server
+      deploymentCount: 0
+      tls.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/server/deployment.yaml
+
+  - it: renders tls.mode simple behind a layer-7 method
+    set:
+      mode: server
+      tls.enabled: true
+      server.ingress.enabled: true
+      server.ingress.controller: nginx
+      tls.mode: simple
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/server/deployment.yaml
+
+  - it: renders tls.mode passthrough
+    set:
+      mode: server
+      tls.enabled: true
+      server.ingress.enabled: true
+      server.ingress.controller: traefik
+      tls.mode: passthrough
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/server/deployment.yaml
+
+  - it: renders a client with an existing secret
+    set:
+      mode: client
+      tls.enabled: true
+      tls.existingSecret: ggbridge-client-crt
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: templates/client/deployment.yaml
