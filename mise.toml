@@ -1,6 +1,6 @@
 [tools]
 "aqua:dagger/dagger" = { version = "0.18.11" }
-"aqua:helm" = { version = "3.18.3"}
+"aqua:helm" = { version = "4.2.3"}
 "aqua:norwoodj/helm-docs" = { version = "1.14.2"}
 "pipx:ggshield" = { version = "1.41.0", uvx_args = "--python-preference=system" }
 "pipx:pre-commit" = { version = "4.2.0", uvx_args = "--python-preference=system" }
