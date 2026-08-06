@@ -178,6 +178,8 @@ jobs:
     if: ${{ github.event_name != 'schedule' }}
     steps:
       - uses: azure/setup-helm@v5.0.0
+        with:
+          version: v4.2.3
 
       - name: Checkout
         uses: actions/checkout@v6
