@@ -1,0 +1,26 @@
+# Reference values for a self-hosted GitGuardian deployment: bridge client side.
+#
+# Installed inside the isolated network that holds the sources to scan. Pair
+# with values-self-hosted-server.yaml.
+#
+# hostname must match the server release: its subdomain and domain concatenated.
+#
+# deploymentCount must match the server. Each index dials the server on its own
+# URL path prefix, so a mismatch leaves indexes unable to connect. Both sides
+# default to three, so neither sets it here.
+#
+# Reverse SOCKS is the only supported tunnel mode for self-hosted, and it is the
+# chart default along with the health tunnel that GIM pings to mark the bridge
+# connected. Neither needs enabling, and no client-to-server tunnel is wanted.
+#
+# Certificates are supplied by the customer:
+#   kubectl create secret generic ggbridge-client-crt \
+#     --from-file=ca.crt=certs/ca.crt \
+#     --from-file=tls.crt=certs/client.crt \
+#     --from-file=tls.key=certs/client.key
+
+hostname: ggbridge.bridge.internal
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-client-crt
