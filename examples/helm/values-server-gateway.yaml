@@ -1,4 +1,7 @@
 # Deploy ggbridge server and expose using Kubernetes Gateway API
+#
+# The Gateway consumes the secret directly, so it must contain literal ca.crt,
+# tls.crt and tls.key keys. tls.existingSecretKeys does not apply here.
 
 mode: server
 domain: gitguardian.com
@@ -6,17 +9,13 @@ subdomain: my-subdomain
 
 tls:
   enabled: true
-  exisingSecret: ggbridge-server-crt
-  existingSecretKeys:
-    caCrt: ca.crt
-    crt: tls.crt
-    key: tls.key
+  existingSecret: ggbridge-server-crt
 
-gateway:
-  enabled: true
+server:
   gateway:
-    create: true
-    className: traefik
-    ports:
-      http: 8000
-      https: 8443
+    enabled: true
+    gateway:
+      className: traefik
+      ports:
+        http: 8000
+        https: 8443

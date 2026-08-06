@@ -1,4 +1,10 @@
 # Deploy ggbridge server and expose using Kubernetes Ingress
+#
+# server.ingress.controller must be set: client certificate verification is
+# wired per controller, and leaving it empty disables mTLS enforcement.
+#
+# The ingress consumes the secret directly, so it must contain literal ca.crt,
+# tls.crt and tls.key keys. tls.existingSecretKeys does not apply here.
 
 mode: server
 domain: gitguardian.com
@@ -6,13 +12,10 @@ subdomain: my-subdomain
 
 tls:
   enabled: true
-  exisingSecret: ggbridge-server-crt
-  existingSecretKeys:
-    caCrt: ca.crt
-    crt: tls.crt
-    key: tls.key
+  existingSecret: ggbridge-server-crt
 
-ingress:
-  enabled: true
-  controller: nginx
-  className: nginx
+server:
+  ingress:
+    enabled: true
+    controller: nginx
+    className: nginx

@@ -10,9 +10,9 @@ tls:
     enabled: true
     issuer:
       name: ggbridge-issuer
-      kind: Issuer
 
-ingress:
-  enabled: true
-  controller: nginx
-  className: nginx
+server:
+  ingress:
+    enabled: true
+    controller: nginx
+    className: nginx

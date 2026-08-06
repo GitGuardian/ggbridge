@@ -1,4 +1,7 @@
 # Deploy ggbridge server and expose using Istio ingress gateway
+#
+# Istio consumes the secret directly, so it must contain literal ca.crt,
+# tls.crt and tls.key keys. tls.existingSecretKeys does not apply here.
 
 mode: server
 domain: gitguardian.com
@@ -6,14 +9,10 @@ subdomain: my-subdomain
 
 tls:
   enabled: true
-  exisingSecret: ggbridge-server-crt
-  existingSecretKeys:
-    caCrt: ca.crt
-    crt: tls.crt
-    key: tls.key
+  existingSecret: ggbridge-server-crt
 
-istio:
-  enabled: true
-  gateway:
-    create: true
-    namespace: istio-ingress
+server:
+  istio:
+    enabled: true
+    gateway:
+      namespace: istio-ingress

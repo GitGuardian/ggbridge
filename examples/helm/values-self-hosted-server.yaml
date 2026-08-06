@@ -1,0 +1,37 @@
+# Reference values for a self-hosted GitGuardian deployment: bridge server side.
+#
+# Deployed next to GIM, in the cluster that runs GitGuardian. Pair with
+# values-self-hosted-client.yaml, which is installed inside the isolated network.
+#
+# Certificates are supplied by the customer. Istio consumes the secret directly,
+# so it must contain literal ca.crt, tls.crt and tls.key keys:
+#   kubectl create secret generic ggbridge-server-crt \
+#     --from-file=ca.crt=certs/ca.crt \
+#     --from-file=tls.crt=certs/server.crt \
+#     --from-file=tls.key=certs/server.key
+#
+# subdomain is the one value both Helm releases and GIM must agree on. It names
+# the proxy Service that GIM connects to, so GIM's bridge identity must use the
+# same string and point baseInternalDomain at this namespace.
+#
+# Exposure must be a layer-7 method. The chart default of three replicas routes
+# each client index to its own server pod by URL path (/0, /1, /2), which a
+# Service cannot do. Prefer Istio or Gateway API where one is already in use;
+# with Ingress, server.ingress.controller must be set explicitly or client
+# certificates are not verified.
+#
+# Set server.istio.gateway.selector if the Istio ingress gateway is not the one
+# labelled `istio: ingress`.
+
+mode: server
+
+subdomain: ggbridge
+domain: bridge.internal
+
+tls:
+  enabled: true
+  existingSecret: ggbridge-server-crt
+
+server:
+  istio:
+    enabled: true
