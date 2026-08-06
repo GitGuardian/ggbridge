@@ -55,6 +55,10 @@ run = 'dagger call client --server={{flag(name="server")}} --ca={{flag(name="ca"
 description = "Lint ggbridge Helm chart"
 run = "helm lint --strict helm/ggbridge"
 
+[tasks.test-chart]
+description = "Run the ggbridge Helm chart unit tests"
+run = "helm unittest helm/ggbridge"
+
 [tasks.test]
 description = "Test ggbridge and print the report"
 run = "dagger call test $@ contents"
