@@ -18,7 +18,7 @@ ARG TARGETVARIANT
 ENV GGBRIDGE_SSL_CERT_DIR="/etc/ggbridge/ssl/certs"
 ENV GGBRIDGE_SSL_CERT_FILE="${GGBRIDGE_SSL_CERT_DIR}/ca-bundle.crt"
 ENV GGBRIDGE_SSL_PRIVATE_CERT_DIR="/etc/ggbridge/ssl/private"
-ENV GGBRIDGE_PRIVATE_SSL_CERT_FILE="${GGBRIDGE_SSL_PRIVATE_CERT_DIR}/ca-bundle.crt"
+ENV GGBRIDGE_SSL_PRIVATE_CERT_FILE="${GGBRIDGE_SSL_PRIVATE_CERT_DIR}/ca-bundle.crt"
 
 RUN apk add --no-cache \
   bash \
@@ -31,12 +31,8 @@ RUN mkdir -p $GGBRIDGE_SSL_CERT_DIR && \
   chmod 775 $GGBRIDGE_SSL_CERT_DIR && \
   mkdir -p $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
   chown 65532:0 $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
-  chmod 775 $GGBRIDGE_SSL_PRIVATE_CERT_DIR && \
-  mkdir -p /opt/ggbridge && \
-  chown 0:0 /opt/ggbridge && \
-  chmod 775 /opt/ggbridge
+  chmod 775 $GGBRIDGE_SSL_PRIVATE_CERT_DIR
 
-COPY --chown=0:0 --chmod=0755 docker/scripts/run.sh /opt/ggbridge/run.sh
 COPY --chown=0:0 --chmod=0644 docker/nginx/nginx.conf /etc/ggbridge/nginx.conf
 
 
@@ -102,7 +98,7 @@ USER 65532
 
 STOPSIGNAL SIGQUIT
 
-ENTRYPOINT ["/opt/ggbridge/run.sh"]
+ENTRYPOINT ["/usr/bin/ggbridge"]
 CMD ["client"]
 
 
@@ -112,5 +108,5 @@ FROM base AS prod
 COPY --link --from=wstunnel --chmod=755 /usr/bin/wstunnel /usr/bin/wstunnel
 COPY --link --from=build --chmod=755 /build/ggbridge /usr/bin/ggbridge
 
-ENTRYPOINT ["/opt/ggbridge/run.sh"]
+ENTRYPOINT ["/usr/bin/ggbridge"]
 CMD ["client"]

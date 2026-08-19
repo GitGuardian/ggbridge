@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -17,11 +18,16 @@ import (
 )
 
 const (
+	DefaultCaBundleDir            = "/etc/ggbridge/ssl/certs"
+	DefaultCaBundleFile           = "/etc/ggbridge/ssl/certs/ca-bundle.crt"
 	DefaultHealthcheckUrl         = "http://127.0.0.1:9081/healthz"
 	DefaultLogLevel               = "INFO"
+	DefaultMTlsCaFile             = "/etc/ggbridge/tls/ca.crt"
 	DefaultPIDFile                = "/var/run/ggbridge.pid"
 	DefaultPingFrequency          = 30
+	DefaultPrivateCaBundleFile    = "/etc/ggbridge/ssl/private/ca-bundle.crt"
 	DefaultServerIdleTimeout      = 30
+	DefaultSystemCaBundleFile     = "/etc/ssl/certs/ca-certificates.crt"
 	DefaultTunnelHealthPort       = 9081
 	DefaultTunnelHealthRemotePort = 8081
 	DefaultTunnelSocksPort        = 9180
@@ -37,6 +43,66 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// caBundleContents concatenates the system trust store with the extra CA certificates.
+// Extra certificates that are missing or empty are skipped.
+func caBundleContents(systemBundle string, extraCerts []string) ([]byte, error) {
+	bundle, err := os.ReadFile(systemBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read system CA bundle %s: %w", systemBundle, err)
+	}
+
+	for _, path := range extraCerts {
+		certs, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("failed to read CA certificates %s: %w", path, err)
+		}
+		if len(certs) == 0 {
+			continue
+		}
+		if !bytes.HasSuffix(bundle, []byte("\n")) {
+			bundle = append(bundle, '\n')
+		}
+		bundle = append(bundle, certs...)
+	}
+
+	return bundle, nil
+}
+
+// buildCaBundle writes the bundle trusted by wstunnel and nginx, merging the system
+// trust store with the private CA bundle and the mTLS CA certificate.
+func buildCaBundle() error {
+	target := getEnv("GGBRIDGE_SSL_CERT_FILE", DefaultCaBundleFile)
+
+	systemBundle := getEnv("SSL_CERT_FILE", DefaultSystemCaBundleFile)
+	if systemBundle == target {
+		systemBundle = DefaultSystemCaBundleFile
+	}
+
+	bundle, err := caBundleContents(systemBundle, []string{
+		getEnv("GGBRIDGE_SSL_PRIVATE_CERT_FILE", DefaultPrivateCaBundleFile),
+		getEnv("GGBRIDGE_MTLS_CA_FILE", DefaultMTlsCaFile),
+	})
+	if err != nil {
+		return err
+	}
+
+	dir := getEnv("GGBRIDGE_SSL_CERT_DIR", DefaultCaBundleDir)
+	if err := os.MkdirAll(dir, 0o775); err != nil {
+		return fmt.Errorf("failed to create %s: %w", dir, err)
+	}
+
+	if err := os.WriteFile(target, bundle, 0o644); err != nil {
+		return fmt.Errorf("failed to write CA bundle %s: %w", target, err)
+	}
+
+	log.Printf("CA bundle written to %s (%d bytes)", target, len(bundle))
+
+	return nil
 }
 
 func writePIDFile(pidFilePath string) error {
@@ -366,6 +432,10 @@ func runClient(pidFile string) {
 		log.Fatalf("Error writing PID file: %v", err)
 	}
 
+	if err := buildCaBundle(); err != nil {
+		log.Printf("Warning: could not build the CA bundle: %v", err)
+	}
+
 	if getEnv("NGINX_EMBEDDED", "true") == "true" {
 		runNginx()
 	}
@@ -379,6 +449,10 @@ func runServer(pidFile string) {
 	err := writePIDFile(pidFile)
 	if err != nil {
 		log.Fatalf("Error writing PID file: %v", err)
+	}
+
+	if err := buildCaBundle(); err != nil {
+		log.Printf("Warning: could not build the CA bundle: %v", err)
 	}
 
 	if getEnv("NGINX_EMBEDDED", "true") == "true" {
@@ -430,12 +504,16 @@ func main() {
 	healthCheckProxyUrl := healthCheckCmd.String("proxy", "", "Proxy address")
 
 	if len(os.Args) < 2 {
-		log.Fatal("Error: Missing subcommand 'server', 'client', or 'healthcheck'")
+		log.Fatal("Error: Missing subcommand 'server', 'client', 'ca-bundle', or 'healthcheck'")
 	}
 
 	subcommand := os.Args[1]
 
 	switch subcommand {
+	case "ca-bundle":
+		if err := buildCaBundle(); err != nil {
+			log.Fatalf("Error building the CA bundle: %v", err)
+		}
 	case "client":
 		clientCmd.Parse(os.Args[2:])
 		runClient(*clientPidFile)

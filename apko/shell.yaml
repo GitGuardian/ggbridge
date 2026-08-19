@@ -10,6 +10,6 @@ contents:
     - openssl
 
 entrypoint:
-  command: /opt/ggbridge/run.sh
+  command: /usr/bin/ggbridge
 
 cmd: client

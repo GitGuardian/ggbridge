@@ -174,33 +174,6 @@ If image tag and digest are not defined, termination fallbacks to chart appVersi
 {{- end -}}
 
 {{/*
-Return the proper caBundle image name.
-If image tag and digest are not defined, termination fallbacks to chart appVersion.
-{{ include "ggbridge.caBundle.image" }}
-*/}}
-{{- define "ggbridge.caBundle.image" -}}
-{{- $registryName := default .Values.caBundle.image.registry .Values.global.imageRegistry -}}
-{{- $repositoryName := .Values.caBundle.image.repository -}}
-{{- $separator := ":" -}}
-{{- $termination := .Values.caBundle.image.tag | toString -}}
-
-{{- if not .Values.caBundle.image.tag }}
-  {{- if .Chart }}
-    {{- $termination = printf "%s-shell" .Chart.AppVersion | toString -}}
-  {{- end -}}
-{{- end -}}
-{{- if .Values.caBundle.image.digest }}
-    {{- $separator = "@" -}}
-    {{- $termination = .Values.caBundle.image.digest | toString -}}
-{{- end -}}
-{{- if $registryName }}
-    {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
-{{- else -}}
-    {{- printf "%s%s%s"  $repositoryName $separator $termination -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Return the proper image name.
 If image tag and digest are not defined, termination fallbacks to chart appVersion.
 {{ include "ggbridge.proxy.image" }}
