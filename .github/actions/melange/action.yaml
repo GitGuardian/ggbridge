@@ -21,7 +21,7 @@ inputs:
   melange-version:
     description: 'Melange version'
     required: false
-    default: 'v0.23.15'
+    default: 'v0.43.6'
 
 runs:
   using: composite

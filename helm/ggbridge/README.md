@@ -13,27 +13,22 @@ A Helm chart for installing ggbridge
 | caBundle.certs | string | `""` | Specify CA certificates to inject (PEM format) |
 | caBundle.existingSecret | string | `""` | Specify the secret containing the CA certificate to inject |
 | caBundle.existingSecretKey | string | `"ca.crt"` | Specify secret key under the CA certificated is stored |
-| caBundle.image.digest | string | `""` | Image digest in the way sha256:aa.... |
-| caBundle.image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
-| caBundle.image.pullSecrets | list | `[]` | Image pull secrets |
-| caBundle.image.registry | string | `"ghcr.io"` | Image registry |
-| caBundle.image.repository | string | `"gitguardian/ggbridge"` | Image repository |
-| caBundle.image.tag | string | `""` | Image tag |
 | caBundle.resources.limits | object | `{"memory":"32Mi"}` | Set CA init container limits |
 | caBundle.resources.requests | object | `{"cpu":"10m","memory":"16Mi"}` | Set CA init container requests |
-| client.connectionMinIdle | int | `0` | Pool of open connection to the server, in order to speed up the connection process |
+| client.connectionMinIdle | int | `3` | Pool of open connection to the server, in order to speed up the connection process. Keeping at least 1 idle connection pre-establishes the TCP+TLS handshake, reducing the gap between consecutive reverse tunnel WebSocket handlers. |
 | client.readinessProbe.enabled | bool | `true` | Enable Client Readiness Probe |
 | client.readinessProbe.exec.command[0] | string | `"ggbridge"` |  |
 | client.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |
-| client.readinessProbe.exec.command[2] | string | `"-grace-period=60"` |  |
-| client.readinessProbe.exec.command[3] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| client.readinessProbe.failureThreshold | int | `3` |  |
-| client.readinessProbe.initialDelaySeconds | int | `10` |  |
-| client.readinessProbe.periodSeconds | int | `7` |  |
+| client.readinessProbe.exec.command[2] | string | `"http://127.0.0.1:9081/healthz"` |  |
+| client.readinessProbe.failureThreshold | int | `1` |  |
+| client.readinessProbe.initialDelaySeconds | int | `5` |  |
+| client.readinessProbe.periodSeconds | int | `10` |  |
 | client.readinessProbe.successThreshold | int | `1` |  |
-| client.readinessProbe.timeoutSeconds | int | `5` |  |
+| client.readinessProbe.timeoutSeconds | int | `2` |  |
 | client.reverseTunnels.health.enabled | bool | `true` | Enable server to client health tunnel |
+| client.reverseTunnels.health.handlers | int | `1` | Number of concurrent WebSocket handlers (run_reverse_tunnel loops) for the health tunnel. Each handler is an independent loop that pre-opens a WebSocket and waits for a connection. With handlers=1 (default), there is a brief gap between handlers where the idle timer may fire. With handlers=2, a second handler is always waiting, preventing the idle timer from closing the listener. Values > 2 provide diminishing returns for health (1 probe every 7s). |
 | client.reverseTunnels.socks.enabled | bool | `true` | Enable server to client socks tunnel |
+| client.reverseTunnels.socks.handlers | int | `1` | Number of concurrent WebSocket handlers for the SOCKS tunnel. Higher values reduce dispatch latency when multiple SOCKS connections arrive simultaneously. With handlers=1, concurrent requests are dispatched sequentially (one WS creation time per request). With handlers=N, the first N requests are dispatched instantly. |
 | client.reverseTunnels.tls.enabled | bool | `false` | Enable server to client tls tunnel |
 | client.reverseTunnels.web.enabled | bool | `false` | Enable server to client web tunnel (for HTTP/HTTPS traffic) |
 | client.tunnels.health.enabled | bool | `true` | Enable client to server health tunnel |
@@ -72,13 +67,14 @@ A Helm chart for installing ggbridge
 | pdb.create | bool | `false` | Enable/disable a Pod Disruption Budget creation |
 | pdb.maxUnavailable | string | `""` | Max number of pods that can be unavailable after the eviction |
 | pdb.minAvailable | int | `1` | Minimum number of pods that must still be available after the eviction |
+| pingFrequency | int | `20` | WebSocket ping frequency in seconds (applies to both client and server). wstunnel sends a ping frame at this interval to detect dead connections. After 3 missed pings, the connection is declared dead. Lower values improve detection speed but increase WebSocket frame overhead. |
 | podAnnotations | object | `{}` | This is for setting Kubernetes Annotations to a Pod |
 | podLabels | object | `{}` | This is for setting Kubernetes Labels to a Pod |
 | podSecurityContext.enabled | bool | `true` | Enable Pod security Context in deployments |
 | proxy.affinity | object | `{}` | Affinity for pod assignment |
 | proxy.annotations | object | `{}` | Set proxy annotations |
 | proxy.argocd.ignoreHealthcheck | bool | `true` | Ignore Deployment healthcheck during ArgoCD sync operations |
-| proxy.config | object | `{"resolver":{"dns":"kube-dns.kube-system.svc.cluster.local","enabled":true,"timeout":"5s"},"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":false,"maxFails":2}}` | Nginx configuration |
+| proxy.config | object | `{"resolver":{"dns":"kube-dns.kube-system.svc.cluster.local","enabled":true,"timeout":"5s"},"server":{"customDirectives":[],"proxyConnectTimeout":"30s","proxyTimeout":"1800s"},"upstream":{"backupMode":false,"downServers":[],"failTimeout":"15s","healthLoadBalancing":false,"maxFails":3}}` | Nginx configuration |
 | proxy.config.resolver | object | `{"dns":"kube-dns.kube-system.svc.cluster.local","enabled":true,"timeout":"5s"}` | Nginx resolver configuration |
 | proxy.config.resolver.dns | string | `"kube-dns.kube-system.svc.cluster.local"` | DNS resolver name |
 | proxy.config.resolver.enabled | bool | `true` | Enable DNS resolver in nginx configuration |
@@ -87,12 +83,12 @@ A Helm chart for installing ggbridge
 | proxy.config.server.customDirectives | list | `[]` | custom parameters to add to the 'server' section of nginx.conf you need to choose which section it applies to can be "health", "socks", "web" or "tls" |
 | proxy.config.server.proxyConnectTimeout | string | `"30s"` | Nginx connection proxy timeout |
 | proxy.config.server.proxyTimeout | string | `"1800s"` | Nginx global proxy timeout |
-| proxy.config.upstream | object | `{"backupMode":false,"downServers":[],"failTimeout":"120s","healthLoadBalancing":false,"maxFails":2}` | Nginx upstream configuration |
+| proxy.config.upstream | object | `{"backupMode":false,"downServers":[],"failTimeout":"15s","healthLoadBalancing":false,"maxFails":3}` | Nginx upstream configuration |
 | proxy.config.upstream.backupMode | bool | `false` | Enable backup mode, will switch from round robin to backup setting for upstream servers |
 | proxy.config.upstream.downServers | list | `[]` | List of server proxy to disable in nginx conf For example [1,2] will mark proxy-1 and proxy-2 as down |
-| proxy.config.upstream.failTimeout | string | `"120s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable |
+| proxy.config.upstream.failTimeout | string | `"15s"` | Time during which the specified number of unsuccessful attempts must happen to mark the server as unavailable. After max_fails is reached, nginx stops retrying the upstream for this duration. A lower value allows faster recovery when the reverse tunnel listener re-opens. |
 | proxy.config.upstream.healthLoadBalancing | bool | `false` | Enable load balancing for health upstream (when true will set load-balancing upstream for healthcheck) |
-| proxy.config.upstream.maxFails | int | `2` | Maximum number of unsuccessful attempts to communicate with the server |
+| proxy.config.upstream.maxFails | int | `3` | Maximum number of unsuccessful attempts to communicate with the server. Aligned with the Kubernetes readiness probe failureThreshold (3) to avoid marking the upstream down too early on transient failures. |
 | proxy.labels | object | `{}` | Set proxy labels |
 | proxy.logLevel | string | `"notice"` | Set nginx sidecar container and proxy pod log level (default: notice) |
 | proxy.networkPolicy.allowExternal | bool | `true` | When true, server will accept connections from any source |
@@ -106,16 +102,15 @@ A Helm chart for installing ggbridge
 | proxy.readinessProbe.exec.command[0] | string | `"ggbridge"` |  |
 | proxy.readinessProbe.exec.command[1] | string | `"healthcheck"` |  |
 | proxy.readinessProbe.exec.command[2] | string | `"-pid-file=/var/run/nginx.pid"` |  |
-| proxy.readinessProbe.exec.command[3] | string | `"-grace-period=60"` |  |
-| proxy.readinessProbe.exec.command[4] | string | `"http://127.0.0.1:9081/healthz"` |  |
-| proxy.readinessProbe.failureThreshold | int | `3` |  |
-| proxy.readinessProbe.initialDelaySeconds | int | `10` |  |
-| proxy.readinessProbe.periodSeconds | int | `7` |  |
+| proxy.readinessProbe.exec.command[3] | string | `"http://127.0.0.1:9081/healthz"` |  |
+| proxy.readinessProbe.failureThreshold | int | `1` |  |
+| proxy.readinessProbe.initialDelaySeconds | int | `5` |  |
+| proxy.readinessProbe.periodSeconds | int | `10` |  |
 | proxy.readinessProbe.successThreshold | int | `1` |  |
-| proxy.readinessProbe.timeoutSeconds | int | `5` |  |
+| proxy.readinessProbe.timeoutSeconds | int | `2` |  |
 | proxy.replicaCount | int | `1` | Number of pods for each deployment |
 | proxy.resources.limits | object | `{}` | Set proxy container limits |
-| proxy.resources.requests | object | `{"cpu":"50m","memory":"64Mi"}` | Set proxy container requests |
+| proxy.resources.requests | object | `{"cpu":"10m","memory":"16Mi"}` | Set proxy container requests |
 | proxy.service.annotations | object | `{"service.kubernetes.io/topology-mode":"Auto"}` | Set proxy service annotations |
 | proxy.service.name | string | `""` | - Set the proxy service name |
 | proxy.service.ports.health.containerPort | int | `9081` | Specify the health tunnel port |
@@ -198,14 +193,14 @@ A Helm chart for installing ggbridge
 | proxyProtocol.enabled | bool | `true` | When true, enables proxy protocol v2 for web/tls tunnels |
 | replicaCount | int | `1` | Number of pods for each deployment |
 | resources.limits | object | `{}` | Set container limits |
-| resources.requests | object | `{"cpu":"100m","memory":"128Mi"}` | Set container requests |
+| resources.requests | object | `{"cpu":"10m","memory":"32Mi"}` | Set container requests |
 | server.gateway.annotations | object | `{}` | Set gateway annotations |
 | server.gateway.enabled | bool | `false` | Enable server exposure using Kubernetes Gateway API |
 | server.gateway.gateway.className | string | `""` | Set the gatewayClassName |
 | server.gateway.gateway.create | bool | `true` | Specifies whether a Gateway resource should be created alongside the routing resource (HTTPRoute) |
 | server.gateway.gateway.ports | object | `{"http":80,"https":443}` | Specify Gateway ports number |
 | server.gateway.parentRefs | list | `[]` | Specify the existing gateway resources |
-| server.idleTimeout | int | `30` | Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server |
+| server.idleTimeout | int | `120` | Configure how much time a tunnel server is going to wait idle (without any new ws clients) before unbinding itself/stopping the server. A higher value reduces the chance of the reverse tunnel listener closing during the gap between consecutive WebSocket handlers (the 1:1 WebSocket:connection model creates a brief gap every ~7s when a health probe is consumed). |
 | server.ingress.annotations | object | `{}` | Set ingress annotations |
 | server.ingress.className | string | `""` | Set the ingress ClassName |
 | server.ingress.controller | string | `""` | Specify the ingress controller |
@@ -232,9 +227,10 @@ A Helm chart for installing ggbridge
 | terminationGracePeriodSeconds | int | `300` |  |
 | tls.autoGenerated | bool | `false` | Generate automatically self-signed TLS certificates |
 | tls.caCrt | string | `""` | CA certificate in PEM format |
-| tls.certManager.certificate | object | `{"algorithm":"RSA","duration":"17520h","renewBefore":"360h","size":4096}` | certificate configuration |
+| tls.certManager.certificate | object | `{"algorithm":"RSA","duration":"17520h","omitCommonName":false,"renewBefore":"360h","size":4096}` | certificate configuration |
 | tls.certManager.certificate.algorithm | string | `"RSA"` | certificate algorithm for private key |
 | tls.certManager.certificate.duration | string | `"17520h"` | certificate total duration time |
+| tls.certManager.certificate.omitCommonName | bool | `false` | Omit commonName from the certificate spec (required when hostname exceeds the 64-byte X.509 limit) |
 | tls.certManager.certificate.renewBefore | string | `"360h"` | certificate renewal time |
 | tls.certManager.certificate.size | int | `4096` | certificate size for private key |
 | tls.certManager.enabled | bool | `false` | Manage certifcates with cert-manager |

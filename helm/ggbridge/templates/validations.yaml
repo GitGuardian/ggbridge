@@ -2,6 +2,10 @@
 {{- $trafficRouting := eq (include "ggbridge.server.trafficRouting.enabled" .) "true" -}}
 {{- $tlsMode := lower (default "" .Values.tls.mode) -}}
 
+{{- if .Values.caBundle.image -}}
+  {{- fail "\n\nggbridge: caBundle.image is set but no longer exists.\n\nThe CA bundle is now assembled by the ggbridge binary itself, so the init container runs the same image as the rest of the chart instead of the -shell variant. A caBundle.image override would silently do nothing, and any registry, tag or digest pin it carried would be lost.\n\nMove the override to image.registry, image.repository, image.tag or image.digest, and remove caBundle.image." -}}
+{{- end -}}
+
 {{- if eq .Values.mode "server" -}}
 
   {{- if and (gt $deploymentCount 1) (not $trafficRouting) -}}
