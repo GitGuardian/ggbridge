@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set GitHub vars
         id: github
@@ -91,11 +91,11 @@ jobs:
     needs: [build-packages]
     runs-on: ubuntu-24.04
     steps:
-      - uses: imjasonh/setup-crane@v0.5
+      - uses: imjasonh/setup-crane@v0.7
       - uses: sigstore/cosign-installer@v3
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set GitHub vars
         id: github
@@ -152,12 +152,12 @@ jobs:
     name: Test Helm Chart
     runs-on: ubuntu-24.04
     steps:
-      - uses: azure/setup-helm@v5.0.0
+      - uses: azure/setup-helm@v5.0.1
         with:
           version: v4.2.3
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install helm-unittest
         run: helm plugin install https://github.com/helm-unittest/helm-unittest --version 1.0.3 --verify=false
@@ -173,12 +173,12 @@ jobs:
     needs: [publish, test-chart]
     runs-on: ubuntu-24.04
     steps:
-      - uses: azure/setup-helm@v5.0.0
+      - uses: azure/setup-helm@v5.0.1
         with:
           version: v4.2.3
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set GitHub vars
         id: github
