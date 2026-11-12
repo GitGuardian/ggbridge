@@ -1,4 +1,7 @@
 ---
+# The bridge URL shown in the dashboard:
+#   US: <id>.ggbridge.gitguardian.com
+#   EU: <id>.ggbridge.eu1.gitguardian.com
 hostname: <id>.ggbridge.gitguardian.com
 
 tls:
@@ -20,7 +23,11 @@ proxy:
       gateway:
         enabled: true
         gateway:
-          # This will create the gateway resource, you can disable it if you want to mange it on you own.
+          # This will create the gateway resource, you can disable it if you want to manage it on your own.
           create: true
           # This will set the gatewayClass of the Gateway
-          className: "my-gateway-class"
+          className: "my-gatewayclass"
+          # Defaults to the US hosts. For the EU region:
+          # listeners:
+          #   - hostname: api.eu1.gitguardian.com
+          #   - hostname: hook.eu1.gitguardian.com

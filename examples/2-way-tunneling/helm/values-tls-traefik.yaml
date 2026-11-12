@@ -1,4 +1,7 @@
 ---
+# The bridge URL shown in the dashboard:
+#   US: <id>.ggbridge.gitguardian.com
+#   EU: <id>.ggbridge.eu1.gitguardian.com
 hostname: <id>.ggbridge.gitguardian.com
 
 tls:
@@ -20,3 +23,7 @@ proxy:
       ingress:
         enabled: true
         controller: "traefik"
+        # Defaults to the US hosts. For the EU region:
+        # listeners:
+        #   - hostname: api.eu1.gitguardian.com
+        #   - hostname: hook.eu1.gitguardian.com

@@ -1,4 +1,7 @@
 ---
+# The bridge URL shown in the dashboard:
+#   US: <id>.ggbridge.gitguardian.com
+#   EU: <id>.ggbridge.eu1.gitguardian.com
 hostname: <id>.ggbridge.gitguardian.com
 
 tls:
