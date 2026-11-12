@@ -56,7 +56,7 @@ kubectl create secret generic ggbridge-client-crt -n ggbridge --from-file=tls.cr
 
 4. Install GGBridge client
 
-Replace `$uid` here with the Bridge UID
+Replace `$uid` here with the Bridge UID. The hostname must match the bridge URL shown in the dashboard: `$uid.ggbridge.eu1.gitguardian.com` for an EU bridge.
 
 ```bash
 helm -n ggbridge upgrade -i ggbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
@@ -118,7 +118,7 @@ kubectl create secret generic ggbridge-client-crt -n ggbridge --from-file=tls.cr
 
 3. Install GGBridge client
 
-Edit the helm [install file](../k3d/helm-ggbridge.yaml) with your Bridge UID
+Edit the helm [install file](../k3d/helm-ggbridge.yaml) with your Bridge UID. The hostname must match the bridge URL shown in the dashboard: `$uid.ggbridge.eu1.gitguardian.com` for an EU bridge.
 ```yaml
   valuesContent: |-
     hostname: $uid.ggbridge.gitguardian.com

@@ -1,5 +1,8 @@
 # Example values to expose the GitGuardian API internally using Service (In-Cluster access only)
 ---
+# The bridge URL shown in the dashboard:
+#   US: <my-subdomain>.ggbridge.gitguardian.com
+#   EU: <my-subdomain>.ggbridge.eu1.gitguardian.com
 hostname: <my-subdomain>.ggbridge.gitguardian.com
 
 tls:
@@ -21,4 +24,5 @@ proxy:
       service:
         listeners:
           - name: <my-service-name>
+            # EU bridges: api.eu1.gitguardian.com
             backend: api.gitguardian.com
