@@ -59,9 +59,9 @@ Test SOCKS proxy connectivity and DNS resolution.
 > ```
 > Then upgrade your deployment:
 > ```bash
-> helm -n ggbridge upgrade -i gbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge -f values.yaml
+> helm -n ggbridge upgrade -i ggbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge -f values.yaml
 > ```
-> And finally, test the connection. By default, the service name will be `ggbridge-proxy` (different from the server side). Only endpoints in the allowed list can be accessed - for testing, you can use `https://api.gitguardian.com`.
+> And finally, test the connection. By default, the service name will be `ggbridge-proxy` (different from the server side). Only endpoints in the allowed list can be accessed - for testing, you can use the API of your bridge's region: `https://api.gitguardian.com` (US) or `https://api.eu1.gitguardian.com` (EU).
 > ```bash
 > kubectl run debug -it --rm \
 >                       --restart=Never \
@@ -128,7 +128,7 @@ Expected output: List of Git branches and their commit hashes
 
 #### 4. Reverse tunneling
 
-When reverse tunneling is enabled on client side, you can check if you are able to connect to `api.gitguardian.com`. Execute this command on the customer's cluster:
+When reverse tunneling is enabled on client side, you can check if you are able to connect to `api.gitguardian.com`. For an EU bridge, use `api.eu1.gitguardian.com` and `hook.eu1.gitguardian.com` in the commands below. Execute this command on the customer's cluster:
 
 ```bash
 kubectl run debug -it --rm \

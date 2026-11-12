@@ -8,6 +8,7 @@ spec:
   chart: oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge
   targetNamespace: ggbridge
   valuesContent: |-
+    # The bridge URL shown in the dashboard (EU: $uid.ggbridge.eu1.gitguardian.com)
     hostname: $uid.ggbridge.gitguardian.com
     image:
       tag: latest

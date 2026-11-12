@@ -83,6 +83,9 @@ Edit your Helm values file to point to your bridge server and the secret created
 > ```
 
 ```yaml
+# The bridge URL shown in the dashboard:
+#   US: <my-subdomain>.ggbridge.gitguardian.com
+#   EU: <my-subdomain>.ggbridge.eu1.gitguardian.com
 hostname: <my-subdomain>.ggbridge.gitguardian.com
 
 image:
@@ -109,6 +112,9 @@ tls:
 For **OpenShift** deployment, use the following values:
 
 ```yaml
+# The bridge URL shown in the dashboard:
+#   US: <my-subdomain>.ggbridge.gitguardian.com
+#   EU: <my-subdomain>.ggbridge.eu1.gitguardian.com
 hostname: <my-subdomain>.ggbridge.gitguardian.com
 
 tls:
@@ -146,7 +152,7 @@ helm -n ggbridge upgrade --install --create-namespace \
 > If you need to upgrade your current installation with new parameters, please update your `values.yaml` file with correct key/value and then run the following command :
 > ```bash
 > helm -n ggbridge upgrade -i \
->         gbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
+>         ggbridge oci://ghcr.io/gitguardian/ggbridge/helm/ggbridge \
 >         -f values.yaml
 > ```
 > We recommend you to store the `values.yaml` file somewhere safe such as in a git repository.
