@@ -1,4 +1,7 @@
 ---
+# The bridge URL shown in the dashboard:
+#   US: <id>.ggbridge.gitguardian.com
+#   EU: <id>.ggbridge.eu1.gitguardian.com
 hostname: <id>.ggbridge.gitguardian.com
 
 tls:
@@ -21,9 +24,15 @@ client:
       enabled: true
 
 proxy:
-  resolver: dns-default.openshift-dns.svc.cluster.local
+  config:
+    resolver:
+      dns: dns-default.openshift-dns.svc.cluster.local
 
   tunnels:
     tls:
       openShiftRoute:
         enabled: true
+        # Defaults to the US hosts. For the EU region:
+        # listeners:
+        #   - hostname: api.eu1.gitguardian.com
+        #   - hostname: hook.eu1.gitguardian.com
