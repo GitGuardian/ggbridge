@@ -6,22 +6,21 @@ You want to deploy **[ggscout](https://docs.gitguardian.com/ggscout-docs/home)**
 
 `ggbridge` can help you establish a secure and mTLS-authenticated gateway between your network and the GitGuardian platform, allowing ggscout to communicate with the GitGuardian public API, and thus, transmit the inventory.
 
-![ggscout](../../docs/images/ggscout-ggbridge.drawio.png)
-
-As you can see in the diagram above, we configure the ggbridge client to expose an internal API endpoint dedicated to communicating with the GitGuardian API through ggbridge’s secure tunnel.
+The ggbridge client exposes an internal Service in your cluster. ggscout sends its API requests to that Service over HTTP, and the client forwards them through the bridge's tunnel to the GitGuardian API over HTTPS.
 
 ## Requirements
 
-Before configuring the ggbridge client on you side, ensure that the GitGuardian team has created a dedicated ggbridge server for your organization.
-You can manage and configure your ggbridge instance directly from the GitGuardian dashboard, where you will have access to its settings (hostname, certificates...) and operational status.
+- A bridge created in the GitGuardian dashboard (**Settings > Security > GitGuardian Bridge**), with its certificate bundle and bridge URL. If your workspace has no access to GitGuardian Bridge yet, contact GitGuardian support to enable it.
+- ggscout running in the **same Kubernetes cluster** as the ggbridge client.
 
-If you do not yet have a dedicated Bridge, please contact the GitGuardian support team to request its creation before proceeding with the deployment.
+> [!NOTE]
+> ggscout running outside that cluster, for example on another network, can reach the GitGuardian API through the client's TLS routing instead: see [2-way tunneling](../2-way-tunneling).
 
 ## Configuration
 
 ### ggbridge Client configuration
 
-To enable the web tunnel and expose the GitGuardian API on your private internal network, you need to configure the ggbridge client.
+To enable the web tunnel and expose the GitGuardian API inside your cluster, you need to configure the ggbridge client.
 
 Follow these steps to create a `values.yaml` file with the appropriate Helm values.
 
@@ -30,6 +29,9 @@ Follow these steps to create a `values.yaml` file with the appropriate Helm valu
 Configure the ggbridge client to connect to your hostname:
 
 ```yaml
+# The bridge URL shown in the dashboard:
+#   US: <my-subdomain>.ggbridge.gitguardian.com
+#   EU: <my-subdomain>.ggbridge.eu1.gitguardian.com
 hostname: <my-subdomain>.ggbridge.gitguardian.com
 
 tls:
@@ -41,7 +43,7 @@ tls:
     key: tls.key
 ```
 
-- `hostname`: The subdomain assigned to your ggbridge instance.
+- `hostname`: The bridge URL of your ggbridge instance, as shown in the dashboard.
 - `tls.enabled`: Enables TLS for secure communication.
 - `tls.existingSecret`: References the Kubernetes secret storing your client certificates.
 - `tls.existingSecretKeys`: Specifies the keys within the secret.
@@ -57,13 +59,9 @@ client:
       enabled: true
 ```
 
-#### 3. Expose the GitGuardian API on Your Internal Network
+#### 3. Expose the GitGuardian API in Your Cluster
 
-There are multiple ways to expose the GitGuardian API within your network. You can use one of the following Kubernetes resources:
-
-##### **Option 1: Service (In-Cluster Access Only)**
-
-This option is only viable if the ggbridge client is deployed in the same Kubernetes cluster as **ggscout**. It enables internal communication using a Kubernetes service.
+Declare a Service listener whose backend is the GitGuardian API of your region. The bridge server only lets that host through: `api.gitguardian.com` for US bridges, `api.eu1.gitguardian.com` for EU bridges.
 
 ```yaml
 proxy:
@@ -72,6 +70,7 @@ proxy:
       service:
         listeners:
           - name: <my-service-name>
+            # EU bridges: api.eu1.gitguardian.com
             backend: api.gitguardian.com
 ```
 
@@ -81,59 +80,9 @@ The GitGuardian API will be accessible internally at:
 http://<my-service-name>.<namespace>.svc.cluster.local
 ```
 
+Use this full name: the client picks the backend from the request's `Host` header, and only this name is mapped to the GitGuardian API.
+
 Helm values file example 👉 [values-service.yaml](./helm/values-service.yaml)
-
-##### **Option 2: Ingress**
-
-Expose the API externally using an Ingress resource:
-
-```yaml
-proxy:
-  tunnels:
-    web:
-      ingress:
-        enabled: true
-        className: <my-ingress-className> # (Optional) Uses the default Ingress class if not set
-        listeners:
-          - hostname: api-gitguardian.<my-domain>
-            backend: api.gitguardian.com
-            tls:
-              secretName: <my-tls-secret>
-```
-
-The GitGuardian API will be accessible at:
-
-```shell
-https://api-gitguardian.<my-domain>
-```
-
-Helm values file example 👉 [values-ingress.yaml](./helm/values-ingress.yaml)
-
-##### **Option 3: Gateway API**
-
-For environments using the **Gateway API**, you can configure it as follows:
-
-```yaml
-proxy:
-  tunnels:
-    web:
-      gateway:
-        enabled: true
-        className: <my-gateway-className> # (Optional) Uses the default Gateway class if not set
-        listeners:
-          - hostname: api-gitguardian.<my-domain>
-            backend: api.gitguardian.com
-            tls:
-              secretName: <my-tls-secret>
-```
-
-The GitGuardian API will be accessible at:
-
-```shell
-https://api-gitguardian.<my-domain>
-```
-
-Helm values file example 👉 [values-gateway.yaml](./helm/values-gateway.yaml)
 
 #### 4. Deploy The ggbridge Client
 
@@ -157,11 +106,11 @@ To enable **ggscout** to communicate with the GitGuardian API via the configured
 inventory:
   config:
     gitguardian:
-      endpoint: "<my-api-endpoint>"
+      endpoint: "http://<my-service-name>.<namespace>.svc.cluster.local"
       api_token: <my-api-token>
 ```
 
-- `endpoint`: The internal URL of the GitGuardian API.
+- `endpoint`: The internal URL of the GitGuardian API, from step 3 above.
 - `api_token`: The authentication token for API access.
 
 Refer to the [ggscout GitHub project](https://github.com/GitGuardian/nhi-scout-helm-charts) for more documentation on how to configure the Helm chart.
