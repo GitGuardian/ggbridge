@@ -99,3 +99,50 @@ tests:
       - hasDocuments:
           count: 3
         template: templates/client/deployment.yaml
+
+  - it: builds the client CA bundle with the main image
+    set:
+      mode: client
+      caBundle.certs: |
+        -----BEGIN CERTIFICATE-----
+        -----END CERTIFICATE-----
+    documentIndex: 0
+    template: templates/client/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/gitguardian/ggbridge:unstable
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: ["ggbridge"]
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value: ["ca-bundle"]
+
+  - it: builds the client CA bundle when only mTLS verification is enabled
+    set:
+      mode: client
+      tls.enabled: true
+      tls.verifyCert: true
+      tls.existingSecret: ggbridge-client-crt
+    documentIndex: 0
+    template: templates/client/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/gitguardian/ggbridge:unstable
+
+  - it: builds the server CA bundle with the main image
+    set:
+      mode: server
+      deploymentCount: 1
+      caBundle.existingSecret: my-ca
+    documentIndex: 0
+    template: templates/server/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/gitguardian/ggbridge:unstable
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value: ["ca-bundle"]

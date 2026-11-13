@@ -98,7 +98,7 @@ tls:
 ```
 
 > [!TIP]
-> If you need to debug the deployment, you can use the image `latest-shell` instead of `latest`. This image comes with embedded tooling for debugging purposes. :
+> If you need to debug the deployment, you can temporarily switch to the `latest-shell` image. It is the same build as `latest` plus a shell and network tooling, so you can `kubectl exec` into the pod. It is a debugging aid only, do not run it in production :
 >
 > ```yaml
 > image:
@@ -131,6 +131,32 @@ proxy:
     resolver:
       dns: dns-default.openshift-dns.svc.cluster.local
 ```
+
+#### Custom CA bundle
+
+If your GitGuardian instance, your proxy or your self-hosted services present certificates signed
+by a private authority, add that authority to the trust store with either `caBundle.certs`:
+
+```yaml
+caBundle:
+  certs: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+```
+
+or an existing secret:
+
+```yaml
+caBundle:
+  existingSecret: my-ca-bundle
+  existingSecretKey: ca.crt
+```
+
+The chart runs an init container that merges those certificates with the system trust store into
+`/etc/ggbridge/ssl/certs/ca-bundle.crt`, and points both `ggbridge` and `nginx` at it. That init
+container runs the same `gitguardian/ggbridge` image as the rest of the chart, so an airgapped
+install only needs that single image mirrored.
 
 5. Deploy with Helm
 

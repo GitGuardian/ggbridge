@@ -1,40 +1,41 @@
 {
   "name": "ggbridge",
-  "engineVersion": "v0.18.11",
+  "engineVersion": "v0.21.7",
   "sdk": {
     "source": "python"
   },
   "dependencies": [
     {
       "name": "apko",
-      "source": "github.com/opopops/daggerverse/apko@apko/v1.16.6",
-      "pin": "78446b125865b4f29ad7588c83f9ce562a9f8ff0"
+      "source": "github.com/opopops/daggerverse/apko@apko/v1.18.3",
+      "pin": "d07e0252feb5ac99985b630d8501ecf3d9f7c082"
     },
     {
       "name": "cosign",
-      "source": "github.com/opopops/daggerverse/cosign@cosign/v1.8.4",
-      "pin": "b3df492dd36aca2076ad67e0b45ea154b49c5f77"
+      "source": "github.com/opopops/daggerverse/cosign@cosign/v1.9.1",
+      "pin": "055e35bb9b932314a8ee3763f53a4c339117220c"
     },
     {
       "name": "crane",
-      "source": "github.com/opopops/daggerverse/crane@crane/v1.5.2",
-      "pin": "dbae1f0861e9f5a991dd757837fc3eae11f0b58f"
+      "source": "github.com/opopops/daggerverse/crane@crane/v1.6.0",
+      "pin": "e2463305d2a514e09c4cdcae58f108d9f687ca04"
     },
     {
       "name": "grype",
-      "source": "github.com/opopops/daggerverse/grype@grype/v1.9.2",
-      "pin": "7ace0f800e61cd152906ca59a524fa964f51069b"
+      "source": "github.com/opopops/daggerverse/grype@grype/v1.9.11",
+      "pin": "d07e0252feb5ac99985b630d8501ecf3d9f7c082"
     },
     {
       "name": "helm",
-      "source": "github.com/opopops/daggerverse/helm@helm/v1.6.5",
-      "pin": "1115887a775537bca8f93e681fbba4d6c954e754"
+      "source": "github.com/opopops/daggerverse/helm@helm/v1.7.1",
+      "pin": "5fd8fd10d2a6715b490818d500895816bb8c1d08"
     },
     {
       "name": "melange",
-      "source": "github.com/opopops/daggerverse/melange@melange/v1.9.4",
-      "pin": "b352411e8b8d0b5e2705e1f5e3db386fc35b5805"
+      "source": "github.com/opopops/daggerverse/melange@melange/v1.11.0",
+      "pin": "8acc58ada3d0eba36fee740769232a8d6068c4d4"
     }
   ],
-  "source": "dagger"
+  "source": "dagger",
+  "disableDefaultFunctionCaching": true
 }

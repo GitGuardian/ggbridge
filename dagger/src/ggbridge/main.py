@@ -9,6 +9,7 @@ from .repository import Repository
 from .image import Image
 
 UUID: str = random.randrange(10**8)
+MELANGE_VERSION: str = "0.43.6"
 
 
 @object_type
@@ -50,7 +51,7 @@ class Ggbridge:
             cosign_=dag.cosign(),
             grype_=dag.grype(),
             helm_=dag.helm(),
-            melange_=dag.melange(),
+            melange_=dag.melange(version=MELANGE_VERSION),
         )
 
     # =============================================================================
