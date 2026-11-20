@@ -10,6 +10,15 @@ With **TLS Routing**, the client also exposes a TLS port that forwards connectio
 > 2-way tunneling is for bridges to **GitGuardian SaaS**. For a self-hosted GitGuardian, reverse SOCKS is the only supported tunnel mode: see [values-self-hosted-client.yaml](../helm/values-self-hosted-client.yaml).
 > Never enable client tunnels against a bridge server whose `whitelist.hosts` is empty (the chart default): such a server forwards any host name it receives.
 
+## Why route `hook` and `api` through the bridge
+
+The bridge already lets GitGuardian reach your VCS: that is how it scans. Some traffic goes the other way, from your network to GitGuardian, and needs these two hosts:
+
+- **`hook.gitguardian.com`** (EU: `hook.eu1.gitguardian.com`) receives the webhooks your VCS sends, for example on each push. GitGuardian's real-time detection relies on them: if the VCS cannot reach this host, it cannot tell GitGuardian about new commits.
+- **`api.gitguardian.com`** (EU: `api.eu1.gitguardian.com`) is the GitGuardian API. Route it only if clients on that network call it: ggshield in your CI or as a [pre-receive hook](https://docs.gitguardian.com/ggshield-docs/integrations/git-hooks/pre-receive) on the VCS server, or ggscout.
+
+If your VCS can already reach these hosts directly, you don't need 2-way tunneling.
+
 ## Before you start
 
 - ggbridge Helm chart **1.6.0 or later**. The LoadBalancer option works from 1.0.0, Traefik and Gateway routes from 1.4.0, and the OpenShift resolver setting below needs 1.6.0.
@@ -19,8 +28,6 @@ With **TLS Routing**, the client also exposes a TLS port that forwards connectio
   | ------ | ----------------------------------- | ----------------------------------------------------- |
   | US     | `<id>.ggbridge.gitguardian.com`     | `hook.gitguardian.com`, `api.gitguardian.com`         |
   | EU     | `<id>.ggbridge.eu1.gitguardian.com` | `hook.eu1.gitguardian.com`, `api.eu1.gitguardian.com` |
-
-- `hook.gitguardian.com` (EU: `hook.eu1.gitguardian.com`) receives the webhooks of your VCS. Route `api.gitguardian.com` (EU: `api.eu1.gitguardian.com`) too only if other clients on that network (ggshield, ggscout...) must reach the GitGuardian API through the bridge.
 
 ## 1. Enable the TLS tunnel
 
