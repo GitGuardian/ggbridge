@@ -2,7 +2,7 @@
 
 By default, the `ggbridge` client only lets GitGuardian reach your network (server → client). It exposes no **client → server** path.
 
-With **TLS Routing**, the client also exposes a TLS port. Each TLS connection it receives is forwarded, unopened, through the tunnel to the bridge server, which connects to the host named in the connection's SNI if that host is allowed. Your VCS can then send its webhooks to GitGuardian with no direct internet access. TLS is not terminated on the way: the VCS sees GitGuardian's own certificate, and there is no CA to install.
+With **TLS Routing**, the client also exposes a TLS port that forwards connections through the tunnel to GitGuardian. Use it when your VCS is fully air-gapped (no egress): it can then still send its webhooks to GitGuardian, through the bridge.
 
 ![tls-routing](../../docs/images/ggbridge-tls-routing.drawio.png)
 
@@ -13,14 +13,14 @@ With **TLS Routing**, the client also exposes a TLS port. Each TLS connection it
 ## Before you start
 
 - ggbridge Helm chart **1.6.0 or later**. The LoadBalancer option works from 1.0.0, Traefik and Gateway routes from 1.4.0, and the OpenShift resolver setting below needs 1.6.0.
-- The hosts of your GitGuardian region. Your bridge URL, shown in the dashboard, tells your region. The bridge server only lets these hosts through, and refuses any other, including other GitGuardian hosts such as the dashboard:
+- The hosts of your GitGuardian region. The bridge server only lets these hosts through, and refuses any other, including other GitGuardian hosts such as the dashboard:
 
   | Region | Bridge URL (`hostname`)             | Hosts allowed client → server                         |
   | ------ | ----------------------------------- | ----------------------------------------------------- |
   | US     | `<id>.ggbridge.gitguardian.com`     | `hook.gitguardian.com`, `api.gitguardian.com`         |
   | EU     | `<id>.ggbridge.eu1.gitguardian.com` | `hook.eu1.gitguardian.com`, `api.eu1.gitguardian.com` |
 
-- `hook.<region>` receives the webhooks of your VCS. Route `api.<region>` too only if other clients on that network (ggshield, ggscout...) must reach the GitGuardian API through the bridge.
+- `hook.gitguardian.com` (EU: `hook.eu1.gitguardian.com`) receives the webhooks of your VCS. Route `api.gitguardian.com` (EU: `api.eu1.gitguardian.com`) too only if other clients on that network (ggshield, ggscout...) must reach the GitGuardian API through the bridge.
 
 ## 1. Enable the TLS tunnel
 
@@ -36,9 +36,10 @@ Keep `proxyProtocol.enabled` at its default (`true`): the bridge server expects 
 ## 2. Expose the TLS port
 
 > [!NOTE]
-> **TLS Routing** does not work with standard `Ingress` objects, which terminate TLS. Use one of the methods below.
+> **TLS Routing** does not work with standard `Ingress` objects. Use one of the methods below.
 
-### Option A: LoadBalancer Service
+<details>
+<summary><strong>Option A: LoadBalancer Service</strong></summary>
 
 Helm values file example 👉 [values-tls-service.yaml](./helm/values-tls-service.yaml)
 
@@ -66,7 +67,10 @@ ggbridge-proxy-tls   LoadBalancer   10.43.241.16   10.0.0.20     443:31490/TCP  
 - **k3s**: the built-in ServiceLB binds the port on the node itself, and the external IP is the node's IP. The bundled Traefik already holds port 443, so the Service stays `<pending>` until k3s runs with `--disable=traefik`. Alternatively, use Option B with the bundled Traefik.
 - **k3d** ([k3d installation](../../docs/k3d-install.md)): that guide disables ServiceLB and Traefik and maps no host port, so the port is not reachable as is. Create the cluster with ServiceLB enabled and `-p "443:443@loadbalancer"`, or use `type: NodePort` with a fixed `nodePort` and `-p "443:<nodePort>@server:0"`.
 
-### Option B: Traefik `IngressRouteTCP`
+</details>
+
+<details>
+<summary><strong>Option B: Traefik <code>IngressRouteTCP</code></strong></summary>
 
 Requires the Traefik ingress controller in your cluster.
 
@@ -93,7 +97,10 @@ NAME      TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                 
 traefik   LoadBalancer   10.43.65.162   172.31.26.173   80:20572/TCP,443:27014/TCP   29h
 ```
 
-### Option C: Gateway API
+</details>
+
+<details>
+<summary><strong>Option C: Gateway API</strong></summary>
 
 Requires [Gateway API](https://gateway-api.sigs.k8s.io/guides/#getting-started-with-gateway-api) and a [`GatewayClass`](https://gateway-api.sigs.k8s.io/concepts/api-overview/#gatewayclass) in your cluster.
 
@@ -140,7 +147,10 @@ NAME         CLASS             ADDRESS         PROGRAMMED   AGE
 my-gateway   my-gatewayclass   192.168.1.200   True         54h
 ```
 
-### Option D: OpenShift Route
+</details>
+
+<details>
+<summary><strong>Option D: OpenShift Route</strong></summary>
 
 Helm values file example 👉 [values-tls-openshift-route.yaml](./helm/values-tls-openshift-route.yaml)
 
@@ -161,14 +171,16 @@ proxy:
 
 Use the address of your OpenShift router in step 3.
 
+</details>
+
 ## 3. Redirect DNS on the VCS network
 
-Make the VCS resolve the hosts of your region (see [Before you start](#before-you-start)) to the address from step 2.
+Make the VCS resolve `hook.gitguardian.com` (EU: `hook.eu1.gitguardian.com`), and the API host if you route it, to the address from step 2.
 
 - **Override exactly these host names**, not the `gitguardian.com` (or `eu1.gitguardian.com`) zone. The bridge refuses every other host, so the dashboard and other GitGuardian services would stop working for that network.
 - **Configure it in the DNS server your VCS uses.** For example, an override zone or RPZ entry on your internal DNS server, or a cloud private DNS zone attached to the VCS network. On AWS, that is a Route 53 private hosted zone named after the host itself (`hook.gitguardian.com`) with an A record at its apex.
 - **VCS appliances rarely have a DNS setting of their own.** GitHub Enterprise Server, for instance, takes its nameservers from DHCP, or from `ghe-setup-network -v` in its administrative shell ([GitHub documentation](https://docs.github.com/en/enterprise-server@latest/admin/configuring-settings/configuring-network-settings/configuring-dns-nameservers)). The redirection itself belongs in that DNS server.
-- **The override applies to every machine that uses this DNS server.** For example, ggshield in CI on that network then reaches `api.<region>` through the bridge, and stops working when the bridge is down.
+- **The override applies to every machine that uses this DNS server.** For example, ggshield in CI on that network then reaches `api.gitguardian.com` (EU: `api.eu1.gitguardian.com`) through the bridge, and stops working when the bridge is down.
 
 ## 4. Open the firewall
 
@@ -178,7 +190,7 @@ Make the VCS resolve the hosts of your region (see [Before you start](#before-yo
 
 ## 5. Verify
 
-From the VCS host (for GitHub Enterprise Server, its administrative shell), with the hosts of your region:
+From the VCS host (for GitHub Enterprise Server, its administrative shell). For an EU bridge, use `hook.eu1.gitguardian.com`:
 
 ```console
 $ getent hosts hook.gitguardian.com
@@ -188,8 +200,8 @@ $ curl -sS -o /dev/null -w '%{http_code} %{remote_ip}\n' https://hook.gitguardia
 ```
 
 - The address must be the one from step 2.
-- Any HTTP status means GitGuardian answered through the tunnel (`404` on `/` is expected for `hook`). Do not use `-k`: TLS is passed through, so the certificate must be GitGuardian's own and must validate.
-- Repeat for `api.<region>` if you route it.
+- Any HTTP status means GitGuardian answered through the tunnel (`404` on `/` is expected for the hook host). Do not use `-k`: the certificate must be GitGuardian's own and must validate.
+- Repeat for `api.gitguardian.com` (EU: `api.eu1.gitguardian.com`) if you route it.
 - If the address is right but the connection fails during the TLS handshake, check that the client pods are `Ready`, and that the hosts belong to your bridge's region: the bridge server refuses the others.
 
 See also [Troubleshooting: reverse tunneling](../../docs/troubleshoot.md#4-reverse-tunneling) for a check from inside the cluster.
